@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #3b82f6; /* Blue-500 */
+  --primary-light: #93c5fd; /* Blue-300 */
+  --primary-dark: #1d4ed8; /* Blue-700 */
+  --accent: #60a5fa; /* Blue-400 */
+  --accent-light: #dbeafe; /* Blue-50 */
+  --accent-dark: #2563eb; /* Blue-600 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a; /* Slate-900 */
+    --foreground: #f8fafc; /* Slate-50 */
+    --primary: #3b82f6; /* Blue-500 */
+    --primary-light: #1d4ed8; /* Blue-700 */
+    --primary-dark: #93c5fd; /* Blue-300 */
+    --accent: #2563eb; /* Blue-600 */
+    --accent-light: #1e3a8a; /* Blue-900 */
+    --accent-dark: #60a5fa; /* Blue-400 */
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Futuristic UI Elements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Gradient Text */
+.gradient-text {
+  @apply bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent;
+}
+
+/* Animated Glow Effect */
+.glow-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-effect::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+  animation: glow-animation 8s infinite;
+}
+
+@keyframes glow-animation {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-25%, -25%) scale(1.2);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+}
+
+/* Futuristic Button Styles */
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl;
+}
+
+.btn-secondary {
+  @apply border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-4 py-2 rounded-full transition-all duration-200;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
