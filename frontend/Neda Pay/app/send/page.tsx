@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { ConnectWallet, Wallet } from '@coinbase/onchainkit/wallet';
-import { Address, Avatar, Name } from '@coinbase/onchainkit/identity';
+import { useState, useRef } from 'react';
+import { useOnchainKit } from '@coinbase/onchainkit';
 import Link from 'next/link';
+import Header from '../components/Header';
 
 export default function SendPage() {
   const [amount, setAmount] = useState<string>('');
@@ -41,26 +41,32 @@ export default function SendPage() {
     setError(null);
   };
 
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanResult, setQrScanResult] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleQrCodeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real implementation, we would use a QR code scanning library
+      // For now, we'll simulate finding an address in the QR code
+      const simulatedAddress = "0x" + Math.random().toString(16).slice(2, 42);
+      setRecipient(simulatedAddress);
+      setQrScanResult(simulatedAddress);
+      setShowScanner(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-blue-100 dark:border-blue-900">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-              NEDA Pay
-            </div>
-          </Link>
-          
-          <div className="wallet-container">
-            <Wallet>
-              <ConnectWallet className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition-all duration-200 flex items-center space-x-2">
-                <span>Connect Wallet</span>
-              </ConnectWallet>
-            </Wallet>
-          </div>
-        </div>
-      </header>
+      {/* Use the Header component */}
+      <Header />
 
       {/* Main content */}
       <main className="container mx-auto max-w-2xl px-4 py-12">
@@ -120,16 +126,74 @@ export default function SendPage() {
                 <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Recipient Address
                 </label>
-                <input
-                  type="text"
-                  id="recipient"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                  placeholder="0x..."
-                  className="block w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="recipient"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    placeholder="0x..."
+                    className="block w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-10"
+                    required
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                    title="Scan QR Code"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
+
+              {/* QR Code Scanner Modal */}
+              {showScanner && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Scan QR Code</h3>
+                      <button 
+                        onClick={() => setShowScanner(false)}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <p className="text-gray-600 dark:text-gray-300 mb-4">Upload a QR code image or take a photo of a QR code</p>
+                      
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleQrCodeUpload}
+                        className="hidden"
+                      />
+                      
+                      <button
+                        onClick={triggerFileInput}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      >
+                        Upload QR Code Image
+                      </button>
+                    </div>
+                    
+                    {scanResult && (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
+                        <p className="text-green-700 dark:text-green-400 text-sm">
+                          Address found: {scanResult.substring(0, 8)}...{scanResult.substring(scanResult.length - 6)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {error && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import WalletSelector from '../components/WalletSelector';
+import Header from '../components/Header';
 
 // Base stablecoins data
 const baseStablecoins = [
@@ -158,6 +159,12 @@ export default function StablecoinsPage() {
   const [receiveAmount, setReceiveAmount] = useState<string>('');
   const [fromCoin, setFromCoin] = useState('tshc');
   const [toCoin, setToCoin] = useState('usdc');
+  const [mounted, setMounted] = useState(false);
+  
+  // Handle client-side mounting
+  useState(() => {
+    setMounted(true);
+  });
 
   // Get coin details by ID
   const getCoinById = (id: string) => {
@@ -214,21 +221,7 @@ export default function StablecoinsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-blue-100 dark:border-blue-900">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-              NEDA Pay
-            </div>
-          </Link>
-          
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <WalletSelector />
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main content */}
       <main className="container mx-auto max-w-6xl px-4 py-12">

@@ -133,7 +133,7 @@ export default function WalletPage() {
               <Link href="/send" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center transition-colors">
                 Send
               </Link>
-              <Link href="/receive" className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 px-4 rounded-lg text-center transition-colors">
+              <Link href="/wallet/receive" className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 px-4 rounded-lg text-center transition-colors">
                 Receive
               </Link>
             </div>
