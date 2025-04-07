@@ -131,7 +131,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-300">Network</span>
-                  <span className="font-medium text-gray-800 dark:text-white">Base Testnet</span>
+                  <span className="font-medium text-gray-800 dark:text-white">Base</span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-300">Standard</span>
@@ -149,18 +149,12 @@ export default function DashboardPage() {
             </div>
             
             <div className="p-6">
-              {isConnected ? (
-                <Link 
-                  href="/send" 
-                  className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-center transition-colors font-medium"
-                >
-                  Send TSHC
-                </Link>
-              ) : (
-                <div className="block w-full py-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-center font-medium flex items-center justify-center space-x-2">
-                  <span>Connect wallet to send TSHC</span>
-                </div>
-              )}
+              <Link 
+                href="/send" 
+                className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-center transition-colors font-medium"
+              >
+                Send TSHC
+              </Link>
             </div>
           </div>
           

@@ -43,13 +43,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-10 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-blue-100 dark:border-blue-900">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <Link href="/" className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
             NEDA Pay
           </Link>
-          <div className="text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-            Base Testnet
-          </div>
         </div>
         
         <div className="flex items-center space-x-4">

@@ -1,96 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ConnectWallet } from '@coinbase/onchainkit/wallet';
-import { useOnchainKit } from '@coinbase/onchainkit';
+import { useState, useRef, useEffect } from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { metaMask, coinbaseWallet } from 'wagmi/connectors';
 
 export default function WalletSelector() {
-  const [mounted, setMounted] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [account, setAccount] = useState('');
-  const [walletType, setWalletType] = useState<'metamask' | 'coinbase' | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Get Coinbase wallet connection status
-  const { address } = useOnchainKit();
-  
-  // Check for Coinbase Wallet connection
-  useEffect(() => {
-    if (address) {
-      setAccount(address);
-      setIsConnected(true);
-      setWalletType('coinbase');
-    }
-  }, [address]);
-  
-  useEffect(() => {
-    setMounted(true);
-    
-    // Check if already connected to MetaMask
-    if (typeof window !== 'undefined') {
-      const ethereum = (window as any).ethereum;
-      if (ethereum && ethereum.isMetaMask) {
-        ethereum.request({ method: 'eth_accounts' })
-          .then((accounts: string[]) => {
-            if (accounts.length > 0 && !isConnected) {
-              setAccount(accounts[0]);
-              setIsConnected(true);
-              setWalletType('metamask');
-            }
-          })
-          .catch(console.error);
-          
-        // Listen for account changes
-        ethereum.on('accountsChanged', (accounts: string[]) => {
-          if (accounts.length > 0) {
-            setAccount(accounts[0]);
-            setIsConnected(true);
-            setWalletType('metamask');
-          } else if (walletType === 'metamask') {
-            // Only disconnect if current wallet is MetaMask
-            setAccount('');
-            setIsConnected(false);
-            setWalletType(null);
-          }
-        });
-      }
-    }
-  }, [isConnected, walletType]);
+  // Use wagmi hooks directly
+  const { address, isConnected, connector } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
   
   // Close dropdown when clicking outside
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setShowOptions(false);
+    }
+  };
+  
+  // Add event listener for clicking outside
   useEffect(() => {
-    if (!mounted) return;
-    
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowOptions(false);
-      }
-    };
-    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [mounted]);
+  }, []);
   
   // Function to handle MetaMask connection
-  const connectMetaMask = async () => {
+  const handleConnectMetaMask = async () => {
     setIsConnecting(true);
-    
     try {
-      if (typeof window !== 'undefined') {
-        const ethereum = (window as any).ethereum;
-        if (ethereum && ethereum.isMetaMask) {
-          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-          if (accounts.length > 0) {
-            setAccount(accounts[0]);
-            setIsConnected(true);
-            setShowOptions(false);
-          }
-        } else {
-          window.open('https://metamask.io/download/', '_blank');
-        }
-      }
+      await connect({ connector: metaMask() });
+      setShowOptions(false);
     } catch (error) {
       console.error('Error connecting to MetaMask', error);
     } finally {
@@ -98,23 +40,24 @@ export default function WalletSelector() {
     }
   };
   
-  // Function to disconnect wallet
-  const disconnectWallet = () => {
-    if (walletType === 'metamask') {
-      // For MetaMask, just update the state
-      setAccount('');
-      setIsConnected(false);
-      setWalletType(null);
-    } else if (walletType === 'coinbase') {
-      // For Coinbase, the ConnectWallet component handles disconnection
-      // Just update our local state
-      setAccount('');
-      setIsConnected(false);
-      setWalletType(null);
+  // Function to handle Coinbase Wallet connection
+  const handleConnectCoinbase = async () => {
+    setIsConnecting(true);
+    try {
+      await connect({ connector: coinbaseWallet({ appName: 'NEDA Pay' }) });
+      setShowOptions(false);
+    } catch (error) {
+      console.error('Error connecting to Coinbase Wallet', error);
+    } finally {
+      setIsConnecting(false);
     }
   };
   
-  if (!mounted) return null;
+  // Function to handle wallet disconnection
+  const handleDisconnect = () => {
+    disconnect();
+    setShowOptions(false);
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -126,7 +69,7 @@ export default function WalletSelector() {
           }}
           className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/40 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full transition-all duration-200"
         >
-          <div className={`w-6 h-6 rounded-full ${walletType === 'metamask' ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
+          <div className={`w-6 h-6 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
               <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
@@ -134,7 +77,7 @@ export default function WalletSelector() {
           </div>
           <div className="flex flex-col">
             <div className="text-sm font-medium">
-              {account.substring(0, 6)}...{account.substring(account.length - 4)}
+              {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
@@ -168,7 +111,7 @@ export default function WalletSelector() {
               </div>
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full ${walletType === 'metamask' ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
+                  <div className={`w-8 h-8 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
                       <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
@@ -176,9 +119,11 @@ export default function WalletSelector() {
                   </div>
                   <div>
                     <div className="font-medium text-gray-800 dark:text-white">
-                      {account.substring(0, 6)}...{account.substring(account.length - 4)}
+                      {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{walletType === 'metamask' ? 'MetaMask' : 'Coinbase Wallet'}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {connector?.name || 'Wallet'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -190,7 +135,7 @@ export default function WalletSelector() {
                   Wallet
                 </a>
                 <button 
-                  onClick={disconnectWallet}
+                  onClick={handleDisconnect}
                   className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   Disconnect
@@ -205,7 +150,9 @@ export default function WalletSelector() {
               <div className="p-2 space-y-2">
                 {/* Coinbase Wallet Option */}
                 <div>
-                  <ConnectWallet
+                  <button
+                    onClick={handleConnectCoinbase}
+                    disabled={isConnecting}
                     className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                   >
                     <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -216,14 +163,16 @@ export default function WalletSelector() {
                     </div>
                     <div>
                       <div className="font-medium text-gray-800 dark:text-white">Coinbase Wallet</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Connect using Coinbase Wallet</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {isConnecting ? 'Connecting...' : 'Connect using Coinbase Wallet'}
+                      </div>
                     </div>
-                  </ConnectWallet>
+                  </button>
                 </div>
                 
                 {/* MetaMask Option */}
                 <button
-                  onClick={connectMetaMask}
+                  onClick={handleConnectMetaMask}
                   disabled={isConnecting}
                   className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
                 >
