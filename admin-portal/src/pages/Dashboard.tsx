@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Box, 
   Grid, 
@@ -27,6 +27,7 @@ import {
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useWeb3 } from '../contexts/Web3Context';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -57,6 +58,37 @@ ChartJS.register(
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { 
+    isInitialized, 
+    isCorrectNetwork, 
+    account, 
+    totalSupply, 
+    collateralizationRatio,
+    connectWallet,
+    refreshData
+  } = useWeb3();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch blockchain data when component mounts
+  useEffect(() => {
+    const fetchBlockchainData = async () => {
+      if (isInitialized && isCorrectNetwork) {
+        setIsLoading(true);
+        try {
+          await refreshData();
+        } catch (error) {
+          console.error('Error fetching blockchain data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBlockchainData();
+  }, [isInitialized, isCorrectNetwork, refreshData]);
 
   // Mock data for charts
   const reserveData = {
@@ -153,23 +185,29 @@ const Dashboard: React.FC = () => {
     },
   ];
 
-  // Summary stats
+  // Summary stats with real data from blockchain when available
   const summaryStats = [
     { 
       title: 'Total Supply', 
-      value: '10,000,000 TSHC', 
+      value: isInitialized && isCorrectNetwork ? 
+        `${parseFloat(totalSupply).toLocaleString()} TSHC` : 
+        '-- TSHC', 
       change: '+5.2%', 
       trend: 'up' 
     },
     { 
       title: 'Circulating Supply', 
-      value: '5,250,000 TSHC', 
+      value: isInitialized && isCorrectNetwork ? 
+        `${parseFloat(totalSupply).toLocaleString()} TSHC` : 
+        '-- TSHC', 
       change: '+3.8%', 
       trend: 'up' 
     },
     { 
       title: 'Backing Ratio', 
-      value: '102.5%', 
+      value: isInitialized && isCorrectNetwork ? 
+        `${collateralizationRatio}%` : 
+        '--%', 
       change: '+0.5%', 
       trend: 'up' 
     },
@@ -209,7 +247,7 @@ const Dashboard: React.FC = () => {
                 {stat.title}
               </Typography>
               <Typography variant="h5" component="div" fontWeight="bold">
-                {stat.value}
+                {isLoading ? 'Loading...' : stat.value}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 {stat.trend === 'up' ? (
@@ -234,6 +272,37 @@ const Dashboard: React.FC = () => {
       </Grid>
 
       {/* Main Dashboard Content */}
+      {!isInitialized && (
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 3, 
+            mb: 4, 
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Connect your wallet to see real-time blockchain data
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            You need to connect your wallet to view the current state of the TSHC smart contracts
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </Button>
+        </Paper>
+      )}
+      
       <Grid container spacing={3}>
         {/* Transaction Volume Chart */}
         <Grid item xs={12} lg={8}>

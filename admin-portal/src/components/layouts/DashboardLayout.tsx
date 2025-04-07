@@ -38,6 +38,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
+import WalletConnect from '../WalletConnect';
 
 const drawerWidth = 260;
 
@@ -139,6 +140,9 @@ const DashboardLayout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             NEDA Pay Admin Portal
           </Typography>
+          
+          {/* Wallet Connect */}
+          <WalletConnect />
           
           {/* Theme toggle */}
           <IconButton color="inherit" onClick={toggleColorMode} sx={{ ml: 1 }}>

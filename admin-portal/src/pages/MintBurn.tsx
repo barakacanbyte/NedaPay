@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useWeb3 } from '../contexts/Web3Context';
 import { 
   Box, 
   Typography, 
@@ -25,6 +26,7 @@ import {
   CardContent,
   Divider,
   Alert,
+  CircularProgress,
   useTheme
 } from '@mui/material';
 import { 
@@ -93,25 +95,65 @@ const mockMintBurnHistory = [
 
 const MintBurn: React.FC = () => {
   const theme = useTheme();
+  const { 
+    isInitialized, 
+    isCorrectNetwork, 
+    account, 
+    totalSupply, 
+    collateralizationRatio,
+    mintTokens, 
+    burnTokens,
+    connectWallet,
+    switchNetwork,
+    refreshData,
+    error: web3Error
+  } = useWeb3();
+  
   const [openMintDialog, setOpenMintDialog] = useState(false);
   const [openBurnDialog, setOpenBurnDialog] = useState(false);
   const [mintAmount, setMintAmount] = useState('');
   const [burnAmount, setBurnAmount] = useState('');
+  const [mintAddress, setMintAddress] = useState('');
   const [reason, setReason] = useState('');
   const [organization, setOrganization] = useState('');
   const [mintSuccess, setMintSuccess] = useState(false);
   const [burnSuccess, setBurnSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mintBurnHistory, setMintBurnHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Calculate total minted and burned
-  const totalMinted = mockMintBurnHistory
+  const totalMinted = mintBurnHistory
     .filter(item => item.type === 'Mint')
     .reduce((sum, item) => sum + item.amount, 0);
     
-  const totalBurned = mockMintBurnHistory
+  const totalBurned = mintBurnHistory
     .filter(item => item.type === 'Burn')
     .reduce((sum, item) => sum + item.amount, 0);
     
-  const netCirculating = totalMinted - totalBurned;
+  const netCirculating = parseFloat(totalSupply);
+  
+  // Fetch transaction history
+  useEffect(() => {
+    const fetchTransactionHistory = async () => {
+      if (isInitialized && isCorrectNetwork) {
+        setIsLoading(true);
+        try {
+          // In a real implementation, we would fetch this from the blockchain
+          // by querying Transfer events from the TSHC contract
+          // For now, we'll use the mock data
+          setMintBurnHistory(mockMintBurnHistory);
+        } catch (err: any) {
+          setError(err.message || 'Failed to fetch transaction history');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchTransactionHistory();
+  }, [isInitialized, isCorrectNetwork]);
 
   // Prepare data for chart
   const chartData = {
@@ -142,8 +184,11 @@ const MintBurn: React.FC = () => {
   const handleMintDialogClose = () => {
     setOpenMintDialog(false);
     setMintAmount('');
+    setMintAddress('');
     setReason('');
     setOrganization('');
+    setMintSuccess(false);
+    setError(null);
   };
 
   const handleBurnDialogOpen = () => {
@@ -158,22 +203,74 @@ const MintBurn: React.FC = () => {
     setOrganization('');
   };
 
-  const handleMint = () => {
-    // Logic to mint tokens would go here
-    // This would call the TSHC.sol contract's mint function
-    setMintSuccess(true);
-    setTimeout(() => {
-      handleMintDialogClose();
-    }, 2000);
+  const handleMint = async () => {
+    if (!isInitialized) {
+      await connectWallet();
+      return;
+    }
+    
+    if (!isCorrectNetwork) {
+      await switchNetwork();
+      return;
+    }
+    
+    setError(null);
+    setIsProcessing(true);
+    
+    try {
+      // Call the mint function from the Web3Context
+      const tx = await mintTokens(mintAddress, mintAmount);
+      
+      // Wait for transaction to be mined
+      await tx.wait();
+      
+      // Refresh data
+      await refreshData();
+      
+      setMintSuccess(true);
+      setTimeout(() => {
+        handleMintDialogClose();
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to mint tokens');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleBurn = () => {
-    // Logic to burn tokens would go here
-    // This would call the TSHC.sol contract's burn function
-    setBurnSuccess(true);
-    setTimeout(() => {
-      handleBurnDialogClose();
-    }, 2000);
+  const handleBurn = async () => {
+    if (!isInitialized) {
+      await connectWallet();
+      return;
+    }
+    
+    if (!isCorrectNetwork) {
+      await switchNetwork();
+      return;
+    }
+    
+    setError(null);
+    setIsProcessing(true);
+    
+    try {
+      // Call the burn function from the Web3Context
+      const tx = await burnTokens(burnAmount);
+      
+      // Wait for transaction to be mined
+      await tx.wait();
+      
+      // Refresh data
+      await refreshData();
+      
+      setBurnSuccess(true);
+      setTimeout(() => {
+        handleBurnDialogClose();
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to burn tokens');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -206,7 +303,7 @@ const MintBurn: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" fontWeight="bold" color="success.main">
-                {totalMinted.toLocaleString()} TSHC
+                {isLoading ? 'Loading...' : totalMinted.toLocaleString()} TSHC
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Last minted: {mockMintBurnHistory.find(item => item.type === 'Mint')?.date}
@@ -231,7 +328,7 @@ const MintBurn: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" fontWeight="bold" color="error.main">
-                {totalBurned.toLocaleString()} TSHC
+                {isLoading ? 'Loading...' : totalBurned.toLocaleString()} TSHC
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Last burned: {mockMintBurnHistory.find(item => item.type === 'Burn')?.date}
@@ -256,10 +353,10 @@ const MintBurn: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" fontWeight="bold">
-                {netCirculating.toLocaleString()} TSHC
+                {isLoading ? 'Loading...' : netCirculating.toLocaleString()} TSHC
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Backed by verified reserves at 102.5%
+                Backed by verified reserves at {collateralizationRatio}%
               </Typography>
             </CardContent>
           </Card>
@@ -317,6 +414,7 @@ const MintBurn: React.FC = () => {
             variant="outlined" 
             color="error"
             onClick={handleBurnDialogOpen}
+            disabled={!isInitialized || !isCorrectNetwork}
           >
             Burn TSHC
           </Button>
@@ -325,6 +423,7 @@ const MintBurn: React.FC = () => {
             variant="contained" 
             color="success"
             onClick={handleMintDialogOpen}
+            disabled={!isInitialized || !isCorrectNetwork}
           >
             Mint TSHC
           </Button>
@@ -346,7 +445,24 @@ const MintBurn: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {mockMintBurnHistory.map((item) => (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 2 }}>
+                    Loading transaction history...
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : mintBurnHistory.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body2">
+                    No mint/burn transactions found
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : mintBurnHistory.map((item) => (
               <TableRow key={item.id}>
                 <TableCell component="th" scope="row">
                   {item.date}
@@ -378,6 +494,18 @@ const MintBurn: React.FC = () => {
       <Dialog open={openMintDialog} onClose={handleMintDialogClose} maxWidth="sm" fullWidth>
         <DialogTitle>Mint TSHC Tokens</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          {web3Error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {web3Error}
+            </Alert>
+          )}
+          
           {mintSuccess ? (
             <Alert severity="success" sx={{ mt: 2 }}>
               Successfully minted TSHC tokens! Transaction has been submitted to the blockchain.
@@ -388,6 +516,13 @@ const MintBurn: React.FC = () => {
                 Minting new TSHC tokens requires proper collateral backing in the reserve.
                 Make sure sufficient reserves are available before proceeding.
               </Alert>
+              <TextField 
+                label="Recipient Address" 
+                fullWidth 
+                value={mintAddress}
+                onChange={(e) => setMintAddress(e.target.value)}
+                margin="normal"
+              />
               <TextField 
                 label="Amount to Mint" 
                 type="number" 
@@ -433,9 +568,9 @@ const MintBurn: React.FC = () => {
               variant="contained" 
               color="success" 
               onClick={handleMint}
-              disabled={!mintAmount || !reason || !organization}
+              disabled={!mintAmount || !mintAddress || !reason || !organization || isProcessing}
             >
-              Mint Tokens
+              {isProcessing ? <CircularProgress size={24} /> : 'Mint Tokens'}
             </Button>
           )}
         </DialogActions>
@@ -445,6 +580,18 @@ const MintBurn: React.FC = () => {
       <Dialog open={openBurnDialog} onClose={handleBurnDialogClose} maxWidth="sm" fullWidth>
         <DialogTitle>Burn TSHC Tokens</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          {web3Error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {web3Error}
+            </Alert>
+          )}
+          
           {burnSuccess ? (
             <Alert severity="success" sx={{ mt: 2 }}>
               Successfully burned TSHC tokens! Transaction has been submitted to the blockchain.
@@ -500,9 +647,9 @@ const MintBurn: React.FC = () => {
               variant="contained" 
               color="error" 
               onClick={handleBurn}
-              disabled={!burnAmount || !reason || !organization}
+              disabled={!burnAmount || !reason || !organization || isProcessing}
             >
-              Burn Tokens
+              {isProcessing ? <CircularProgress size={24} /> : 'Burn Tokens'}
             </Button>
           )}
         </DialogActions>

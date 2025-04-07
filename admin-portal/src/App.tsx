@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { useAuth } from './hooks/useAuth';
+import { Web3Provider } from './contexts/Web3Context';
 
 // Layouts
 import DashboardLayout from './components/layouts/DashboardLayout';
@@ -36,7 +37,8 @@ function App() {
   return (
     <>
       <CssBaseline />
-      <Routes>
+      <Web3Provider>
+        <Routes>
         {/* Auth routes */}
         <Route path="/login" element={<AuthLayout><Login /></AuthLayout>} />
         <Route path="/forgot-password" element={<AuthLayout><ForgotPassword /></AuthLayout>} />
@@ -52,7 +54,8 @@ function App() {
         
         {/* 404 route */}
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </Web3Provider>
     </>
   );
 }
