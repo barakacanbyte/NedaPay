@@ -78,10 +78,13 @@ export default function SendPage() {
       <main className="container mx-auto max-w-2xl px-4 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-            Send {selectedCoin}
+            Global Payments with NEDA Pay
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Send {selectedCoinDetails?.name || 'stablecoins'} to any address on the Base network
+            Send {selectedCoin === 'TSHC' ? 'TSHC and other local stablecoins' : selectedCoin} across borders with ease on the Base network
+          </p>
+          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+            Currently sending: <span className="font-medium">{selectedCoinDetails?.flag} {selectedCoinDetails?.name}</span>
           </p>
         </div>
 
