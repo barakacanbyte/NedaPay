@@ -53,10 +53,10 @@ export default function App() {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-                  The Future of Payments in Tanzania
+                  The Future of Global Payments
                 </h1>
                 <p className="text-lg md:text-xl mb-8 text-gray-600 dark:text-gray-300">
-                  NEDA Pay leverages Base stablecoins to provide a secure, fast, and affordable payment solution with the Tanzania Shilling stablecoin (TSHC).
+                  NEDA Pay enables secure, fast, and affordable payments worldwide, with TSHC (Tanzania Shilling Coin) leading our suite of local stablecoins for borderless transactions.
                 </p>
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <Link 
@@ -96,7 +96,7 @@ export default function App() {
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
                       <span className="text-gray-600 dark:text-gray-300">Network</span>
-                      <span className="font-medium">Base Testnet</span>
+                      <span className="font-medium">Base</span>
                     </div>
                   </div>
                 </div>
