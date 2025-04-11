@@ -8,8 +8,8 @@ import ThemeToggle from './ThemeToggle';
 // NEDA Pay features for navigation
 const features = [
   {
-    name: 'Send TSHC',
-    description: 'Send Tanzania Shilling stablecoin to anyone',
+    name: 'Send',
+    description: 'Send stablecoins to any address',
     url: '/send',
     icon: '💸',
   },

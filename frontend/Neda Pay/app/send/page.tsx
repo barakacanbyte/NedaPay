@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useOnchainKit } from '@coinbase/onchainkit';
 import Link from 'next/link';
 import Header from '../components/Header';
+import { stablecoins } from '../data/stablecoins';
 
 export default function SendPage() {
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState<string>('');
+  const [selectedCoin, setSelectedCoin] = useState<string>('TSHC');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
+  
+  // Get the selected coin details
+  const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);
 
   const handleSend = async () => {
     if (!amount || !recipient) {
@@ -72,10 +78,10 @@ export default function SendPage() {
       <main className="container mx-auto max-w-2xl px-4 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-            Send TSHC
+            Send {selectedCoin}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Send Tanzania Shilling stablecoin (TSHC) to any address on the Base network
+            Send {selectedCoinDetails?.name || 'stablecoins'} to any address on the Base network
           </p>
         </div>
 
@@ -89,7 +95,7 @@ export default function SendPage() {
               </div>
               <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Transaction Successful!</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Your TSHC has been sent successfully.
+                Your {selectedCoin} has been sent successfully.
               </p>
               <button
                 onClick={resetForm}
@@ -102,7 +108,7 @@ export default function SendPage() {
             <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
               <div>
                 <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Amount (TSHC)
+                  Amount
                 </label>
                 <div className="relative">
                   <input
@@ -116,9 +122,42 @@ export default function SendPage() {
                     step="0.01"
                     required
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-500 dark:text-gray-400">TSHC</span>
+                  <div 
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
+                    onClick={() => setShowCurrencySelector(!showCurrencySelector)}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span className="text-gray-700 dark:text-gray-300">{selectedCoinDetails?.flag}</span>
+                      <span className="text-gray-700 dark:text-gray-300">{selectedCoin}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
+                  
+                  {/* Currency Selector Dropdown */}
+                  {showCurrencySelector && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden z-10 border border-gray-200 dark:border-gray-700">
+                      <div className="p-2">
+                        {stablecoins.map((coin) => (
+                          <div 
+                            key={coin.baseToken}
+                            className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCoin === coin.baseToken ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
+                            onClick={() => {
+                              setSelectedCoin(coin.baseToken);
+                              setShowCurrencySelector(false);
+                            }}
+                          >
+                            <span className="text-lg">{coin.flag}</span>
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-white">{coin.baseToken}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">{coin.name}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -220,7 +259,7 @@ export default function SendPage() {
                       Processing...
                     </div>
                   ) : (
-                    'Send TSHC'
+                    `Send ${selectedCoin}`
                   )}
                 </button>
               </div>
@@ -229,9 +268,9 @@ export default function SendPage() {
         </div>
 
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-          <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2">About TSHC</h3>
+          <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300 mb-2">About {selectedCoin}</h3>
           <p className="text-blue-700 dark:text-blue-400 text-sm">
-            TSHC is a stablecoin pegged 1:1 to the Tanzania Shilling (TSH). It is fully backed by TSH government bonds, T-bills, and cash equivalents.
+            {selectedCoinDetails?.description || `${selectedCoin} is a stablecoin available on the Base network.`}
           </p>
         </div>
       </main>
