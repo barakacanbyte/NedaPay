@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #3b82f6; /* Blue-500 */
+  --primary-light: #93c5fd; /* Blue-300 */
+  --primary-dark: #1d4ed8; /* Blue-700 */
+  --accent: #60a5fa; /* Blue-400 */
+  --accent-light: #dbeafe; /* Blue-50 */
+  --accent-dark: #2563eb; /* Blue-600 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a; /* Slate-900 */
+    --foreground: #f8fafc; /* Slate-50 */
+    --primary: #3b82f6; /* Blue-500 */
+    --primary-light: #1d4ed8; /* Blue-700 */
+    --primary-dark: #93c5fd; /* Blue-300 */
+    --accent: #2563eb; /* Blue-600 */
+    --accent-light: #1e3a8a; /* Blue-900 */
+    --accent-dark: #60a5fa; /* Blue-400 */
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Futuristic UI Elements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background-image: linear-gradient(to right, var(--primary-dark), var(--primary));
+  background-clip: text;
+  color: transparent;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-on-light {
+    color: #171717 !important; /* Dark text for light backgrounds */
+  }
+  
+  .text-on-dark {
+    color: #f8fafc !important; /* Light text for dark backgrounds */
+  }
+}
+
+/* Fix for white-on-white text issues */
+.bg-white {
+  color: #171717 !important;
+}
+
+.bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white h5, .bg-white h6 {
+  color: #111827 !important;
+}
+
+.bg-white p, .bg-white span, .bg-white div {
+  color: #374151 !important;
+}
+
+/* Fix for specific dashboard elements */
+.bg-white .text-sm,
+.bg-white .text-xl,
+.bg-white .text-2xl,
+.bg-white .font-semibold,
+.bg-white .font-bold {
+  color: #111827 !important;
+}
+
+/* Fix for Quick Actions */
+.bg-gray-100 h3,
+.bg-blue-50 h3,
+.bg-green-50 h3,
+.bg-purple-50 h3 {
+  color: #111827 !important;
+}
+
+.bg-gray-100 p,
+.bg-blue-50 p,
+.bg-green-50 p,
+.bg-purple-50 p {
+  color: #374151 !important;
+}
+
+/* Dark mode overrides */
+.dark .bg-white h1, .dark .bg-white h2, .dark .bg-white h3, .dark .bg-white h4, .dark .bg-white h5, .dark .bg-white h6,
+.dark .bg-white p, .dark .bg-white span, .dark .bg-white div,
+.dark .bg-gray-800 h1, .dark .bg-gray-800 h2, .dark .bg-gray-800 h3, .dark .bg-gray-800 h4, .dark .bg-gray-800 h5, .dark .bg-gray-800 h6,
+.dark .bg-gray-800 p, .dark .bg-gray-800 span, .dark .bg-gray-800 div {
+  color: #f3f4f6 !important;
+}
