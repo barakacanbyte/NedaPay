@@ -18,31 +18,49 @@ export default function WalletPage() {
   // Get wallet connection status from OnchainKit
   const { address } = useOnchainKit();
   
-  // Function to fetch transaction history
+  // Function to fetch transaction history - using mock data for demonstration
   const fetchTransactionHistory = async (userAddress: string) => {
     try {
       setIsLoadingTx(true);
-      // Using Base Sepolia testnet API
-      const baseApiUrl = `https://api-sepolia.basescan.org/api?module=account&action=tokentx&address=${userAddress}&sort=desc&apikey=YourApiKey`;
       
-      const response = await fetch(baseApiUrl);
-      const data = await response.json();
+      // For demonstration, we'll use mock transactions
+      // In production, this would use the BaseScan API or a backend service
+      const mockTransactions = [
+        {
+          hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+          from: userAddress.toLowerCase(),
+          to: '0x7d9687c95831874926bbc9476844674D6B943464',
+          value: '1000000000000000000', // 1 TSHC (18 decimals)
+          timeStamp: Math.floor(Date.now() / 1000 - 3600).toString(), // 1 hour ago
+          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
+        },
+        {
+          hash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+          from: '0x10dE41927cdD093dA160E562630e0efC19423869',
+          to: userAddress.toLowerCase(),
+          value: '5000000000000000000', // 5 TSHC
+          timeStamp: Math.floor(Date.now() / 1000 - 86400).toString(), // 1 day ago
+          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
+        },
+        {
+          hash: '0x7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456',
+          from: userAddress.toLowerCase(),
+          to: '0x46358DA741d3456dBAEb02995979B2722C3b8722',
+          value: '2500000000000000000', // 2.5 TSHC
+          timeStamp: Math.floor(Date.now() / 1000 - 172800).toString(), // 2 days ago
+          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
+        }
+      ];
       
-      if (data.status === '1' && Array.isArray(data.result)) {
-        // Filter for TSHC transactions (contract address)
-        const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB'.toLowerCase();
-        const tshcTxs = data.result
-          .filter((tx: any) => tx.contractAddress.toLowerCase() === tshcAddress)
-          .slice(0, 5); // Get only the 5 most recent transactions
-          
-        setTransactions(tshcTxs);
-      } else {
-        setTransactions([]);
-      }
+      // Simulate API delay
+      setTimeout(() => {
+        setTransactions(mockTransactions);
+        setIsLoadingTx(false);
+      }, 1000);
+      
     } catch (error) {
       console.error('Error fetching transaction history:', error);
       setTransactions([]);
-    } finally {
       setIsLoadingTx(false);
     }
   };
