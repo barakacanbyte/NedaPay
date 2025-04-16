@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOnchainKit } from '@coinbase/onchainkit';
 import Link from 'next/link';
 import ThemeToggle from '../components/ThemeToggle';
 import WalletSelector from '../components/WalletSelector';
 import Header from '../components/Header';
+import { stablecoins } from '../data/stablecoins';
 
 // Utility payment options
 const utilityOptions = [
@@ -86,6 +87,37 @@ export default function UtilitiesPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCoin, setSelectedCoin] = useState<string>('TSHC');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [walletAddress, setWalletAddress] = useState<string>('');
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  
+  // Get wallet connection status from OnchainKit
+  const { address } = useOnchainKit();
+  
+  useEffect(() => {
+    if (address) {
+      setIsConnected(true);
+      setWalletAddress(address);
+    }
+  }, [address]);
+  
+  // Check if MetaMask is connected on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ethereum = (window as any).ethereum;
+      if (ethereum && ethereum.isMetaMask) {
+        ethereum.request({ method: 'eth_accounts' })
+          .then((accounts: string[]) => {
+            if (accounts.length > 0) {
+              setIsConnected(true);
+              setWalletAddress(accounts[0]);
+            }
+          })
+          .catch(console.error);
+      }
+    }
+  }, []);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -105,21 +137,66 @@ export default function UtilitiesPage() {
       setError('Please enter both account number and amount');
       return;
     }
-
+    
+    if (!isConnected) {
+      setError('Please connect your wallet to make a payment');
+      return;
+    }
+    
+    // Show confirmation modal instead of proceeding directly
+    setShowConfirmation(true);
+  };
+  
+  const confirmPayment = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      setShowConfirmation(false);
       
-      // This would be replaced with actual payment logic
-      // For now, we'll simulate a successful payment after a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get the selected stablecoin details
+      const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);
+      
+      if (!selectedCoinDetails) {
+        throw new Error('Selected stablecoin not found');
+      }
+      
+      // Actual blockchain transaction logic
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      
+      // Token contract ABI (only transfer function needed)
+      const tokenAbi = [
+        'function transfer(address to, uint256 amount) returns (bool)'
+      ];
+      
+      // Create contract instance
+      const tokenContract = new ethers.Contract(
+        selectedCoinDetails.address,
+        tokenAbi,
+        signer
+      );
+      
+      // Convert amount to wei (assuming 18 decimals for all tokens)
+      const amountWei = ethers.parseUnits(amount, 18);
+      
+      // Send the transaction
+      const tx = await tokenContract.transfer(accountNumber, amountWei);
+      
+      // Wait for transaction confirmation
+      await tx.wait();
       
       setIsSuccess(true);
-      setIsLoading(false);
-    } catch (err) {
-      setError('Payment failed. Please try again.');
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.message || 'Payment failed. Please try again.');
+    } finally {
       setIsLoading(false);
     }
+  };
+  
+  const cancelPayment = () => {
+    setShowConfirmation(false);
   };
 
   const resetForm = () => {
@@ -324,7 +401,7 @@ export default function UtilitiesPage() {
 
                     <div>
                       <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Amount (TSHC)
+                        Amount ({selectedCoin})
                       </label>
                       <div className="relative">
                         <input
@@ -339,7 +416,7 @@ export default function UtilitiesPage() {
                           required
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <span className="text-gray-500 dark:text-gray-400">TSHC</span>
+                          <span className="text-gray-500 dark:text-gray-400">{selectedCoin}</span>
                         </div>
                       </div>
                     </div>
@@ -347,73 +424,21 @@ export default function UtilitiesPage() {
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
                       <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-2">Available Stablecoins</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <div className="flex items-center">
-                          <input
-                            id="tshc"
-                            name="stablecoin"
-                            type="radio"
-                            defaultChecked
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="tshc" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            TSHC (TSH)
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="usdc"
-                            name="stablecoin"
-                            type="radio"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="usdc" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            USDC (USD)
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="euroc"
-                            name="stablecoin"
-                            type="radio"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="euroc" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            EURC (EUR)
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="ngnc"
-                            name="stablecoin"
-                            type="radio"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="ngnc" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            NGNC (NGN)
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="idrx"
-                            name="stablecoin"
-                            type="radio"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="idrx" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            IDRX (IDR)
-                          </label>
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            id="brz"
-                            name="stablecoin"
-                            type="radio"
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="brz" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                            BRZ (BRL)
-                          </label>
-                        </div>
+                        {stablecoins.map((coin) => (
+                          <div key={coin.baseToken} className="flex items-center">
+                            <input
+                              id={coin.baseToken}
+                              name="stablecoin"
+                              type="radio"
+                              checked={selectedCoin === coin.baseToken}
+                              onChange={() => setSelectedCoin(coin.baseToken)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <label htmlFor={coin.baseToken} className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                              <span className="mr-1">{coin.flag}</span> {coin.baseToken} ({coin.currency})
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
@@ -451,6 +476,55 @@ export default function UtilitiesPage() {
               </div>
             )}
           </>
+        )}
+        
+        {/* Transaction Confirmation Modal */}
+        {showConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+              <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Confirm Payment</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Service:</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{selectedProvider}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Account:</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{accountNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Amount:</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{amount} {selectedCoin}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">From Wallet:</span>
+                  <span className="font-medium text-gray-800 dark:text-white truncate max-w-[200px]">
+                    {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg text-yellow-700 dark:text-yellow-400 text-sm mb-6">
+                You will be prompted to sign this transaction with your connected wallet.
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelPayment}
+                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmPayment}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Confirm & Sign
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
