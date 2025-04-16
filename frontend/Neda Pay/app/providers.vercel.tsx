@@ -3,8 +3,9 @@
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createConfig, http } from 'wagmi';
+import { createConfig } from 'wagmi';
 import { WagmiProvider } from 'wagmi';
+import { http } from 'viem';
 import { baseSepolia } from './utils/chain-helpers';
 import { coinbaseWallet, metaMask, injected } from 'wagmi/connectors';
 
