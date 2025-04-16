@@ -7,7 +7,8 @@
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "chmod +x ./vercel-install.sh && ./vercel-install.sh && NEXT_SKIP_TYPECHECKING=true NEXT_TELEMETRY_DISABLED=1 next build --no-lint"
+    "vercel-build": "chmod +x ./vercel-install.sh && ./vercel-install.sh && NEXT_SKIP_TYPECHECKING=true NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
+    "vercel-build-simple": "chmod +x ./vercel-build-simple.sh && ./vercel-build-simple.sh"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.5",

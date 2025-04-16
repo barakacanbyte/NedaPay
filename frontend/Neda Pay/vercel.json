@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "npm run vercel-build-simple",
   "installCommand": "bash ./vercel-install.sh",
   "framework": "nextjs",
   "outputDirectory": ".next",
@@ -20,7 +20,8 @@
       "use": "@vercel/next",
       "config": {
         "skipTypescriptChecking": true,
-        "nodeVersion": "18.x"
+        "nodeVersion": "18.x",
+        "buildCommand": "npm run vercel-build-simple"
       }
     }
   ]
