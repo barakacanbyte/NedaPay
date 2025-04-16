@@ -22,16 +22,32 @@ const nextConfig = {
       stream: false,
     };
 
-    // Improve module resolution for @coinbase/onchainkit
+    // Improve module resolution for both @coinbase/onchainkit and wagmi
     config.resolve.alias = {
       ...config.resolve.alias,
       '@coinbase/onchainkit': path.join(__dirname, 'node_modules/@coinbase/onchainkit'),
+      'wagmi': path.join(__dirname, 'node_modules/wagmi'),
+    };
+    
+    // Ensure proper handling of ESM modules
+    config.module = {
+      ...config.module,
+      rules: [
+        ...config.module.rules,
+        {
+          test: /\.m?js$/,
+          type: 'javascript/auto',
+          resolve: {
+            fullySpecified: false,
+          },
+        },
+      ],
     };
     
     return config;
   },
   // Transpile specific modules
-  transpilePackages: ['@coinbase/onchainkit'],
+  transpilePackages: ['@coinbase/onchainkit', 'wagmi', '@wagmi/core', 'viem'],
 };
 
 export default nextConfig;

@@ -1,5 +1,8 @@
 declare module '@coinbase/onchainkit' {
-  // Define the useOnchainKit hook
+  import { ReactNode } from 'react';
+  import { Config } from 'wagmi';
+
+  // Define the useOnchainKit hook with more specific types
   export function useOnchainKit(): {
     address: string | undefined;
     chain: any;
@@ -11,8 +14,15 @@ declare module '@coinbase/onchainkit' {
     status: 'connected' | 'connecting' | 'disconnected' | 'disconnecting';
   };
 
-  // Define other exports as needed
+  // Define other exports with more specific types
   export function createConfig(options: any): any;
   export function getDefaultConfig(options: any): any;
-  export function OnchainProvider(props: { children: React.ReactNode; config?: any }): JSX.Element;
+  
+  // Define OnchainProvider with proper props type
+  export interface OnchainProviderProps {
+    children: ReactNode;
+    config?: any;
+  }
+  
+  export function OnchainProvider(props: OnchainProviderProps): JSX.Element;
 }

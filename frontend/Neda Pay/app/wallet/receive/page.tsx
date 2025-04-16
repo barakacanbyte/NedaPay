@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '../../components/Header';
 import { QRCodeSVG } from 'qrcode.react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { useAccount } from 'wagmi';
+import { useOnchainKit } from '@coinbase/onchainkit';
 import { stablecoins } from '../../data/stablecoins';
 
 export default function ReceivePage() {
@@ -18,8 +18,8 @@ export default function ReceivePage() {
   const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
   const currencySelectorRef = useRef<HTMLDivElement>(null);
   
-  // Get wallet connection status using wagmi hooks
-  const { isConnected, address } = useAccount();
+  // Get wallet connection status using Coinbase Onchain Kit hooks
+  const { isConnected, address } = useOnchainKit();
   
   // Get the selected coin details
   const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);

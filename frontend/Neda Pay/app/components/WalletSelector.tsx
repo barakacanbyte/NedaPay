@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { metaMask, coinbaseWallet } from 'wagmi/connectors';
+import { useOnchainKit } from '@coinbase/onchainkit';
+import { coinbaseWallet, metaMask } from 'wagmi/connectors';
 
 export default function WalletSelector() {
   const [showOptions, setShowOptions] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Use wagmi hooks directly
-  const { address, isConnected, connector } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
+  // Use Coinbase Onchain Kit hooks
+  const { address, isConnected, status, connect, disconnect, chain } = useOnchainKit();
+  const connectorName = status === 'connected' ? 'Wallet' : '';
   
   // Close dropdown when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
@@ -31,7 +30,7 @@ export default function WalletSelector() {
   const handleConnectMetaMask = async () => {
     setIsConnecting(true);
     try {
-      await connect({ connector: metaMask() });
+      await connect();
       setShowOptions(false);
     } catch (error) {
       console.error('Error connecting to MetaMask', error);
@@ -44,7 +43,7 @@ export default function WalletSelector() {
   const handleConnectCoinbase = async () => {
     setIsConnecting(true);
     try {
-      await connect({ connector: coinbaseWallet({ appName: 'NEDA Pay' }) });
+      await connect();
       setShowOptions(false);
     } catch (error) {
       console.error('Error connecting to Coinbase Wallet', error);
@@ -69,7 +68,7 @@ export default function WalletSelector() {
           }}
           className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/40 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full transition-all duration-200"
         >
-          <div className={`w-6 h-6 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
+          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
               <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
@@ -111,7 +110,7 @@ export default function WalletSelector() {
               </div>
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
+                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
                       <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
@@ -122,7 +121,7 @@ export default function WalletSelector() {
                       {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {connector?.name || 'Wallet'}
+                      {connectorName || 'Wallet'}
                     </div>
                   </div>
                 </div>
