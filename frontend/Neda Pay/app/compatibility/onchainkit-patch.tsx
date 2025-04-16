@@ -9,9 +9,11 @@ export const OnchainProvider: React.FC<{ children: React.ReactNode; config?: any
   children, 
   config = {} 
 }) => {
-  // Ensure the config has the wagmiConfig property
+  // Create a clean config without the chains property
+  // Extract only the properties that OnchainProvider expects
   const patchedConfig = {
-    ...config,
+    appName: config.appName || 'NEDA Pay',
+    // Use the wagmiConfig directly without exposing its internal structure
     wagmiConfig: config.wagmiConfig || wagmiConfig,
   };
   
