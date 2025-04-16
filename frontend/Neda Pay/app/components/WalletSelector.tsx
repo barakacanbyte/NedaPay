@@ -28,6 +28,16 @@ export default function WalletSelector() {
     // This way, if the user connects through another component or manually,
     // we'll still update our state
     
+    // Suppress console errors when no provider is detected
+    const originalConsoleError = console.error;
+    console.error = function(msg, ...args) {
+      if (typeof msg === 'string' && msg.includes('No Ethereum provider detected')) {
+        // Silently ignore this specific error
+        return;
+      }
+      originalConsoleError.apply(console, [msg, ...args]);
+    };
+    
     // Listen for account changes
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
@@ -73,6 +83,8 @@ export default function WalletSelector() {
         provider.removeListener('accountsChanged', handleAccountsChanged);
         provider.removeListener('chainChanged', handleChainChanged);
       }
+      // Restore original console.error
+      console.error = originalConsoleError;
     };
   }, []);
   

@@ -3,11 +3,6 @@
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createConfig } from 'wagmi';
-import { WagmiProvider } from 'wagmi';
-import { http } from 'viem';
-import { baseSepolia } from './utils/chain-helpers';
-import { coinbaseWallet, metaMask, injected } from 'wagmi/connectors';
 
 // Smart wallet factory address from memory
 const SMART_WALLET_FACTORY_ADDRESS = '0x10dE41927cdD093dA160E562630e0efC19423869';
@@ -23,31 +18,14 @@ const queryClient = new QueryClient({
   },
 });
 
-// Create wagmi config with all supported wallet types
-const config = createConfig({
-  // Fix for Vercel deployment - use an array for chains
-  chains: [baseSepolia],
-  transports: {
-    [baseSepolia.id]: http('https://sepolia.base.org'),
-  },
-  connectors: [
-    metaMask(),
-    coinbaseWallet({
-      appName: 'NEDA Pay',
-    }),
-    injected(),
-  ],
-});
-
-// Create a providers component with proper nesting for Vercel
+// Create a providers component with minimal dependencies for Vercel
+// We're removing all wagmi-related code to avoid TypeScript errors
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      </WagmiProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
