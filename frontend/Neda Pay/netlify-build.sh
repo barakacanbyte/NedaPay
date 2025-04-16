@@ -6,6 +6,10 @@ echo "🔧 Running Netlify build with TypeScript checking disabled..."
 # Install required dependencies for node polyfills
 npm install --save-dev crypto-browserify stream-browserify stream-http https-browserify browserify-zlib path-browserify os-browserify
 
+# Import environment variables from netlify-env.js
+echo "📥 Importing environment variables from netlify-env.js"
+node netlify-import-env.js
+
 # Set environment variables to disable all checks
 export NEXT_TELEMETRY_DISABLED=1
 export NODE_OPTIONS="--max-old-space-size=8192"
