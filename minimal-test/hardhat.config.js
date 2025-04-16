@@ -3,7 +3,7 @@ require("dotenv").config({ path: '../.env' });
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000000";
 const BASE_SEPOLIA_RPC_URL = process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org";
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "PCSFXU5WTDT5X4CA2IGWMFE91YF1E1XPPU";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "SUXG8NUP2GJ25SFWEWZNSY47TBH9G19QAW";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -28,7 +28,9 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      baseSepolia: ETHERSCAN_API_KEY
+    },
     customChains: [
       {
         network: "baseSepolia",
