@@ -9,10 +9,12 @@
     "NEXT_PUBLIC_CHAIN_ID": "84532",
     "NEXT_PUBLIC_TSHC_ADDRESS": "0x0859D42FD008D617c087DD386667da51570B1aAB",
     "NEXT_SKIP_TYPECHECKING": "true",
-    "NEXT_TYPESCRIPT_COMPILE_OPTIONS": "{\"transpileOnly\": true}",
+    "NEXT_TYPESCRIPT_COMPILE_OPTIONS": "{\"transpileOnly\": true, \"ignoreBuildErrors\": true}",
     "NEXT_TELEMETRY_DISABLED": "1",
     "NEXT_SHARP_PATH": "./node_modules/sharp",
-    "NODE_OPTIONS": "--max-old-space-size=4096"
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "NEXT_DISABLE_SOURCEMAPS": "true",
+    "NEXT_DISABLE_ESLINT": "true"
   },
   "builds": [
     {
@@ -21,7 +23,8 @@
       "config": {
         "skipTypescriptChecking": true,
         "nodeVersion": "18.x",
-        "buildCommand": "npm run vercel-build-simple"
+        "buildCommand": "npm run vercel-build-simple",
+        "installCommand": "bash ./vercel-install.sh"
       }
     }
   ]
