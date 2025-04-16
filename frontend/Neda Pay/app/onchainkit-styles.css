@@ -1,0 +1,77 @@
+/* Basic OnchainKit styles */
+:root {
+  --onchainkit-connect-button-text-color: #ffffff;
+  --onchainkit-connect-button-background: #0052ff;
+  --onchainkit-connect-button-background-hover: #0a46e4;
+  --onchainkit-connect-button-border-radius: 8px;
+  --onchainkit-modal-background: #ffffff;
+  --onchainkit-modal-text-color: #000000;
+  --onchainkit-modal-border-radius: 12px;
+}
+
+.onchainkit-connect-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--onchainkit-connect-button-border-radius);
+  background-color: var(--onchainkit-connect-button-background);
+  color: var(--onchainkit-connect-button-text-color);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.onchainkit-connect-button:hover {
+  background-color: var(--onchainkit-connect-button-background-hover);
+}
+
+.onchainkit-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.onchainkit-modal-content {
+  background-color: var(--onchainkit-modal-background);
+  color: var(--onchainkit-modal-text-color);
+  border-radius: var(--onchainkit-modal-border-radius);
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.onchainkit-wallet-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.onchainkit-wallet-option:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.onchainkit-wallet-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+}
+
+.onchainkit-wallet-name {
+  font-weight: 500;
+}

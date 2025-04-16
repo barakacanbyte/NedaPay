@@ -1,4 +1,5 @@
-import '@coinbase/onchainkit/styles.css';
+// Import local CSS instead of from the package
+import './onchainkit-styles.css';
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
