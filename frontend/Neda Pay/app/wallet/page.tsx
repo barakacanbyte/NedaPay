@@ -18,50 +18,99 @@ export default function WalletPage() {
   // Get wallet connection status from OnchainKit
   const { address } = useOnchainKit();
   
-  // Function to fetch transaction history - using mock data for demonstration
+  // Function to fetch transaction history from the blockchain
   const fetchTransactionHistory = async (userAddress: string) => {
     try {
       setIsLoadingTx(true);
       
-      // For demonstration, we'll use mock transactions
-      // In production, this would use the BaseScan API or a backend service
-      const mockTransactions = [
-        {
-          hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          from: userAddress.toLowerCase(),
-          to: '0x7d9687c95831874926bbc9476844674D6B943464',
-          value: '1000000000000000000', // 1 TSHC (18 decimals)
-          timeStamp: Math.floor(Date.now() / 1000 - 3600).toString(), // 1 hour ago
-          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
-        },
-        {
-          hash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-          from: '0x10dE41927cdD093dA160E562630e0efC19423869',
-          to: userAddress.toLowerCase(),
-          value: '5000000000000000000', // 5 TSHC
-          timeStamp: Math.floor(Date.now() / 1000 - 86400).toString(), // 1 day ago
-          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
-        },
-        {
-          hash: '0x7890abcdef1234567890abcdef1234567890abcdef1234567890abcdef123456',
-          from: userAddress.toLowerCase(),
-          to: '0x46358DA741d3456dBAEb02995979B2722C3b8722',
-          value: '2500000000000000000', // 2.5 TSHC
-          timeStamp: Math.floor(Date.now() / 1000 - 172800).toString(), // 2 days ago
-          contractAddress: '0x0859D42FD008D617c087DD386667da51570B1aAB'
-        }
+      // TSHC contract address on Base Sepolia
+      const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB'.toLowerCase();
+      
+      // Fetch transaction history using ethers.js directly
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      
+      // ERC-20 Transfer event ABI
+      const erc20ABI = [
+        'event Transfer(address indexed from, address indexed to, uint256 value)'
       ];
       
-      // Simulate API delay
-      setTimeout(() => {
-        setTransactions(mockTransactions);
-        setIsLoadingTx(false);
-      }, 1000);
+      const tshcContract = new ethers.Contract(tshcAddress, erc20ABI, provider);
+      
+      // Get the current block number
+      const currentBlock = await provider.getBlockNumber();
+      
+      // Look back 10000 blocks (approximately 1-2 days on Base Sepolia)
+      const fromBlock = Math.max(0, currentBlock - 10000);
+      
+      // Get all Transfer events where the user is either sender or receiver
+      const sentFilter = tshcContract.filters.Transfer(userAddress);
+      const receivedFilter = tshcContract.filters.Transfer(null, userAddress);
+      
+      const [sentEvents, receivedEvents] = await Promise.all([
+        tshcContract.queryFilter(sentFilter, fromBlock),
+        tshcContract.queryFilter(receivedFilter, fromBlock)
+      ]);
+      
+      // Combine and process events
+      const allEvents = [...sentEvents, ...receivedEvents];
+      
+      // Sort events by block number (descending)
+      allEvents.sort((a, b) => (b.blockNumber || 0) - (a.blockNumber || 0));
+      
+      // Process events into transaction format
+      const processedTxs = await Promise.all(allEvents.slice(0, 5).map(async (event: any) => {
+        const block = await event.getBlock();
+        const txHash = event.transactionHash;
+        
+        // Get transaction details
+        const tx = await provider.getTransaction(txHash);
+        
+        // Extract transfer details from the event
+        const from = event.args?.[0];
+        const to = event.args?.[1];
+        const value = event.args?.[2];
+        
+        return {
+          hash: txHash,
+          from: from.toLowerCase(),
+          to: to.toLowerCase(),
+          value: value.toString(),
+          timeStamp: (block.timestamp || Math.floor(Date.now() / 1000)).toString(),
+          contractAddress: tshcAddress
+        };
+      }));
+      
+      setTransactions(processedTxs);
+      setIsLoadingTx(false);
       
     } catch (error) {
       console.error('Error fetching transaction history:', error);
       setTransactions([]);
       setIsLoadingTx(false);
+      
+      // If there's an error with the blockchain query, fall back to BaseScan API
+      try {
+        // Use BaseScan API as fallback
+        const baseApiUrl = `https://api-sepolia.basescan.org/api?module=account&action=tokentx&address=${userAddress}&sort=desc`;
+        
+        const response = await fetch(baseApiUrl);
+        const data = await response.json();
+        
+        if (data.status === '1' && Array.isArray(data.result)) {
+          // Filter for TSHC transactions
+          const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB'.toLowerCase();
+          const tshcTxs = data.result
+            .filter((tx: any) => tx.contractAddress.toLowerCase() === tshcAddress)
+            .slice(0, 5); // Get only the 5 most recent transactions
+            
+          setTransactions(tshcTxs);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback API also failed:', fallbackError);
+      } finally {
+        setIsLoadingTx(false);
+      }
     }
   };
 
