@@ -13,6 +13,12 @@ const features = [
     url: '/send',
     icon: '💸',
   },
+  {
+    name: 'Receive',
+    description: 'Receive stablecoins to your wallet',
+    url: '/wallet/receive',
+    icon: '📥',
+  },
   { 
     name: 'Wallet', 
     description: 'Manage your TSHC tokens and transactions',

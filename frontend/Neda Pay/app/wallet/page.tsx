@@ -16,16 +16,37 @@ export default function WalletPage() {
   // Get wallet connection status from OnchainKit
   const { address } = useOnchainKit();
   
+  // Function to fetch TSHC balance
+  const fetchTSHCBalance = async (userAddress: string) => {
+    try {
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB';
+      
+      // TSHC token ABI (only the balanceOf function)
+      const tshcAbi = [
+        'function balanceOf(address account) view returns (uint256)'
+      ];
+      
+      const tshcContract = new ethers.Contract(tshcAddress, tshcAbi, provider);
+      const balanceWei = await tshcContract.balanceOf(userAddress);
+      
+      // Convert from wei to TSHC (with 18 decimals - standard for ERC20 tokens)
+      const balanceTSHC = ethers.formatUnits(balanceWei, 18);
+      setBalance(parseFloat(balanceTSHC).toFixed(4));
+    } catch (error) {
+      console.error('Error fetching TSHC balance:', error);
+      setBalance('0.00');
+    }
+  };
+  
   // Check for Coinbase Wallet connection
   useEffect(() => {
     if (address) {
       setAccount(address);
       setIsConnected(true);
       setWalletType('coinbase');
-      
-      // For a real app, you would fetch the actual balance here
-      // This is just a placeholder
-      setBalance('1000.00');
+      fetchTSHCBalance(address);
     }
   }, [address]);
   
@@ -43,14 +64,8 @@ export default function WalletPage() {
               setIsConnected(true);
               setWalletType('metamask');
               
-              // Get balance (example)
-              ethereum.request({
-                method: 'eth_getBalance',
-                params: [accounts[0], 'latest']
-              }).then((balance: string) => {
-                const balanceInEth = parseInt(balance, 16) / 1e18;
-                setBalance(balanceInEth.toFixed(4));
-              });
+              // Fetch TSHC balance instead of ETH balance
+              fetchTSHCBalance(accounts[0]);
             }
           })
           .catch(console.error);
@@ -62,14 +77,8 @@ export default function WalletPage() {
             setIsConnected(true);
             setWalletType('metamask');
             
-            // Update balance when account changes
-            ethereum.request({
-              method: 'eth_getBalance',
-              params: [accounts[0], 'latest']
-            }).then((balance: string) => {
-              const balanceInEth = parseInt(balance, 16) / 1e18;
-              setBalance(balanceInEth.toFixed(4));
-            });
+            // Update TSHC balance when account changes
+            fetchTSHCBalance(accounts[0]);
           } else if (walletType === 'metamask') {
             // Only disconnect if current wallet is MetaMask
             setAccount('');
@@ -130,9 +139,12 @@ export default function WalletPage() {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <Link href="/send" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center transition-colors">
+              <button 
+                onClick={() => window.location.href = '/send'}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center transition-colors"
+              >
                 Send
-              </Link>
+              </button>
               <Link href="/wallet/receive" className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 px-4 rounded-lg text-center transition-colors">
                 Receive
               </Link>

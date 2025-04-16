@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import { QRCodeSVG } from 'qrcode.react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { useAccount } from 'wagmi';
+import { stablecoins } from '../../data/stablecoins';
 
 export default function ReceivePage() {
   const [mounted, setMounted] = useState(false);
@@ -13,9 +14,27 @@ export default function ReceivePage() {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [qrValue, setQrValue] = useState('');
+  const [selectedCoin, setSelectedCoin] = useState<string>('TSHC');
+  const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
+  const currencySelectorRef = useRef<HTMLDivElement>(null);
   
   // Get wallet connection status using wagmi hooks
   const { isConnected, address } = useAccount();
+  
+  // Get the selected coin details
+  const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);
+  
+  // Close currency selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (currencySelectorRef.current && !currencySelectorRef.current.contains(event.target as Node)) {
+        setShowCurrencySelector(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   useEffect(() => {
     setMounted(true);
@@ -23,8 +42,13 @@ export default function ReceivePage() {
   
   useEffect(() => {
     if (isConnected && address) {
-      // Generate QR code value based on address and optional amount/note
+      // Generate QR code value based on address, selected coin, and optional amount/note
       let qrData = `ethereum:${address}`;
+      
+      // Add token information
+      if (selectedCoinDetails) {
+        qrData += `?asset=${selectedCoin}&assetAddress=${selectedCoinDetails.address}`;
+      }
       
       // Add parameters if provided
       const params = [];
@@ -32,12 +56,12 @@ export default function ReceivePage() {
       if (note) params.push(`note=${encodeURIComponent(note)}`);
       
       if (params.length > 0) {
-        qrData += `?${params.join('&')}`;
+        qrData += (qrData.includes('?') ? '&' : '?') + params.join('&');
       }
       
       setQrValue(qrData);
     }
-  }, [isConnected, address, amount, note]);
+  }, [isConnected, address, amount, note, selectedCoin, selectedCoinDetails]);
   
   const handleCopy = () => {
     setCopied(true);
@@ -50,31 +74,23 @@ export default function ReceivePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
       
-      <main className="container mx-auto max-w-4xl px-4 py-12">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-6">
-          <Link 
-            href="/wallet" 
-            className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline mb-4"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          <Link href="/wallet" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
             Back to Wallet
           </Link>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-            Receive TSHC
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Share your wallet address or QR code to receive TSHC payments
-          </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Receive {selectedCoin}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">Share your wallet address or QR code to receive {selectedCoin} payments</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* QR Code Section */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-              Scan QR Code
-            </h2>
+            <h2 className="text-xl font-semibold mb-4">Scan QR Code</h2>
             
             {isConnected && address ? (
               <div className="flex flex-col items-center">
@@ -89,7 +105,7 @@ export default function ReceivePage() {
                   />
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  Scan this QR code to send TSHC to this wallet
+                  Scan this QR code to send {selectedCoin} to this wallet
                 </p>
               </div>
             ) : (
@@ -109,28 +125,65 @@ export default function ReceivePage() {
           
           {/* Address and Options Section */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-              Wallet Address
-            </h2>
+            <h2 className="text-xl font-semibold mb-4">Wallet Address</h2>
+            
+            {/* Currency Selector */}
+            <div className="mb-4 relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Currency</label>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-left"
+                  onClick={() => setShowCurrencySelector(!showCurrencySelector)}
+                >
+                  <div className="flex items-center">
+                    <span className="mr-2">{selectedCoinDetails?.flag}</span>
+                    <span>{selectedCoin} - {selectedCoinDetails?.name}</span>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+                
+                {showCurrencySelector && (
+                  <div 
+                    ref={currencySelectorRef}
+                    className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg py-1 max-h-60 overflow-auto"
+                  >
+                    {stablecoins.map((coin) => (
+                      <button
+                        key={coin.baseToken}
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center ${selectedCoin === coin.baseToken ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                        onClick={() => {
+                          setSelectedCoin(coin.baseToken);
+                          setShowCurrencySelector(false);
+                        }}
+                      >
+                        <span className="mr-2">{coin.flag}</span>
+                        <div>
+                          <div className="font-medium">{coin.baseToken}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{coin.name}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             
             {isConnected && address ? (
               <>
-                <div className="relative mb-6">
-                  <div className="flex items-center p-3 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                    <span className="block truncate text-gray-800 dark:text-gray-200 font-mono">
-                      {address}
-                    </span>
-                  </div>
+                <div className="relative bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                  <p className="font-mono text-sm break-all pr-10">
+                    {address}
+                  </p>
                   <CopyToClipboard text={address || ''} onCopy={handleCopy}>
                     <button className="absolute right-2 top-2 p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                       {copied ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                        <span className="text-green-600 dark:text-green-400">Copied!</span>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                          <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
                         </svg>
                       )}
                     </button>
@@ -139,30 +192,28 @@ export default function ReceivePage() {
                 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Amount (optional)
                     </label>
                     <input
                       type="number"
-                      id="amount"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="Enter amount in TSHC"
-                      className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="note" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Note (optional)
                     </label>
                     <input
                       type="text"
-                      id="note"
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       placeholder="Add a note for this payment"
-                      className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -182,7 +233,7 @@ export default function ReceivePage() {
             )}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -28,14 +28,43 @@ export default function SendPage() {
       setIsLoading(true);
       setError(null);
       
-      // This would be replaced with actual transaction logic using the Base Onchain Kit
-      // For now, we'll simulate a successful transaction after a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get ethers and set up provider
+      const { ethers } = await import('ethers');
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      
+      // TSHC token contract address and ABI
+      const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB';
+      const tshcAbi = [
+        'function transfer(address to, uint256 amount) returns (bool)',
+        'function decimals() view returns (uint8)'
+      ];
+      
+      // Create contract instance with signer
+      const tshcContract = new ethers.Contract(tshcAddress, tshcAbi, signer);
+      
+      // Get token decimals
+      const decimals = await tshcContract.decimals();
+      
+      // Convert amount to wei (with 18 decimals)
+      const amountInWei = ethers.parseUnits(amount, decimals);
+      
+      // Send transaction - this will trigger the wallet signing prompt
+      const tx = await tshcContract.transfer(recipient, amountInWei);
+      
+      // Wait for transaction to be mined
+      await tx.wait();
       
       setIsSuccess(true);
       setIsLoading(false);
-    } catch (err) {
-      setError('Transaction failed. Please try again.');
+    } catch (err: any) {
+      console.error('Transaction error:', err);
+      // Handle user rejection
+      if (err.code === 'ACTION_REJECTED') {
+        setError('Transaction was rejected by user');
+      } else {
+        setError(`Transaction failed: ${err.message || 'Please try again'}`);
+      }
       setIsLoading(false);
     }
   };
