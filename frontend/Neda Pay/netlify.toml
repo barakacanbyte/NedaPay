@@ -1,6 +1,6 @@
 [build]
-  command = "chmod +x ./netlify-build.sh && ./netlify-build.sh"
-  publish = ".next"
+  command = "npm install next-themes ethers && npm run netlify-static"
+  publish = "out"
 
 [build.environment]
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL = "https://sepolia.base.org"
@@ -22,8 +22,7 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["**/*"]
+  external_node_modules = ["@swc/*", "@next/swc-*", "@esbuild/linux-x64", "@esbuild/darwin-x64", "@esbuild/darwin-arm64"]
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Remove the redirect to index.html as it conflicts with Next.js routing

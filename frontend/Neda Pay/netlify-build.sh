@@ -21,7 +21,7 @@ export NEXT_SKIP_ESLINT=true
 export TYPESCRIPT_SKIP_CHECKING=true
 
 # Copy our special next.config
-cp next.config.vercel.js next.config.js
+cp netlify.config.js next.config.js
 echo "✅ Using special Next.js configuration for Netlify"
 
 # Create a special window.ethereum declaration file
