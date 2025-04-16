@@ -1,159 +1,146 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { addBaseSepolia, switchToBaseSepolia, BASE_SEPOLIA_DECIMAL, getEthereumProvider } from '../utils/chain-helpers';
+import { addBaseSepolia, BASE_SEPOLIA_DECIMAL } from '../utils/chain-helpers';
 import Link from 'next/link';
+import { connectMetaMask, disconnectWallet, checkWalletConnection, setupWalletEventListeners, WalletState } from '../utils/wallet-connect';
+import { connectCoinbaseWallet } from '../utils/coinbase-wallet';
 
 // Smart wallet factory address from memory
 const SMART_WALLET_FACTORY_ADDRESS = '0x10dE41927cdD093dA160E562630e0efC19423869';
 
 export default function WalletSelector() {
   const [showOptions, setShowOptions] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Track wallet connection state manually
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [chainId, setChainId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [walletState, setWalletState] = useState<WalletState>({
+    address: null,
+    isConnected: false,
+    chainId: null,
+    error: null
+  });
   
-  // Check if wallet is already connected on component mount
+  // Check wallet connection on page load
   useEffect(() => {
-    // We'll skip auto-connecting to prevent automatic reconnection
-    // This ensures the user is always prompted to connect
-    
-    // Instead, we'll just set up listeners for account and chain changes
-    // This way, if the user connects through another component or manually,
-    // we'll still update our state
-    
-    // Suppress console errors when no provider is detected
-    const originalConsoleError = console.error;
-    console.error = function(msg, ...args) {
-      if (typeof msg === 'string' && msg.includes('No Ethereum provider detected')) {
-        // Silently ignore this specific error
-        return;
-      }
-      originalConsoleError.apply(console, [msg, ...args]);
+    const checkConnection = async () => {
+      const state = await checkWalletConnection();
+      setWalletState(state);
     };
     
-    // Listen for account changes
+    checkConnection();
+  }, []);
+  
+  // Setup wallet event listeners
+  useEffect(() => {
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) {
-        setIsConnected(false);
-        setAddress(null);
+        // User disconnected their wallet
+        setWalletState({
+          address: null,
+          isConnected: false,
+          chainId: null,
+          error: null
+        });
+        localStorage.setItem('wallet_disconnected', 'true');
       } else {
-        setAddress(accounts[0]);
-        setIsConnected(true);
+        // User switched accounts
+        setWalletState(prev => ({
+          ...prev,
+          address: accounts[0],
+          isConnected: true
+        }));
+        localStorage.removeItem('wallet_disconnected');
       }
     };
     
-    // Listen for chain changes
     const handleChainChanged = (chainId: string) => {
-      setChainId(parseInt(chainId, 16));
+      setWalletState(prev => ({
+        ...prev,
+        chainId: parseInt(chainId, 16)
+      }));
+      // Reload the page as recommended by MetaMask
+      window.location.reload();
     };
     
-    const provider = getEthereumProvider();
-    if (provider) {
-      provider.on('accountsChanged', handleAccountsChanged);
-      provider.on('chainChanged', handleChainChanged);
-      
-      // Clear any cached connection data in localStorage
-      try {
-        if (window.localStorage) {
-          // Clear any wallet connection cache that might be causing auto-reconnect
-          const keysToRemove = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('wallet') || key.includes('connect') || key.includes('wagmi') || key.includes('coinbase'))) {
-              keysToRemove.push(key);
-            }
-          }
-          
-          keysToRemove.forEach(key => localStorage.removeItem(key));
-        }
-      } catch (e) {
-        console.error('Error clearing localStorage:', e);
-      }
-    }
-    
-    return () => {
-      if (provider) {
-        provider.removeListener('accountsChanged', handleAccountsChanged);
-        provider.removeListener('chainChanged', handleChainChanged);
-      }
-      // Restore original console.error
-      console.error = originalConsoleError;
-    };
+    const cleanup = setupWalletEventListeners(handleAccountsChanged, handleChainChanged);
+    return cleanup;
   }, []);
   
   // Close dropdown when clicking outside
-  const handleClickOutside = (event: MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-      setShowOptions(false);
-    }
-  };
-
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowOptions(false);
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setShowOptions(false);
+    }
+  };
+  
+  // Add event listener for clicks outside dropdown
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [walletState.isConnected]);
 
   // Clear error message when connection status changes
   useEffect(() => {
-    if (isConnected) {
+    if (walletState.isConnected) {
       setErrorMessage(null);
       setShowOptions(false);
     }
-  }, [isConnected]);
+  }, [walletState.isConnected]);
   
-  // Function to handle wallet connection with specific connector
-  const handleConnectWallet = async (walletType?: string) => {
-    setIsConnecting(true);
+  // Function to handle wallet connection with MetaMask
+  const handleConnectMetaMask = async () => {
     setErrorMessage(null);
     setIsPending(true);
     
     try {
-      const provider = getEthereumProvider();
-      if (!provider) {
-        throw new Error('No Ethereum provider found. Please install MetaMask or Coinbase Wallet.');
-      }
+      const result = await connectMetaMask();
+      setWalletState(result);
+      setShowOptions(false);
       
-      // For MetaMask, try to switch to Base Sepolia first
-      if (walletType === 'metamask' && provider.isMetaMask) {
-        await switchToBaseSepolia();
-      }
-      
-      // Request accounts
-      if (provider.request) {
-        const accounts = await provider.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          setAddress(accounts[0]);
-          setIsConnected(true);
-          
-          // Get chain ID
-          const chainId = await provider.request({ method: 'eth_chainId' });
-          setChainId(parseInt(chainId, 16));
-        } else {
-          throw new Error('No accounts returned from wallet');
-        }
-      } else {
-        throw new Error('Provider does not support request method');
+      if (result.error) {
+        setErrorMessage(result.error);
       }
     } catch (error: any) {
-      console.error('Error connecting wallet', error);
-      
-      // Check if the error is about unrecognized chain ID
-      if (error.message?.includes('Unrecognized chain ID')) {
-        setErrorMessage('Base Sepolia chain not recognized. Click "Add Base Sepolia" button below.');
-      } else {
-        setErrorMessage(error.message || 'Failed to connect wallet');
-      }
+      console.error('Error connecting to MetaMask:', error);
+      setErrorMessage(error.message || 'Failed to connect to MetaMask');
     } finally {
-      setIsConnecting(false);
+      setIsPending(false);
+    }
+  };
+  
+  // Function to handle wallet connection with Coinbase Wallet
+  const handleConnectCoinbase = async () => {
+    setErrorMessage(null);
+    setIsPending(true);
+    
+    try {
+      const result = await connectCoinbaseWallet();
+      setWalletState(result);
+      setShowOptions(false);
+      
+      if (result.error) {
+        setErrorMessage(result.error);
+      }
+    } catch (error: any) {
+      console.error('Error connecting to Coinbase Wallet:', error);
+      setErrorMessage(error.message || 'Failed to connect to Coinbase Wallet');
+    } finally {
       setIsPending(false);
     }
   };
@@ -161,21 +148,17 @@ export default function WalletSelector() {
   // Function to handle wallet disconnection
   const handleDisconnect = async () => {
     try {
-      // There's no standard way to disconnect in all wallets
-      // Just update our local state
-      setIsConnected(false);
-      setAddress(null);
+      await disconnectWallet();
+      setWalletState({
+        address: null,
+        isConnected: false,
+        chainId: null,
+        error: null
+      });
       setShowOptions(false);
-      
-      // For MetaMask, we can try this approach
-      const provider = getEthereumProvider();
-      if (provider && provider.isMetaMask && provider._state && typeof provider._state.accounts !== 'undefined') {
-        // This is a hack for MetaMask
-        // @ts-ignore
-        provider._state.accounts = [];
-      }
-    } catch (error) {
-      console.error('Error disconnecting wallet', error);
+    } catch (error: any) {
+      console.error('Error disconnecting wallet:', error);
+      setErrorMessage(error.message || 'Failed to disconnect wallet');
     }
   };
   
@@ -187,7 +170,7 @@ export default function WalletSelector() {
       if (success) {
         // Try connecting again after adding the network
         setTimeout(() => {
-          handleConnectWallet('metamask');
+          handleConnectMetaMask();
         }, 500);
       }
     } catch (error: any) {
@@ -205,20 +188,20 @@ export default function WalletSelector() {
 
   // Get chain name
   const getChainName = () => {
-    if (chainId === BASE_SEPOLIA_DECIMAL) return 'Base Sepolia';
-    return chainId ? `Chain ID: ${chainId}` : 'Unknown Chain';
+    if (!walletState.chainId) return 'Unknown Chain';
+    return walletState.chainId === BASE_SEPOLIA_DECIMAL ? 'Base Sepolia' : `Chain ID: ${walletState.chainId}`;
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => isConnected ? setShowOptions(!showOptions) : setShowOptions(true)}
+        onClick={() => walletState.isConnected ? setShowOptions(!showOptions) : setShowOptions(true)}
         className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300"
         disabled={isPending}
       >
-        {isConnected ? (
+        {walletState.isConnected ? (
           <>
-            <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+            <span>{walletState.address?.slice(0, 6)}...{walletState.address?.slice(-4)}</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -249,7 +232,7 @@ export default function WalletSelector() {
         </div>
       )}
 
-      {showOptions && !isConnected && (
+      {showOptions && !walletState.isConnected && (
         <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg z-10 overflow-hidden w-64">
           <div className="p-3 border-b border-gray-700">
             <h3 className="text-lg font-semibold">Connect Wallet</h3>
@@ -258,7 +241,7 @@ export default function WalletSelector() {
           <div className="p-3 space-y-2">
             {/* MetaMask Option */}
             <button
-              onClick={() => handleConnectWallet('metamask')}
+              onClick={handleConnectMetaMask}
               className="w-full text-left p-3 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-3"
               disabled={isPending}
             >
@@ -276,7 +259,7 @@ export default function WalletSelector() {
             
             {/* Coinbase Wallet Option */}
             <button
-              onClick={() => handleConnectWallet('coinbaseWallet')}
+              onClick={handleConnectCoinbase}
               className="w-full text-left p-3 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-3"
               disabled={isPending}
             >
@@ -312,16 +295,14 @@ export default function WalletSelector() {
         </div>
       )}
 
-      {showOptions && isConnected && (
-        <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg z-10 overflow-hidden w-48">
+      {showOptions && walletState.isConnected && (
+        <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg z-10 overflow-hidden w-64" ref={dropdownRef}>
           <div className="p-3 border-b border-gray-700">
             <h3 className="text-lg font-semibold">Wallet</h3>
+            <p className="text-sm text-gray-400">{getChainName()}</p>
           </div>
 
           <div className="p-3">
-            <div className="mb-2 text-xs text-gray-400">
-              Connected to: {getChainName()}
-            </div>
             <button
               onClick={handleDisconnect}
               className="w-full text-left p-2 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-2 text-red-400"

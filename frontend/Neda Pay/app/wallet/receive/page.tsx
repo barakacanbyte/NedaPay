@@ -5,8 +5,8 @@ import Link from 'next/link';
 import Header from '../../components/Header';
 import { QRCodeSVG } from 'qrcode.react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import { useOnchainKit } from '@coinbase/onchainkit';
 import { stablecoins } from '../../data/stablecoins';
+import { loadWalletState } from '../../utils/global-wallet-state';
 
 export default function ReceivePage() {
   const [mounted, setMounted] = useState(false);
@@ -18,8 +18,17 @@ export default function ReceivePage() {
   const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
   const currencySelectorRef = useRef<HTMLDivElement>(null);
   
-  // Get wallet connection status using Coinbase Onchain Kit hooks
-  const { isConnected, address } = useOnchainKit();
+  // Get wallet connection status from global state
+  const [walletState, setWalletState] = useState({ isConnected: false, address: null });
+  
+  // Load wallet state on mount
+  useEffect(() => {
+    const state = loadWalletState();
+    setWalletState({
+      isConnected: state.isConnected,
+      address: state.address
+    });
+  }, []);
   
   // Get the selected coin details
   const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);
@@ -41,9 +50,9 @@ export default function ReceivePage() {
   }, []);
   
   useEffect(() => {
-    if (isConnected && address) {
+    if (walletState.isConnected && walletState.address) {
       // Generate QR code value based on address, selected coin, and optional amount/note
-      let qrData = `ethereum:${address}`;
+      let qrData = `ethereum:${walletState.address}`;
       
       // Add token information
       if (selectedCoinDetails) {
@@ -61,7 +70,7 @@ export default function ReceivePage() {
       
       setQrValue(qrData);
     }
-  }, [isConnected, address, amount, note, selectedCoin, selectedCoinDetails]);
+  }, [walletState.isConnected, walletState.address, amount, note, selectedCoin, selectedCoinDetails]);
   
   const handleCopy = () => {
     setCopied(true);
@@ -92,7 +101,7 @@ export default function ReceivePage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold mb-4">Scan QR Code</h2>
             
-            {isConnected && address ? (
+            {walletState.isConnected && walletState.address ? (
               <div className="flex flex-col items-center">
                 <div className="bg-white p-4 rounded-xl mb-4">
                   <QRCodeSVG 
@@ -113,12 +122,9 @@ export default function ReceivePage() {
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Connect your wallet to generate a QR code
                 </p>
-                <button 
-                  onClick={() => window.location.href = '/'}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
-                >
+                <Link href="/" className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition-colors">
                   Go to Home to Connect Wallet
-                </button>
+                </Link>
               </div>
             )}
           </div>
@@ -171,13 +177,16 @@ export default function ReceivePage() {
               </div>
             </div>
             
-            {isConnected && address ? (
+            {walletState.isConnected && walletState.address ? (
               <>
                 <div className="relative bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
-                  <p className="font-mono text-sm break-all pr-10">
-                    {address}
-                  </p>
-                  <CopyToClipboard text={address || ''} onCopy={handleCopy}>
+                  <div className="mt-2 text-center break-all">
+                    {walletState.address}
+                  </div>
+                  <CopyToClipboard text={walletState.address || ''} onCopy={() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}>
                     <button className="absolute right-2 top-2 p-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                       {copied ? (
                         <span className="text-green-600 dark:text-green-400">Copied!</span>
@@ -223,12 +232,9 @@ export default function ReceivePage() {
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Connect your wallet to view your address
                 </p>
-                <button 
-                  onClick={() => window.location.href = '/'}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
-                >
+                <Link href="/" className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition-colors">
                   Go to Home to Connect Wallet
-                </button>
+                </Link>
               </div>
             )}
           </div>

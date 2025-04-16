@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useOnchainKit } from '@coinbase/onchainkit';
 import Link from 'next/link';
 import Header from '../components/Header';
 import { stablecoins } from '../data/stablecoins';
+import { loadWalletState } from '../utils/global-wallet-state';
 
 export default function SendPage() {
   const [amount, setAmount] = useState<string>('');
@@ -15,6 +15,26 @@ export default function SendPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
   
+  // Get wallet connection status from global state
+  const [walletState, setWalletState] = useState({ isConnected: false, address: null });
+  
+  // Load wallet state on mount
+  useEffect(() => {
+    const state = loadWalletState();
+    setWalletState({
+      isConnected: state.isConnected,
+      address: state.address
+    });
+  }, []);
+
+  // Redirect to home if not connected
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !walletState.isConnected) {
+      // Optional: Redirect to home or show a modal
+      // window.location.href = '/';
+    }
+  }, [walletState.isConnected]);
+
   // Get the selected coin details
   const selectedCoinDetails = stablecoins.find(coin => coin.baseToken === selectedCoin);
 
@@ -118,7 +138,19 @@ export default function SendPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-          {isSuccess ? (
+          {!walletState.isConnected ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Please connect your wallet</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                You need to connect your wallet to send {selectedCoin}.
+              </p>
+            </div>
+          ) : isSuccess ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
