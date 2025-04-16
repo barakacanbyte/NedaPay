@@ -3,8 +3,9 @@
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi'; // Note: WagmiProvider, not WagmiConfig
-import { OnchainProvider } from '@coinbase/onchainkit';
+// Import from our compatibility layers
+import { WagmiProvider } from './compatibility/wagmi-compat';
+import { OnchainProvider } from './compatibility/onchainkit-patch';
 import { wagmiConfig } from './config/wagmi';
 import onchainConfig from './config/onchain-config';
 
