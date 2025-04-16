@@ -20,6 +20,10 @@ ln -sf $(npm root)/@coinbase/onchainkit node_modules/@coinbase/onchainkit
 # Create type definitions directory if it doesn't exist
 mkdir -p types
 
+# Use the Vercel-specific TypeScript configuration
+echo "Using Vercel-specific TypeScript configuration..."
+cp tsconfig.vercel.json tsconfig.json
+
 # List installed packages
 echo "Installed packages:"
 npm list @coinbase/onchainkit
