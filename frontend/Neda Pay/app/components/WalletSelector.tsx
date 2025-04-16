@@ -21,29 +21,12 @@ export default function WalletSelector() {
   
   // Check if wallet is already connected on component mount
   useEffect(() => {
-    const checkConnection = async () => {
-      const provider = getEthereumProvider();
-      if (!provider) return;
-      
-      try {
-        // Check for accounts
-        if (provider.request) {
-          const accounts = await provider.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            setAddress(accounts[0]);
-            setIsConnected(true);
-            
-            // Get chain ID
-            const chainId = await provider.request({ method: 'eth_chainId' });
-            setChainId(parseInt(chainId, 16));
-          }
-        }
-      } catch (error) {
-        console.error('Error checking connection:', error);
-      }
-    };
+    // We'll skip auto-connecting to prevent automatic reconnection
+    // This ensures the user is always prompted to connect
     
-    checkConnection();
+    // Instead, we'll just set up listeners for account and chain changes
+    // This way, if the user connects through another component or manually,
+    // we'll still update our state
     
     // Listen for account changes
     const handleAccountsChanged = (accounts: string[]) => {
@@ -65,6 +48,24 @@ export default function WalletSelector() {
     if (provider) {
       provider.on('accountsChanged', handleAccountsChanged);
       provider.on('chainChanged', handleChainChanged);
+      
+      // Clear any cached connection data in localStorage
+      try {
+        if (window.localStorage) {
+          // Clear any wallet connection cache that might be causing auto-reconnect
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('wallet') || key.includes('connect') || key.includes('wagmi') || key.includes('coinbase'))) {
+              keysToRemove.push(key);
+            }
+          }
+          
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        }
+      } catch (e) {
+        console.error('Error clearing localStorage:', e);
+      }
     }
     
     return () => {

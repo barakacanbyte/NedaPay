@@ -20,9 +20,12 @@ cp app/providers.tsx .backup/ || true
 cp next.config.js .backup/ || true
 cp tsconfig.json .backup/ || true
 
-# Replace providers.tsx with minimal version
-echo "🔄 Replacing providers with minimal version..."
-cp app/providers.minimal.jsx app/providers.tsx
+# Use the Vercel-specific providers file if it exists
+echo "🔄 Using Vercel-compatible providers file..."
+if [ -f app/providers.vercel.tsx ]; then
+  cp app/providers.vercel.tsx app/providers.tsx
+  echo "✅ Replaced providers.tsx with Vercel-compatible version"
+fi
 
 # Create a temporary tsconfig that ignores all type checking
 echo "⚙️ Creating minimal TypeScript configuration..."
@@ -81,6 +84,23 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+EOL
+
+# Create a special window.ethereum declaration file to ensure wallet connection works
+echo "🔗 Creating Ethereum provider type declarations..."
+cat > types/window.d.ts << 'EOL'
+interface Window {
+  ethereum?: {
+    isMetaMask?: boolean;
+    isCoinbaseWallet?: boolean;
+    request: (args: { method: string; params?: any[] }) => Promise<any>;
+    on: (event: string, callback: (...args: any[]) => void) => void;
+    removeListener: (event: string, callback: (...args: any[]) => void) => void;
+    selectedAddress?: string;
+    chainId?: string;
+    isConnected: () => boolean;
+  };
+}
 EOL
 
 # Run the build with all type checking disabled
