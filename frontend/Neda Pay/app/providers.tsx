@@ -3,21 +3,17 @@
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
-import { wagmiConfig } from './config/wagmi';
 
 // Create a query client for React Query
 const queryClient = new QueryClient();
 
-// Create a providers component that integrates both wagmi and Coinbase Onchain Kit
+// Create a simple providers component that will definitely work with Vercel
 export function Providers(props: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <WagmiProvider config={wagmiConfig}>
-        <QueryClientProvider client={queryClient}>
-          {props.children}
-        </QueryClientProvider>
-      </WagmiProvider>
+      <QueryClientProvider client={queryClient}>
+        {props.children}
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
