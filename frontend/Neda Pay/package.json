@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "vercel-build": "chmod +x ./vercel-install.sh && ./vercel-install.sh && NEXT_SKIP_TYPECHECKING=true NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
-    "vercel-build-simple": "chmod +x ./vercel-build-simple.sh && ./vercel-build-simple.sh"
+    "vercel-build-simple": "chmod +x ./vercel-build-simple.sh && ./vercel-build-simple.sh",
+    "vercel-build-no-ts": "cp next.config.vercel.js next.config.js && NEXT_SKIP_TYPE_CHECK=true NEXT_SKIP_ESLINT=true NODE_OPTIONS=\"--max-old-space-size=8192\" next build --no-lint"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.5",
