@@ -1,26 +1,21 @@
 'use client';
 
-import { base } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { coinbaseWallet, metaMask } from 'wagmi/connectors';
+import { WagmiProvider, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { OnchainProvider, getDefaultConfig } from '@coinbase/onchainkit';
 
 // Create a query client for React Query
 const queryClient = new QueryClient();
 
-// Configure wagmi with all supported wallet connectors
-const wagmiConfig = createConfig({
-  chains: [base],
-  connectors: [
-    coinbaseWallet({
-      appName: 'NEDA Pay',
-    }),
-    metaMask()
-  ],
+// Get the default config from OnchainKit
+const wagmiConfig = getDefaultConfig({
+  appName: 'NEDA Pay',
+  chains: [baseSepolia],
   transports: {
-    [base.id]: http(),
+    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
   },
 });
 
@@ -29,7 +24,17 @@ export function Providers(props: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          {props.children}
+          <OnchainProvider
+            config={{
+              chain: baseSepolia,
+              appearance: {
+                name: "NEDA Pay",
+                mode: "auto"
+              }
+            }}
+          >
+            {props.children}
+          </OnchainProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </ThemeProvider>
