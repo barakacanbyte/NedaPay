@@ -63,13 +63,4 @@ export function useWallet() {
   };
 }
 
-// Add TypeScript support for window.ethereum
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
-      on: (event: string, callback: (...args: any[]) => void) => void;
-      removeListener: (event: string, callback: (...args: any[]) => void) => void;
-    };
-  }
-}
+// We don't need to declare the global ethereum type here since it's handled by wagmi
