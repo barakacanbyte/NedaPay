@@ -3,8 +3,11 @@ set -e
 
 echo "🔧 Running Netlify build with TypeScript checking disabled..."
 
-# Install required dependencies for node polyfills
+# Install required dependencies for node polyfills and missing packages
 npm install --save-dev crypto-browserify stream-browserify stream-http https-browserify browserify-zlib path-browserify os-browserify
+npm install next-themes ethers
+
+echo "✅ Installed next-themes and ethers packages"
 
 # Import environment variables from netlify-env.js
 echo "📥 Importing environment variables from netlify-env.js"

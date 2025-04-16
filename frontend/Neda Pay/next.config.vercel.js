@@ -9,7 +9,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // This will transpile the problematic packages
-  transpilePackages: ['wagmi', '@coinbase/onchainkit', 'viem'],
+  transpilePackages: ['wagmi', '@coinbase/onchainkit', 'viem', 'next-themes', 'ethers'],
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
