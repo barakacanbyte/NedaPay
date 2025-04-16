@@ -17,6 +17,11 @@ module.exports = {
   
   // Configure webpack for browser compatibility
   webpack: (config) => {
+    // Ensure fallback object exists
+    if (!config.resolve) config.resolve = {};
+    if (!config.resolve.fallback) config.resolve.fallback = {};
+    
+    // Add polyfills for browser compatibility
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
