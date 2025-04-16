@@ -18,6 +18,11 @@ const CONTRACT_ADDRESSES = {
   TSHC: '0x0859D42FD008D617c087DD386667da51570B1aAB', // SimpleTSHC deployed address
   RESERVE: '0x72Ff093CEA6035fa395c0910B006af2DC4D4E9F5', // SimpleReserve deployed address
   TEST_USDC: '0x4ecD2810a6A412fdc95B71c03767068C35D23fE3', // TestUSDC deployed address
+  PRICE_ORACLE: '0xe4A05fca88C4F10fe6d844B75025E3415dFe6170', // SimplePriceOracle deployed address
+  FEE_MANAGER: '0x46358DA741d3456dBAEb02995979B2722C3b8722', // SimpleFeeManager deployed address
+  BATCH_PAYMENT: '0x9E1e03b06FB36364b3A6cbb6AbEC4f6f2B9C8DdC', // SimpleBatchPayment deployed address
+  PAYMASTER: '0x7d9687c95831874926bbc9476844674D6B943464', // SimplePaymaster deployed address
+  SMART_WALLET_FACTORY: '0x10dE41927cdD093dA160E562630e0efC19423869', // SimpleSmartWalletFactory deployed address
 };
 
 // Mock data for demonstration purposes when contracts are not available
