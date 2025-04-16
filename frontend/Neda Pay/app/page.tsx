@@ -55,9 +55,11 @@ export default function App() {
                 <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
                   The Future of Global Payments
                 </h1>
-                <p className="text-lg md:text-xl mb-8 text-gray-600 dark:text-gray-300">
-                  NEDA Pay enables secure, fast, and affordable payments worldwide, with TSHC (Tanzania Shilling Coin) leading our suite of local stablecoins for borderless transactions.
-                </p>
+                <div className="mb-8">
+                  <p className="text-lg md:text-xl font-semibold landing-text">
+                    NEDA Pay enables secure, fast, and affordable payments worldwide, with TSHC (Tanzania Shilling Coin) leading our suite of local stablecoins for borderless transactions.
+                  </p>
+                </div>
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <Link 
                     href="/send" 

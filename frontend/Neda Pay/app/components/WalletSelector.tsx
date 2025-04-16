@@ -1,17 +1,79 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useOnchainKit } from '@coinbase/onchainkit';
-import { coinbaseWallet, metaMask } from 'wagmi/connectors';
+import { addBaseSepolia, switchToBaseSepolia, BASE_SEPOLIA_DECIMAL, getEthereumProvider } from '../utils/chain-helpers';
+import Link from 'next/link';
+
+// Smart wallet factory address from memory
+const SMART_WALLET_FACTORY_ADDRESS = '0x10dE41927cdD093dA160E562630e0efC19423869';
 
 export default function WalletSelector() {
   const [showOptions, setShowOptions] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Use Coinbase Onchain Kit hooks
-  const { address, isConnected, status, connect, disconnect, chain } = useOnchainKit();
-  const connectorName = status === 'connected' ? 'Wallet' : '';
+  // Track wallet connection state manually
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [chainId, setChainId] = useState<number | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  
+  // Check if wallet is already connected on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      const provider = getEthereumProvider();
+      if (!provider) return;
+      
+      try {
+        // Check for accounts
+        if (provider.request) {
+          const accounts = await provider.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            setAddress(accounts[0]);
+            setIsConnected(true);
+            
+            // Get chain ID
+            const chainId = await provider.request({ method: 'eth_chainId' });
+            setChainId(parseInt(chainId, 16));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking connection:', error);
+      }
+    };
+    
+    checkConnection();
+    
+    // Listen for account changes
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        setIsConnected(false);
+        setAddress(null);
+      } else {
+        setAddress(accounts[0]);
+        setIsConnected(true);
+      }
+    };
+    
+    // Listen for chain changes
+    const handleChainChanged = (chainId: string) => {
+      setChainId(parseInt(chainId, 16));
+    };
+    
+    const provider = getEthereumProvider();
+    if (provider) {
+      provider.on('accountsChanged', handleAccountsChanged);
+      provider.on('chainChanged', handleChainChanged);
+    }
+    
+    return () => {
+      if (provider) {
+        provider.removeListener('accountsChanged', handleAccountsChanged);
+        provider.removeListener('chainChanged', handleChainChanged);
+      }
+    };
+  }, []);
   
   // Close dropdown when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
@@ -19,180 +81,245 @@ export default function WalletSelector() {
       setShowOptions(false);
     }
   };
-  
-  // Add event listener for clicking outside
+
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
-  
-  // Function to handle MetaMask connection
-  const handleConnectMetaMask = async () => {
-    setIsConnecting(true);
-    try {
-      await connect();
+
+  // Clear error message when connection status changes
+  useEffect(() => {
+    if (isConnected) {
+      setErrorMessage(null);
       setShowOptions(false);
-    } catch (error) {
-      console.error('Error connecting to MetaMask', error);
-    } finally {
-      setIsConnecting(false);
     }
-  };
+  }, [isConnected]);
   
-  // Function to handle Coinbase Wallet connection
-  const handleConnectCoinbase = async () => {
+  // Function to handle wallet connection with specific connector
+  const handleConnectWallet = async (walletType?: string) => {
     setIsConnecting(true);
+    setErrorMessage(null);
+    setIsPending(true);
+    
     try {
-      await connect();
-      setShowOptions(false);
-    } catch (error) {
-      console.error('Error connecting to Coinbase Wallet', error);
+      const provider = getEthereumProvider();
+      if (!provider) {
+        throw new Error('No Ethereum provider found. Please install MetaMask or Coinbase Wallet.');
+      }
+      
+      // For MetaMask, try to switch to Base Sepolia first
+      if (walletType === 'metamask' && provider.isMetaMask) {
+        await switchToBaseSepolia();
+      }
+      
+      // Request accounts
+      if (provider.request) {
+        const accounts = await provider.request({ method: 'eth_requestAccounts' });
+        if (accounts && accounts.length > 0) {
+          setAddress(accounts[0]);
+          setIsConnected(true);
+          
+          // Get chain ID
+          const chainId = await provider.request({ method: 'eth_chainId' });
+          setChainId(parseInt(chainId, 16));
+        } else {
+          throw new Error('No accounts returned from wallet');
+        }
+      } else {
+        throw new Error('Provider does not support request method');
+      }
+    } catch (error: any) {
+      console.error('Error connecting wallet', error);
+      
+      // Check if the error is about unrecognized chain ID
+      if (error.message?.includes('Unrecognized chain ID')) {
+        setErrorMessage('Base Sepolia chain not recognized. Click "Add Base Sepolia" button below.');
+      } else {
+        setErrorMessage(error.message || 'Failed to connect wallet');
+      }
     } finally {
       setIsConnecting(false);
+      setIsPending(false);
     }
   };
   
   // Function to handle wallet disconnection
-  const handleDisconnect = () => {
-    disconnect();
+  const handleDisconnect = async () => {
+    try {
+      // There's no standard way to disconnect in all wallets
+      // Just update our local state
+      setIsConnected(false);
+      setAddress(null);
+      setShowOptions(false);
+      
+      // For MetaMask, we can try this approach
+      const provider = getEthereumProvider();
+      if (provider && provider.isMetaMask && provider._state && typeof provider._state.accounts !== 'undefined') {
+        // This is a hack for MetaMask
+        // @ts-ignore
+        provider._state.accounts = [];
+      }
+    } catch (error) {
+      console.error('Error disconnecting wallet', error);
+    }
+  };
+  
+  // Function to add Base Sepolia to MetaMask
+  const handleAddBaseSepolia = async () => {
+    try {
+      const success = await addBaseSepolia();
+      setErrorMessage(null);
+      if (success) {
+        // Try connecting again after adding the network
+        setTimeout(() => {
+          handleConnectWallet('metamask');
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error('Error adding Base Sepolia', error);
+      setErrorMessage(error.message || 'Failed to add Base Sepolia to wallet');
+    }
+  };
+
+  // Function to create a smart wallet
+  const handleCreateSmartWallet = () => {
+    // This would typically redirect to a page to create a smart wallet
+    setErrorMessage(null);
     setShowOptions(false);
+  };
+
+  // Get chain name
+  const getChainName = () => {
+    if (chainId === BASE_SEPOLIA_DECIMAL) return 'Base Sepolia';
+    return chainId ? `Chain ID: ${chainId}` : 'Unknown Chain';
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {isConnected ? (
-        <button
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            setShowOptions(!showOptions);
-          }}
-          className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/40 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full transition-all duration-200"
-        >
-          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
-              <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+      <button
+        onClick={() => isConnected ? setShowOptions(!showOptions) : setShowOptions(true)}
+        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300"
+        disabled={isPending}
+      >
+        {isConnected ? (
+          <>
+            <span>{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-          </div>
-          <div className="flex flex-col">
-            <div className="text-sm font-medium">
-              {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
-            </div>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-      ) : (
-        <button
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            setShowOptions(!showOptions);
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full transition-all duration-200 flex items-center space-x-2"
-        >
-          <span>Connect Wallet</span>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-      )}
-      
-      {showOptions && (
-        <div 
-          className="absolute right-0 mt-2 w-60 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200 dark:border-gray-700"
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          {isConnected ? (
-            <>
-              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Connected Account</h3>
-              </div>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
-                      <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-800 dark:text-white">
-                      {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {connectorName || 'Wallet'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-2">
-                <a href="/dashboard" className="block w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  Dashboard
-                </a>
-                <a href="/wallet" className="block w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  Wallet
-                </a>
-                <button 
-                  onClick={handleDisconnect}
-                  className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Disconnect
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Wallet</h3>
-              </div>
-              <div className="p-2 space-y-2">
-                {/* Coinbase Wallet Option */}
-                <div>
-                  <button
-                    onClick={handleConnectCoinbase}
-                    disabled={isConnecting}
-                    className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z" fill="#0052FF"/>
-                        <path d="M12.0002 4.80005C8.0002 4.80005 4.8002 8.00005 4.8002 12C4.8002 16 8.0002 19.2 12.0002 19.2C16.0002 19.2 19.2002 16 19.2002 12C19.2002 8.00005 16.0002 4.80005 12.0002 4.80005ZM9.6002 14.4C8.8002 14.4 8.0002 13.6 8.0002 12.8C8.0002 12 8.8002 11.2 9.6002 11.2C10.4002 11.2 11.2002 12 11.2002 12.8C11.2002 13.6 10.4002 14.4 9.6002 14.4ZM14.4002 14.4C13.6002 14.4 12.8002 13.6 12.8002 12.8C12.8002 12 13.6002 11.2 14.4002 11.2C15.2002 11.2 16.0002 12 16.0002 12.8C16.0002 13.6 15.2002 14.4 14.4002 14.4Z" fill="white"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-800 dark:text-white">Coinbase Wallet</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {isConnecting ? 'Connecting...' : 'Connect using Coinbase Wallet'}
-                      </div>
-                    </div>
-                  </button>
-                </div>
-                
-                {/* MetaMask Option */}
-                <button
-                  onClick={handleConnectMetaMask}
-                  disabled={isConnecting}
-                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-                >
-                  <div className="w-8 h-8 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
-                      <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
-                      <path d="M18.4378 16.86L16.2378 20.46L20.9378 21.84L22.3378 16.92L18.4378 16.86Z" fill="#E27625"/>
-                      <path d="M1.67782 16.92L3.05782 21.84L7.75782 20.46L5.55782 16.86L1.67782 16.92Z" fill="#E27625"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-800 dark:text-white">MetaMask</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {isConnecting ? 'Connecting...' : 'Connect using MetaMask'}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </>
+          </>
+        ) : (
+          <>
+            <span>{isPending ? 'Connecting...' : 'Connect Wallet'}</span>
+            {!isPending && (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
+          </>
+        )}
+      </button>
+
+      {errorMessage && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-red-100 text-red-700 rounded-md z-10">
+          {errorMessage}
+          {errorMessage.includes('Base Sepolia') && (
+            <button
+              onClick={handleAddBaseSepolia}
+              className="mt-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors duration-300"
+            >
+              Add Base Sepolia
+            </button>
           )}
+        </div>
+      )}
+
+      {showOptions && !isConnected && (
+        <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg z-10 overflow-hidden w-64">
+          <div className="p-3 border-b border-gray-700">
+            <h3 className="text-lg font-semibold">Connect Wallet</h3>
+          </div>
+
+          <div className="p-3 space-y-2">
+            {/* MetaMask Option */}
+            <button
+              onClick={() => handleConnectWallet('metamask')}
+              className="w-full text-left p-3 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-3"
+              disabled={isPending}
+            >
+              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+                  <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold">MetaMask</div>
+                <div className="text-xs text-gray-400">Connect to your MetaMask wallet</div>
+              </div>
+            </button>
+            
+            {/* Coinbase Wallet Option */}
+            <button
+              onClick={() => handleConnectWallet('coinbaseWallet')}
+              className="w-full text-left p-3 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-3"
+              disabled={isPending}
+            >
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 0C4.478 0 0 4.478 0 10C0 15.522 4.478 20 10 20C15.522 20 20 15.522 20 10C20 4.478 15.522 0 10 0ZM10 18.75C5.175 18.75 1.25 14.825 1.25 10C1.25 5.175 5.175 1.25 10 1.25C14.825 1.25 18.75 5.175 18.75 10C18.75 14.825 14.825 18.75 10 18.75Z" fill="white"/>
+                  <path d="M14.375 10C14.375 12.415 12.415 14.375 10 14.375C7.585 14.375 5.625 12.415 5.625 10C5.625 7.585 7.585 5.625 10 5.625C12.415 5.625 14.375 7.585 14.375 10Z" fill="white"/>
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold">Coinbase Wallet</div>
+                <div className="text-xs text-gray-400">Connect to your Coinbase wallet</div>
+              </div>
+            </button>
+            
+            {/* Smart Wallet Option */}
+            <Link 
+              href="/smart-wallet/create"
+              className="w-full text-left p-3 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-3"
+              onClick={handleCreateSmartWallet}
+            >
+              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-semibold">Create Smart Wallet</div>
+                <div className="text-xs text-gray-400">Create a new gasless smart wallet</div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {showOptions && isConnected && (
+        <div className="absolute top-full right-0 mt-2 bg-gray-800 text-white rounded-md shadow-lg z-10 overflow-hidden w-48">
+          <div className="p-3 border-b border-gray-700">
+            <h3 className="text-lg font-semibold">Wallet</h3>
+          </div>
+
+          <div className="p-3">
+            <div className="mb-2 text-xs text-gray-400">
+              Connected to: {getChainName()}
+            </div>
+            <button
+              onClick={handleDisconnect}
+              className="w-full text-left p-2 hover:bg-gray-700 rounded-md transition-colors duration-300 flex items-center gap-2 text-red-400"
+              disabled={isPending}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Disconnect</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

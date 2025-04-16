@@ -94,4 +94,14 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Fix for the landing page text */
+  .landing-text {
+    background-color: transparent !important;
+    color: #111827 !important;
+  }
+  
+  .dark .landing-text {
+    color: #ffffff !important;
+  }
 }
