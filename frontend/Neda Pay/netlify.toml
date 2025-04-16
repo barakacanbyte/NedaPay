@@ -1,5 +1,5 @@
 [build]
-  command = "node netlify-prebuild.js && npm run build && npm run export"
+  command = "chmod +x ./netlify-simple-build.sh && ./netlify-simple-build.sh"
   publish = "out"
 
 [build.environment]
