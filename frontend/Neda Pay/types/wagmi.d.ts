@@ -42,5 +42,10 @@ declare module 'wagmi/chains' {
 
 declare module 'wagmi/connectors' {
   export function coinbaseWallet(config: { appName: string }): any;
-  export function metaMask(): any;
+  export function metaMask(config?: { shimDisconnect?: boolean }): any;
+  export function injected(config?: { shimDisconnect?: boolean }): any;
+}
+
+declare module 'viem' {
+  export function http(url?: string): any;
 }
