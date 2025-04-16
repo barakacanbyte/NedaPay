@@ -1,6 +1,7 @@
 'use client';
 
-import { baseSepolia } from 'wagmi/chains';
+// Import from our compatibility layer instead of wagmi/chains
+import { baseSepolia, base } from '../compatibility/chains-compat';
 import { createConfig } from 'wagmi';
 import { http } from 'viem';
 import { coinbaseWallet, metaMask } from 'wagmi/connectors';
@@ -9,7 +10,7 @@ import { coinbaseWallet, metaMask } from 'wagmi/connectors';
 export const defaultChain = baseSepolia;
 
 // Define chains array with proper type annotation
-const chains = [baseSepolia] as const;
+const chains = [baseSepolia, base] as const;
 
 // Create and export the wagmi config directly
 export const wagmiConfig = createConfig({
@@ -22,5 +23,6 @@ export const wagmiConfig = createConfig({
   ],
   transports: {
     [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
+    [base.id]: http('https://mainnet.base.org'),
   },
 });
