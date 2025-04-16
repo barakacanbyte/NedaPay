@@ -19,7 +19,6 @@ const wagmiConfig = createConfig({
     }),
     metaMask()
   ],
-  ssr: true,
   transports: {
     [base.id]: http(),
   },
