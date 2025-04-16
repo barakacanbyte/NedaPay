@@ -52,6 +52,12 @@ export default function WalletPage() {
         return;
       }
       
+      // For demo purposes, set a fixed balance of 1100 TSHC
+      // This is temporary until we have proper balance fetching from the blockchain
+      setBalance('1100.0000');
+      
+      // Uncomment the below code to fetch real balance from blockchain
+      /*
       const { ethers } = await import('ethers');
       const provider = new ethers.BrowserProvider(window.ethereum);
       const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB';
@@ -67,6 +73,7 @@ export default function WalletPage() {
       // Convert from wei to TSHC (with 18 decimals - standard for ERC20 tokens)
       const balanceTSHC = ethers.formatUnits(balanceWei, 18);
       setBalance(parseFloat(balanceTSHC).toFixed(4));
+      */
     } catch (error) {
       console.error('Error fetching TSHC balance:', error);
       setBalance('0.00');
