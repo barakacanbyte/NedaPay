@@ -44,33 +44,34 @@ import { Doughnut } from 'react-chartjs-2';
 const mockReserveAssets = [
   { 
     id: 1, 
-    type: 'Government Bonds', 
-    amount: 4500000, 
-    percentage: 45, 
-    lastVerified: '2025-04-01', 
+    type: 'TestUSDC', 
+    amount: 1000000, 
+    percentage: 100, 
+    lastVerified: '2025-04-16', 
     status: 'Verified', 
+    issuer: 'NEDA Pay', 
+    maturityDate: 'N/A',
+    address: '0x4ecD2810a6A412fdc95B71c03767068C35D23fE3'
+  },
+  { 
+    id: 2, 
+    type: 'Government Bonds', 
+    amount: 0, 
+    percentage: 0, 
+    lastVerified: '2025-04-01', 
+    status: 'Pending', 
     issuer: 'Bank of Tanzania', 
     maturityDate: '2026-04-01' 
   },
   { 
-    id: 2, 
+    id: 3, 
     type: 'T-Bills', 
-    amount: 3000000, 
-    percentage: 30, 
+    amount: 0, 
+    percentage: 0, 
     lastVerified: '2025-04-02', 
-    status: 'Verified', 
+    status: 'Pending', 
     issuer: 'Ministry of Finance', 
     maturityDate: '2025-10-01' 
-  },
-  { 
-    id: 3, 
-    type: 'Cash Equivalents', 
-    amount: 2500000, 
-    percentage: 25, 
-    lastVerified: '2025-04-03', 
-    status: 'Verified', 
-    issuer: 'CRDB Bank', 
-    maturityDate: 'N/A' 
   },
 ];
 
@@ -78,49 +79,34 @@ const mockReserveAssets = [
 const mockReserveTransactions = [
   { 
     id: 1, 
-    date: '2025-04-05', 
+    date: '2025-04-16', 
     type: 'Deposit', 
-    assetType: 'Government Bonds', 
-    amount: 500000, 
-    verifiedBy: 'John Smith', 
-    organization: 'Bank of Tanzania' 
+    assetType: 'TestUSDC', 
+    amount: 1000000, 
+    verifiedBy: 'Admin', 
+    organization: 'NEDA Pay',
+    txHash: '0x4ecD2810a6A412fdc95B71c03767068C35D23fE3'
   },
   { 
     id: 2, 
-    date: '2025-04-03', 
-    type: 'Withdrawal', 
-    assetType: 'T-Bills', 
-    amount: 200000, 
-    verifiedBy: 'Maria Johnson', 
-    organization: 'Ministry of Finance' 
+    date: '2025-04-16', 
+    type: 'Mint', 
+    assetType: 'TSHC', 
+    amount: 100000, 
+    verifiedBy: 'Admin', 
+    organization: 'NEDA Pay',
+    txHash: '0x0859D42FD008D617c087DD386667da51570B1aAB'
   },
   { 
     id: 3, 
-    date: '2025-04-01', 
-    type: 'Deposit', 
-    assetType: 'Cash Equivalents', 
-    amount: 300000, 
-    verifiedBy: 'Robert Chen', 
-    organization: 'CRDB Bank' 
-  },
-  { 
-    id: 4, 
-    date: '2025-03-28', 
-    type: 'Deposit', 
-    assetType: 'Government Bonds', 
-    amount: 1000000, 
-    verifiedBy: 'John Smith', 
-    organization: 'Bank of Tanzania' 
-  },
-  { 
-    id: 5, 
-    date: '2025-03-25', 
-    type: 'Withdrawal', 
-    assetType: 'Cash Equivalents', 
-    amount: 150000, 
-    verifiedBy: 'Robert Chen', 
-    organization: 'CRDB Bank' 
-  },
+    date: '2025-04-16', 
+    type: 'Burn', 
+    assetType: 'TSHC', 
+    amount: 50000, 
+    verifiedBy: 'Admin', 
+    organization: 'NEDA Pay',
+    txHash: '0x0859D42FD008D617c087DD386667da51570B1aAB'
+  }
 ];
 
 const Reserves: React.FC = () => {

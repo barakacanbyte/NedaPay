@@ -14,9 +14,10 @@ import RESERVE_ABI from '../contracts/abis/Reserve.json';
 
 // Contract addresses - these would come from environment variables in production
 const CONTRACT_ADDRESSES = {
-  // Base Mainnet addresses
-  TSHC: '0x123456789abcdef123456789abcdef123456789a', // Replace with actual deployed address
-  RESERVE: '0x987654321fedcba987654321fedcba987654321', // Replace with actual deployed address
+  // Base Sepolia testnet addresses
+  TSHC: '0x0859D42FD008D617c087DD386667da51570B1aAB', // SimpleTSHC deployed address
+  RESERVE: '0x72Ff093CEA6035fa395c0910B006af2DC4D4E9F5', // SimpleReserve deployed address
+  TEST_USDC: '0x4ecD2810a6A412fdc95B71c03767068C35D23fE3', // TestUSDC deployed address
 };
 
 // Mock data for demonstration purposes when contracts are not available
@@ -32,9 +33,9 @@ const MOCK_DATA = {
 
 // Network configuration
 const NETWORK_CONFIG = {
-  chainId: 8453, // Base Mainnet
-  name: 'Base',
-  rpcUrl: 'https://mainnet.base.org',
+  chainId: 84532, // Base Sepolia testnet
+  name: 'Base Sepolia',
+  rpcUrl: 'https://sepolia.base.org',
 };
 
 class Web3Service {

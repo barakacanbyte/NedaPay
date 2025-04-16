@@ -44,53 +44,33 @@ const mockMintBurnHistory = [
   { 
     id: 1, 
     type: 'Mint', 
-    amount: 1000000, 
-    date: '2025-04-05', 
-    authorizedBy: 'John Smith', 
-    organization: 'Bank of Tanzania',
-    reason: 'Initial stablecoin issuance',
-    txHash: '0x1a2b3c4d5e6f...'
+    amount: 100000, 
+    date: '2025-04-16', 
+    authorizedBy: 'Admin', 
+    organization: 'NEDA Pay',
+    reason: 'Testing TSHC token',
+    txHash: '0x0859D42FD008D617c087DD386667da51570B1aAB'
   },
   { 
     id: 2, 
-    type: 'Mint', 
-    amount: 500000, 
-    date: '2025-04-03', 
-    authorizedBy: 'Maria Johnson', 
-    organization: 'Bank of Tanzania',
-    reason: 'Increased market demand',
-    txHash: '0x2b3c4d5e6f7g...'
+    type: 'Burn', 
+    amount: 50000, 
+    date: '2025-04-16', 
+    authorizedBy: 'Admin', 
+    organization: 'NEDA Pay',
+    reason: 'Testing burn functionality',
+    txHash: '0x0859D42FD008D617c087DD386667da51570B1aAB'
   },
   { 
     id: 3, 
-    type: 'Burn', 
-    amount: 200000, 
-    date: '2025-04-01', 
-    authorizedBy: 'Robert Chen', 
+    type: 'Deposit', 
+    amount: 1000000, 
+    date: '2025-04-16', 
+    authorizedBy: 'Admin', 
     organization: 'NEDA Pay',
-    reason: 'Excess supply adjustment',
-    txHash: '0x3c4d5e6f7g8h...'
-  },
-  { 
-    id: 4, 
-    type: 'Mint', 
-    amount: 300000, 
-    date: '2025-03-28', 
-    authorizedBy: 'John Smith', 
-    organization: 'Bank of Tanzania',
-    reason: 'Reserve increase',
-    txHash: '0x4d5e6f7g8h9i...'
-  },
-  { 
-    id: 5, 
-    type: 'Burn', 
-    amount: 100000, 
-    date: '2025-03-25', 
-    authorizedBy: 'Maria Johnson', 
-    organization: 'NEDA Pay',
-    reason: 'Market stabilization',
-    txHash: '0x5e6f7g8h9i0j...'
-  },
+    reason: 'TestUSDC collateral deposit',
+    txHash: '0x4ecD2810a6A412fdc95B71c03767068C35D23fE3'
+  }
 ];
 
 const MintBurn: React.FC = () => {
@@ -481,7 +461,14 @@ const MintBurn: React.FC = () => {
                 <TableCell>{item.reason}</TableCell>
                 <TableCell>
                   <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                    {item.txHash}
+                    <a 
+                      href={`https://sepolia.basescan.org/address/${item.txHash}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: theme.palette.primary.main, textDecoration: 'underline' }}
+                    >
+                      {item.txHash.substring(0, 8)}...{item.txHash.substring(item.txHash.length - 6)}
+                    </a>
                   </Typography>
                 </TableCell>
               </TableRow>

@@ -6,7 +6,7 @@ export const stablecoins = [
     currency: 'TZS',
     baseToken: 'TSHC',
     name: 'Tanzania Shilling Coin',
-    address: '0x123456789abcdef123456789abcdef123456789a', // Placeholder address
+    address: '0x0859D42FD008D617c087DD386667da51570B1aAB', // Base Sepolia testnet
     issuer: 'NEDA Pay',
     description: 'Stablecoin pegged 1:1 to the Tanzania Shilling (TZS)',
     website: 'https://nedapay.app'

@@ -31,7 +31,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
         address sender;
         address[] recipients;
         uint256[] amounts;
-        string reference;
+        string paymentReference;
         uint256 timestamp;
         bool processed;
         uint256 totalAmount;
@@ -47,7 +47,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
     uint256 public minAmountPerRecipient = 1 * 10**18; // 1 TSHC
 
     // Events
-    event BatchPaymentCreated(uint256 indexed batchId, address indexed sender, uint256 totalAmount, uint256 totalFee, string reference);
+    event BatchPaymentCreated(uint256 indexed batchId, address indexed sender, uint256 totalAmount, uint256 totalFee, string paymentReference);
     event BatchPaymentProcessed(uint256 indexed batchId);
     event MaxRecipientsUpdated(uint256 oldMax, uint256 newMax);
     event MinAmountUpdated(uint256 oldMin, uint256 newMin);
@@ -80,13 +80,13 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
      * @dev Create a new batch payment
      * @param _recipients Array of recipient addresses
      * @param _amounts Array of amounts to send to each recipient
-     * @param _reference Reference information for the batch payment
+     * @param _paymentReference Reference information for the batch payment
      * @return batchId The ID of the created batch payment
      */
     function createBatchPayment(
         address[] calldata _recipients,
         uint256[] calldata _amounts,
-        string calldata _reference
+        string calldata _paymentReference
     ) 
         external 
         nonReentrant 
@@ -117,7 +117,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
             sender: msg.sender,
             recipients: _recipients,
             amounts: _amounts,
-            reference: _reference,
+            paymentReference: _paymentReference,
             timestamp: block.timestamp,
             processed: false,
             totalAmount: totalAmount,
@@ -127,7 +127,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
         // Transfer total amount plus fee from sender to this contract
         tshc.transferFrom(msg.sender, address(this), totalAmount + totalFee);
         
-        emit BatchPaymentCreated(batchId, msg.sender, totalAmount, totalFee, _reference);
+        emit BatchPaymentCreated(batchId, msg.sender, totalAmount, totalFee, _paymentReference);
         
         return batchId;
     }
@@ -178,7 +178,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
             address sender,
             address[] memory recipients,
             uint256[] memory amounts,
-            string memory reference,
+            string memory paymentReference,
             uint256 timestamp,
             bool processed,
             uint256 totalAmount,
@@ -191,7 +191,7 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
             batch.sender,
             batch.recipients,
             batch.amounts,
-            batch.reference,
+            batch.paymentReference,
             batch.timestamp,
             batch.processed,
             batch.totalAmount,
