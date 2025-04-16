@@ -12,10 +12,41 @@ export default function WalletPage() {
   const [account, setAccount] = useState('');
   const [balance, setBalance] = useState('0.00');
   const [walletType, setWalletType] = useState<'metamask' | 'coinbase' | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoadingTx, setIsLoadingTx] = useState(false);
   
   // Get wallet connection status from OnchainKit
   const { address } = useOnchainKit();
   
+  // Function to fetch transaction history
+  const fetchTransactionHistory = async (userAddress: string) => {
+    try {
+      setIsLoadingTx(true);
+      // Using Base Sepolia testnet API
+      const baseApiUrl = `https://api-sepolia.basescan.org/api?module=account&action=tokentx&address=${userAddress}&sort=desc&apikey=YourApiKey`;
+      
+      const response = await fetch(baseApiUrl);
+      const data = await response.json();
+      
+      if (data.status === '1' && Array.isArray(data.result)) {
+        // Filter for TSHC transactions (contract address)
+        const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB'.toLowerCase();
+        const tshcTxs = data.result
+          .filter((tx: any) => tx.contractAddress.toLowerCase() === tshcAddress)
+          .slice(0, 5); // Get only the 5 most recent transactions
+          
+        setTransactions(tshcTxs);
+      } else {
+        setTransactions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+      setTransactions([]);
+    } finally {
+      setIsLoadingTx(false);
+    }
+  };
+
   // Function to fetch TSHC balance
   const fetchTSHCBalance = async (userAddress: string) => {
     try {
@@ -47,6 +78,7 @@ export default function WalletPage() {
       setIsConnected(true);
       setWalletType('coinbase');
       fetchTSHCBalance(address);
+      fetchTransactionHistory(address);
     }
   }, [address]);
   
@@ -64,8 +96,9 @@ export default function WalletPage() {
               setIsConnected(true);
               setWalletType('metamask');
               
-              // Fetch TSHC balance instead of ETH balance
+              // Fetch TSHC balance and transaction history
               fetchTSHCBalance(accounts[0]);
+              fetchTransactionHistory(accounts[0]);
             }
           })
           .catch(console.error);
@@ -77,8 +110,9 @@ export default function WalletPage() {
             setIsConnected(true);
             setWalletType('metamask');
             
-            // Update TSHC balance when account changes
+            // Update TSHC balance and transaction history when account changes
             fetchTSHCBalance(accounts[0]);
+            fetchTransactionHistory(accounts[0]);
           } else if (walletType === 'metamask') {
             // Only disconnect if current wallet is MetaMask
             setAccount('');
@@ -237,10 +271,73 @@ export default function WalletPage() {
           {/* Recent Transactions */}
           <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
-            <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 text-center">
-              <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
-            </div>
-            <Link href="/transactions" className="text-blue-600 dark:text-blue-400 text-sm font-medium flex items-center justify-center">
+            
+            {isLoadingTx ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : transactions.length > 0 ? (
+              <div className="space-y-4">
+                {transactions.map((tx, index) => {
+                  const isSender = tx.from.toLowerCase() === account.toLowerCase();
+                  const formattedValue = parseFloat(tx.value) / 10**18;
+                  const txDate = new Date(parseInt(tx.timeStamp) * 1000);
+                  const formattedDate = txDate.toLocaleDateString();
+                  const formattedTime = txDate.toLocaleTimeString();
+                  
+                  return (
+                    <div key={index} className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSender ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+                            {isSender ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-red-600 dark:text-red-400">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-green-600 dark:text-green-400">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 4.5l15 15m0 0V8.25m0 11.25H8.25" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="ml-3">
+                            <p className="font-medium">{isSender ? 'Sent TSHC' : 'Received TSHC'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {formattedDate} at {formattedTime}
+                            </p>
+                            <a 
+                              href={`https://sepolia.basescan.org/tx/${tx.hash}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              View on BaseScan
+                            </a>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-medium ${isSender ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                            {isSender ? '-' : '+'}{formattedValue.toFixed(4)} TSHC
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+                            {isSender ? 'To: ' : 'From: '}
+                            {isSender ? 
+                              tx.to.substring(0, 6) + '...' + tx.to.substring(tx.to.length - 4) : 
+                              tx.from.substring(0, 6) + '...' + tx.from.substring(tx.from.length - 4)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 text-center">
+                <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+              </div>
+            )}
+            
+            <Link href="/transactions" className="text-blue-600 dark:text-blue-400 text-sm font-medium flex items-center justify-center mt-4">
               View All Transactions
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
