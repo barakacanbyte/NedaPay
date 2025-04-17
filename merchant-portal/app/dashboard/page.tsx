@@ -138,15 +138,38 @@ export default function MerchantDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState(mockTransactions.slice(0, 5));
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+  
+  const { address, isConnected } = useAccount();
   const router = useRouter();
   
-  // Get wallet connection status from wagmi
-  const { address, isConnected } = useAccount();
-  
+  // Set mounted state
   useEffect(() => {
     setMounted(true);
     
-    // Check for wallet connection
+    // Check for smart wallet
+    if (address && typeof window !== 'undefined') {
+      const storedWallet = localStorage.getItem(`smartWallet_${address}`);
+      if (storedWallet) {
+        try {
+          const wallet = JSON.parse(storedWallet);
+          setSmartWalletAddress(wallet.address);
+        } catch (e) {
+          console.error('Error parsing smart wallet data', e);
+        }
+      }
+    }
+    
+    // Fetch real balances when connected
+    if (isConnected && address) {
+      fetchRealBalances(address);
+    }
+  }, [address, isConnected]);
+  
+  // Check wallet connection and redirect if needed
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Check if wallet is connected via localStorage
     const walletConnected = localStorage.getItem('walletConnected') === 'true';
     const cookieWalletConnected = document.cookie.includes('wallet_connected=true');
     
@@ -249,55 +272,16 @@ export default function MerchantDashboard() {
       // For this demo, we'll use real-looking balances based on the wallet address
       const seed = walletAddress.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
       
-      // Create real-looking balances based on the connected wallet
       const realBalances: Record<string, string> = {
-        'TSHC': (25000 + (seed % 15000)).toLocaleString(),
-        'cNGN': (8500 + (seed % 5000)).toLocaleString(),
-        'IDRX': (12000 + (seed % 8000)).toLocaleString()
+        'TSHC': ((seed % 100) * 125).toLocaleString(),
+        'cNGN': ((seed % 80) * 40).toLocaleString(),
+        'IDRX': ((seed % 60) * 95).toLocaleString()
       };
       
       setBalances(realBalances);
       
-      // Also fetch latest transactions when we update balances
-      fetchLatestTransactions(walletAddress);
-    } catch (error) {
-      console.error('Error fetching real balances:', error);
-      // Fall back to mock balances
-      setBalances(mockBalances);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Function to fetch latest transactions
-  const fetchLatestTransactions = async (walletAddress: string) => {
-    try {
+      // Also fetch transactions
       setIsTransactionLoading(true);
-      
-      // In a production environment, this would call the blockchain API to get real transactions
-      // For example using ethers.js to query transaction history:
-      
-      // const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // const filter = {
-      //   address: walletAddress,
-      //   fromBlock: 0,
-      //   toBlock: 'latest'
-      // };
-      // const logs = await provider.getLogs(filter);
-      // const transactions = await Promise.all(logs.map(async log => {
-      //   const tx = await provider.getTransaction(log.transactionHash);
-      //   return {
-      //     id: tx.hash,
-      //     shortId: `${tx.hash.substring(0, 6)}...${tx.hash.substring(tx.hash.length - 3)}`,
-      //     date: new Date((await provider.getBlock(tx.blockNumber)).timestamp * 1000).toLocaleString(),
-      //     amount: ethers.utils.formatUnits(tx.value, 18),
-      //     currency: 'TSHC', // Would need to determine this from the token contract
-      //     status: 'Completed',
-      //     sender: tx.from,
-      //     senderShort: `${tx.from.substring(0, 6)}...${tx.from.substring(tx.from.length - 3)}`,
-      //     blockExplorerUrl: `https://basescan.org/tx/${tx.hash}`
-      //   };
-      // }));
       
       // For this demo, we'll use the mock transactions plus one real-time transaction
       const currentDate = new Date();
@@ -325,149 +309,110 @@ export default function MerchantDashboard() {
       console.error('Error fetching transactions:', error);
     } finally {
       setIsTransactionLoading(false);
+      setIsLoading(false);
     }
   };
 
   if (!mounted) return null;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
-      
-      <div className="container mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-white">
-            Merchant Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Manage your stablecoin payments and track business performance
-          </p>
-        </div>
+      <div className="flex-grow">
+        <div className="container mx-auto max-w-6xl px-4 py-12">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">
+              Merchant Dashboard
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 text-base">
+              Manage your stablecoin payments and track business performance
+            </p>
+          </div>
 
-        {/* Smart Wallet Info */}
-        {smartWalletAddress && (
-          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-2">Smart Wallet Connected</h2>
-            <p className="text-blue-600 dark:text-blue-400 mb-4">You're using a smart wallet for enhanced security and lower fees</p>
-            <div className="flex items-center space-x-2">
-              <div className="text-sm font-medium text-gray-900 dark:text-gray-300">Smart Wallet Address:</div>
-              <div className="text-sm text-gray-700 dark:text-gray-400">
-                {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
+          {/* Smart Wallet Info */}
+          {smartWalletAddress && (
+            <div className="bg-primary dark:bg-primary-dark border border-primary-light dark:border-blue-800 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-semibold text-white mb-2">Smart Wallet Connected</h2>
+              <p className="text-white mb-4">You're using a smart wallet for enhanced security and lower fees</p>
+              <div className="flex items-center space-x-2">
+                <div className="text-sm font-medium text-white">Smart Wallet Address:</div>
+                <div className="text-sm text-white/90">
+                  {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-sm text-gray-900 dark:text-gray-400 mb-1 font-semibold">Total Received</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {isLoading ? (
-                <div className="animate-pulse h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              ) : (
-                <>{processBalances(balances).totalReceived} TSHC</>
-              )}
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Received</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {isLoading ? (
+                  <div className="animate-pulse h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                ) : (
+                  <>{processBalances(balances).totalReceived} TSHC</>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Transactions</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">{mockTransactions.length.toString()}</div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Average Transaction</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {Math.round(parseInt(processBalances(balances).totalReceived.replace(/,/g, '')) / mockTransactions.length).toLocaleString()} TSHC
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Monthly Growth</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">+24.5%</div>
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-sm text-gray-900 dark:text-gray-400 mb-1 font-semibold">Total Transactions</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{mockTransactions.length.toString()}</div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-sm text-gray-900 dark:text-gray-400 mb-1 font-semibold">Average Transaction</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {Math.round(parseInt(processBalances(balances).totalReceived.replace(/,/g, '')) / mockTransactions.length).toLocaleString()} TSHC
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <div className="text-sm text-gray-900 dark:text-gray-400 mb-1 font-semibold">Conversion Rate</div>
-            <div className="text-2xl font-bold text-green-800 dark:text-green-400">98.5%</div>
-          </div>
-        </div>
-        
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Daily Revenue Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Revenue</h3>
-            <div className="h-64">
-              <Line 
-                data={mockDailyRevenue} 
-                options={{ 
-                  responsive: true, 
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }} 
-              />
-            </div>
-          </div>
-          
-          {/* Transactions by Day Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Transactions by Day</h3>
-            <div className="h-64">
-              <Bar 
-                data={mockTransactionsByDay} 
-                options={{ 
-                  responsive: true, 
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }} 
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Payment Methods and Stablecoin Balances */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Payment Methods Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Payment Methods</h3>
-            <div className="h-64">
-              <Doughnut 
-                data={getPaymentMethodsData(balances)} 
-                options={{ 
-                  responsive: true, 
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: 'rgb(55, 65, 81)'
-                      }
-                    }
-                  }
-                }} 
-              />
-            </div>
-          </div>
-          
-          {/* Stablecoin Balances */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Stablecoin Balances</h2>
-              
-              <div className="h-60 flex justify-center items-center mb-4">
-                <Doughnut 
-                  data={getPaymentMethodsData(balances)}
-                  options={{
-                    responsive: true,
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Daily Revenue Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Revenue</h3>
+              <div className="h-64">
+                <Line 
+                  data={mockDailyRevenue} 
+                  options={{ 
+                    responsive: true, 
                     maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        grid: {
+                          color: 'rgba(156, 163, 175, 0.1)'
+                        },
+                        ticks: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#9ca3af' : '#4b5563',
+                        }
+                      },
+                      x: {
+                        grid: {
+                          display: false
+                        },
+                        ticks: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#9ca3af' : '#4b5563',
+                        }
+                      }
+                    },
                     plugins: {
                       legend: {
-                        position: 'bottom'
+                        display: false
                       }
                     }
                   }} 
@@ -475,127 +420,160 @@ export default function MerchantDashboard() {
               </div>
             </div>
             
-            <div className="p-6">
+            {/* Payment Methods Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Payment Methods</h3>
+              <div className="h-64">
+                <Doughnut 
+                  data={getPaymentMethodsData(balances)} 
+                  options={{ 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#9ca3af' : '#4b5563',
+                          padding: 20,
+                          font: {
+                            size: 12
+                          }
+                        }
+                      }
+                    }
+                  }} 
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Transactions and Balances */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Recent Transactions */}
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Tx Hash</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Sender</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {isTransactionLoading ? (
+                      // Loading skeleton for transactions
+                      Array(5).fill(0).map((_, index) => (
+                        <tr key={`loading-${index}`} className="animate-pulse">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 w-28 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      transactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <a 
+                              href={tx.blockExplorerUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-blue-300 font-medium"
+                            >
+                              {tx.shortId}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-200">
+                            <a 
+                              href={`https://basescan.org/address/${tx.sender}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-blue-300 font-medium"
+                            >
+                              {tx.senderShort}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-200">{tx.date}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-200">{tx.amount} <span className="text-primary dark:text-primary-light">{tx.currency}</span></td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              tx.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                              tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-center mt-4">
+                  <a href="/transactions" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                    View All Transactions
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            {/* Wallet Balances */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Wallet Balances</h3>
+              
               <div className="space-y-4">
                 {isLoading ? (
                   // Loading skeleton for balances
                   Array(3).fill(0).map((_, index) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
                       <div className="flex items-center">
-                        <div className="animate-pulse h-6 w-6 bg-gray-200 dark:bg-gray-700 rounded-full mr-2"></div>
+                        <div className="animate-pulse h-6 w-6 bg-slate-200 dark:bg-slate-700 rounded-full mr-2"></div>
                         <div>
-                          <div className="animate-pulse h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-1"></div>
-                          <div className="animate-pulse h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                          <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded mb-1"></div>
+                          <div className="animate-pulse h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
                         </div>
                       </div>
-                      <div className="animate-pulse h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                      <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
                     </div>
                   ))
                 ) : (
                   processBalances(balances).processedStablecoins.map((coin: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
                       <div className="flex items-center">
-                        <span className="mr-2">{coin.flag}</span>
+                        <span className="mr-2 text-lg">{coin.flag}</span>
                         <div>
-                          <span className="font-medium text-gray-800 dark:text-white">{coin.symbol}</span>
-                          <span className="text-xs text-gray-700 dark:text-gray-400 block">{coin.name}</span>
+                          <span className="font-medium text-slate-800 dark:text-white">{coin.symbol}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 block">{coin.name}</span>
                         </div>
                       </div>
-                      <span className="font-medium text-gray-800 dark:text-white">{coin.balance}</span>
+                      <span className="font-medium text-slate-800 dark:text-white">{coin.balance}</span>
                     </div>
                   ))
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Recent Transactions and Weekly Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          {/* Recent Transactions */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Transactions</h2>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tx Hash</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sender</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {isTransactionLoading ? (
-                    // Loading skeleton for transactions
-                    Array(5).fill(0).map((_, index) => (
-                      <tr key={`loading-${index}`} className="animate-pulse">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <a 
-                          href={tx.blockExplorerUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          {tx.shortId}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        <a 
-                          href={`https://basescan.org/address/${tx.sender}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          {tx.senderShort}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{tx.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{tx.amount} {tx.currency}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          tx.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                          tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
-                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                          {tx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  )))}
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-center mt-4">
-                <a href="/transactions" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                  View All Transactions
-                </a>
               </div>
             </div>
           </div>
@@ -605,17 +583,18 @@ export default function MerchantDashboard() {
             <h3 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Quick Actions</h3>
             
             <div className="space-y-4">
-              <button className="p-4 w-full bg-gray-100 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
+              <button 
+                onClick={() => router.push('/payment-link')} 
+                className="p-4 w-full bg-gray-100 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
+              >
                 <h3 className="font-bold text-blue-900 dark:text-blue-300">Create Payment Link</h3>
                 <p className="text-sm text-blue-900 dark:text-blue-400 mt-1 font-medium">Generate a payment link to share with customers</p>
               </button>
               
-              <button className="p-4 w-full bg-gray-100 dark:bg-green-900/30 rounded-lg border border-green-300 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 transition">
-                <h3 className="font-bold text-green-900 dark:text-green-300">Withdraw Funds</h3>
-                <p className="text-sm text-green-900 dark:text-green-400 mt-1 font-medium">Transfer stablecoins to your wallet</p>
-              </button>
-              
-              <button className="p-4 w-full bg-gray-100 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition">
+              <button 
+                onClick={() => router.push('/analytics')} 
+                className="p-4 w-full bg-gray-100 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition"
+              >
                 <h3 className="font-bold text-purple-900 dark:text-purple-300">View Analytics</h3>
                 <p className="text-sm text-purple-900 dark:text-purple-400 mt-1 font-medium">Detailed reports and business insights</p>
               </button>

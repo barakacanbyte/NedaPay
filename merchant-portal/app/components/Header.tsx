@@ -16,27 +16,30 @@ export default function Header() {
   if (!mounted) return null;
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm">
+    <header className="bg-primary-light dark:bg-slate-800 shadow-sm border-b-2 border-white dark:border-slate-700">
       <div className="container mx-auto max-w-6xl px-4 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center">
-              <span className="text-xl font-bold text-gray-900 dark:text-white !important">
+              <span className="text-xl font-bold text-slate-800 dark:text-white">
                 NEDA Pay Merchant
               </span>
             </Link>
             
             <nav className="hidden md:flex space-x-6">
-              <Link href="/dashboard" className="text-gray-700 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400">
+              <Link href="/dashboard" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
                 Dashboard
               </Link>
-              <Link href="/payments" className="text-gray-700 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400">
+              <Link href="/payment-link" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
+                Payment Link
+              </Link>
+              <Link href="/analytics" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
+                Analytics
+              </Link>
+              <Link href="/payments" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
                 Payments
               </Link>
-              <Link href="/stablecoins" className="text-gray-700 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400">
-                Stablecoins
-              </Link>
-              <Link href="/settings" className="text-gray-700 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400">
+              <Link href="/settings" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
                 Settings
               </Link>
             </nav>
@@ -45,7 +48,7 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              className="p-2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? '☀️' : '🌙'}
