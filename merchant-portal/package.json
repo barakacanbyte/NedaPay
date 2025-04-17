@@ -12,6 +12,8 @@
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.7",
     "@tanstack/react-query": "^5.72.2",
+    "@web3modal/ethereum": "^2.7.1",
+    "@web3modal/react": "^2.7.1",
     "chart.js": "^4.4.8",
     "ethers": "^5.7.2",
     "next": "15.3.0",
