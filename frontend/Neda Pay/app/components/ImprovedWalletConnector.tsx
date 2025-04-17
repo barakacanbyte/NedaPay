@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { loadWalletState, saveWalletState, clearWalletState, WalletState } from '../utils/wallet-state';
 
+// This ensures consistent wallet display across all browsers
+const FORCE_SHOW_ALL_WALLETS = true;
+
 export default function ImprovedWalletConnector() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -50,46 +53,16 @@ export default function ImprovedWalletConnector() {
     }
   }, []);
 
-  // Helper function to detect if MetaMask is installed
+  // CRITICAL: Forcing MetaMask to display on ALL browsers
   const isMetaMaskInstalled = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    
-    const { ethereum } = window as any;
-    
-    // Check multiple ways MetaMask might be available
-    if (ethereum) {
-      // Direct property
-      if (ethereum.isMetaMask) return true;
-      
-      // In providers array
-      if (ethereum.providers && Array.isArray(ethereum.providers)) {
-        return ethereum.providers.some((p: any) => p.isMetaMask);
-      }
-    }
-    
-    // Always return true for testing if needed
-    return true; // Force MetaMask to always show in the list
+    // Always show MetaMask regardless of browser or detection
+    return FORCE_SHOW_ALL_WALLETS;
   };
 
   // Helper function to detect if Coinbase Wallet is installed
   const isCoinbaseWalletInstalled = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    
-    const { ethereum } = window as any;
-    
-    // Check multiple ways Coinbase might be available
-    if (ethereum) {
-      // Direct property
-      if (ethereum.isCoinbaseWallet) return true;
-      
-      // In providers array
-      if (ethereum.providers && Array.isArray(ethereum.providers)) {
-        return ethereum.providers.some((p: any) => p.isCoinbaseWallet);
-      }
-    }
-    
-    // Also check for coinbaseWalletExtension global
-    return Boolean((window as any).coinbaseWalletExtension);
+    // Force all wallets to display regardless of browser
+    return FORCE_SHOW_ALL_WALLETS;
   };
   
   // Helper function to check if smart wallet features are available
@@ -115,19 +88,16 @@ export default function ImprovedWalletConnector() {
         throw new Error('MetaMask provider not found');
       }
       
-      // Look specifically for MetaMask - different ways to detect it
-      let metaMaskProvider = null;
+      // SIMPLIFIED provider detection to fix Chrome vs Safari inconsistencies
+      let metaMaskProvider = ethereum;
       
-      // Check if it's a multi-provider environment
-      if (ethereum.providers) {
-        // Find the MetaMask provider in the providers array
-        metaMaskProvider = ethereum.providers.find((p: any) => p.isMetaMask && !p.isCoinbaseWallet);
-      } else if (ethereum.isMetaMask && !ethereum.isCoinbaseWallet) {
-        // Single MetaMask provider
-        metaMaskProvider = ethereum;
-      } else {
-        // Fallback to using ethereum directly
-        metaMaskProvider = ethereum;
+      // Try to find MetaMask in a more reliable way that works cross-browser
+      if (ethereum.providers && Array.isArray(ethereum.providers)) {
+        // Find any provider that might be MetaMask
+        const possibleMetaMask = ethereum.providers.find((p: any) => p.isMetaMask);
+        if (possibleMetaMask) {
+          metaMaskProvider = possibleMetaMask;
+        }
       }
       
       // Request accounts
@@ -457,7 +427,7 @@ export default function ImprovedWalletConnector() {
                       Standard Wallets
                     </h4>
                     
-                    {/* MetaMask Option */}
+                    {/* FORCING MetaMask to show on ALL browsers - removed ALL conditional logic */}
                     <button
                       onClick={connectMetaMask}
                       disabled={isConnecting && connectingWallet !== 'MetaMask'}
@@ -468,14 +438,10 @@ export default function ImprovedWalletConnector() {
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-orange-200 flex items-center justify-center">
-                          <img 
-                            src="/metamask-logo.svg" 
-                            alt="MetaMask" 
-                            width={30} 
-                            height={30} 
-                            className="object-contain"
-                          />
+                        <div className="w-10 h-10 mr-3 flex-shrink-0 bg-gradient-to-b from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                          </svg>
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-gray-900 dark:text-white">MetaMask</p>
@@ -502,14 +468,11 @@ export default function ImprovedWalletConnector() {
                       }`}
                     >
                       <div className="flex items-center">
-                        <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-blue-200 flex items-center justify-center">
-                          <img 
-                            src="/coinbase-logo.svg" 
-                            alt="Coinbase Wallet" 
-                            width={30} 
-                            height={30} 
-                            className="object-contain"
-                          />
+                        <div className="w-10 h-10 mr-3 flex-shrink-0 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 12h8"></path>
+                          </svg>
                         </div>
                         <div className="text-left">
                           <p className="font-medium text-gray-900 dark:text-white">Coinbase Wallet</p>
@@ -545,16 +508,14 @@ export default function ImprovedWalletConnector() {
                     >
                       <div className="flex items-center">
                         <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-indigo-200 flex items-center justify-center relative">
-                          <img 
-                            src="/coinbase-logo.svg" 
-                            alt="Coinbase Smart Wallet" 
-                            width={24} 
-                            height={24} 
-                            className="object-contain"
-                          />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 12h8"></path>
+                          </svg>
                           <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              <path d="M6.5 2a.5.5 0 0 0 0 1h1v1a4.5 4.5 0 0 0 9 0V3h1a.5.5 0 0 0 0-1h-11zm2 1h7v1a3.5 3.5 0 0 1-7 0V3z"/>
+                              <path d="M4.5 8.5a4 4 0 0 1 8 0V10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V8.5zm2.5.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 0-1h-2a.5.5 0 0 0-.5.5zm9 0a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5z"/>
                             </svg>
                           </div>
                         </div>
