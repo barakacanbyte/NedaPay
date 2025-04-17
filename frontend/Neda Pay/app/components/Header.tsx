@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import WalletSelector from './WalletSelector';
+import ImprovedWalletConnector from './ImprovedWalletConnector';
 import ThemeToggle from './ThemeToggle';
 
 // NEDA Pay features for navigation
@@ -92,7 +92,7 @@ export default function Header() {
           
           <ThemeToggle />
           
-          <WalletSelector />
+          <ImprovedWalletConnector />
         </div>
       </div>
     </header>

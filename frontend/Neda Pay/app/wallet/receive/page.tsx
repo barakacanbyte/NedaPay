@@ -6,7 +6,8 @@ import Header from '../../components/Header';
 import { QRCodeSVG } from 'qrcode.react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { stablecoins } from '../../data/stablecoins';
-import { loadWalletState } from '../../utils/global-wallet-state';
+import { loadWalletState, WalletState } from '../../utils/wallet-state';
+import ImprovedWalletConnector from '../../components/ImprovedWalletConnector';
 
 export default function ReceivePage() {
   const [mounted, setMounted] = useState(false);
@@ -19,15 +20,26 @@ export default function ReceivePage() {
   const currencySelectorRef = useRef<HTMLDivElement>(null);
   
   // Get wallet connection status from global state
-  const [walletState, setWalletState] = useState({ isConnected: false, address: null });
+  const [walletState, setWalletState] = useState<WalletState>(loadWalletState());
   
-  // Load wallet state on mount
+  // Listen for wallet state changes from other components
   useEffect(() => {
-    const state = loadWalletState();
-    setWalletState({
-      isConnected: state.isConnected,
-      address: state.address
-    });
+    // Function to handle wallet state changes
+    const handleWalletStateChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<WalletState>;
+      setWalletState(customEvent.detail);
+    };
+    
+    // Set up event listener
+    window.addEventListener('walletStateChanged', handleWalletStateChanged);
+    
+    // Load initial state
+    setWalletState(loadWalletState());
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('walletStateChanged', handleWalletStateChanged);
+    };
   }, []);
   
   // Get the selected coin details
@@ -122,9 +134,7 @@ export default function ReceivePage() {
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Connect your wallet to generate a QR code
                 </p>
-                <Link href="/" className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-full transition-colors">
-                  Go to Home to Connect Wallet
-                </Link>
+                <ImprovedWalletConnector />
               </div>
             )}
           </div>

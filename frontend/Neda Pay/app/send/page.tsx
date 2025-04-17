@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import { stablecoins } from '../data/stablecoins';
-import { loadWalletState } from '../utils/global-wallet-state';
+import { loadWalletState, WalletState } from '../utils/wallet-state';
+import ImprovedWalletConnector from '../components/ImprovedWalletConnector';
 
 export default function SendPage() {
   const [amount, setAmount] = useState<string>('');
@@ -16,15 +17,28 @@ export default function SendPage() {
   const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
   
   // Get wallet connection status from global state
-  const [walletState, setWalletState] = useState({ isConnected: false, address: null });
+  const [walletState, setWalletState] = useState<WalletState>(loadWalletState());
   
-  // Load wallet state on mount
+  // Load wallet state on mount and listen for changes
   useEffect(() => {
-    const state = loadWalletState();
-    setWalletState({
-      isConnected: state.isConnected,
-      address: state.address
-    });
+    if (typeof window === 'undefined') return;
+    
+    // Function to handle wallet state changes
+    const handleWalletStateChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<WalletState>;
+      setWalletState(customEvent.detail);
+    };
+    
+    // Set up event listener
+    window.addEventListener('walletStateChanged', handleWalletStateChanged);
+    
+    // Load initial state
+    setWalletState(loadWalletState());
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('walletStateChanged', handleWalletStateChanged);
+    };
   }, []);
 
   // Redirect to home if not connected
@@ -53,27 +67,62 @@ export default function SendPage() {
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       
-      // TSHC token contract address and ABI
-      const tshcAddress = '0x0859D42FD008D617c087DD386667da51570B1aAB';
-      const tshcAbi = [
-        'function transfer(address to, uint256 amount) returns (bool)',
-        'function decimals() view returns (uint8)'
+      // Get the selected coin details from our data
+      const selectedToken = stablecoins.find(coin => coin.baseToken === selectedCoin);
+      if (!selectedToken) {
+        throw new Error(`Token ${selectedCoin} not found in available stablecoins`);
+      }
+      
+      // Get token contract address from our data
+      const tokenAddress = selectedToken.address;
+      
+      // Use a more complete ERC-20 ABI
+      const tokenAbi = [
+        // Read-only functions
+        'function balanceOf(address owner) view returns (uint256)',
+        'function decimals() view returns (uint8)',
+        'function symbol() view returns (string)',
+        'function name() view returns (string)',
+        
+        // Authenticated functions
+        'function transfer(address to, uint256 value) returns (bool)',
+        'function approve(address spender, uint256 value) returns (bool)',
+        'function transferFrom(address from, address to, uint256 value) returns (bool)',
+        
+        // Events
+        'event Transfer(address indexed from, address indexed to, uint256 value)',
+        'event Approval(address indexed owner, address indexed spender, uint256 value)'
       ];
       
       // Create contract instance with signer
-      const tshcContract = new ethers.Contract(tshcAddress, tshcAbi, signer);
+      const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
       
-      // Get token decimals
-      const decimals = await tshcContract.decimals();
+      // Try to get token decimals with fallback to standard 18
+      let decimals = 18; // Default fallback
+      try {
+        decimals = await tokenContract.decimals();
+        console.log(`Token decimals: ${decimals}`);
+      } catch (decimalError) {
+        console.warn('Could not get token decimals, using default of 18:', decimalError);
+        // Continue with default decimals
+      }
       
-      // Convert amount to wei (with 18 decimals)
-      const amountInWei = ethers.parseUnits(amount, decimals);
+      // Convert amount to proper units with decimals
+      const parsedAmount = ethers.parseUnits(amount, decimals);
+      console.log(`Sending ${amount} ${selectedCoin} (${parsedAmount} in raw units)`);
+      
+      // Get current user's address for logging
+      const userAddress = await signer.getAddress();
+      console.log(`Sending from: ${userAddress}`);
+      console.log(`Sending to: ${recipient}`);
       
       // Send transaction - this will trigger the wallet signing prompt
-      const tx = await tshcContract.transfer(recipient, amountInWei);
+      const tx = await tokenContract.transfer(recipient, parsedAmount);
+      console.log('Transaction submitted:', tx.hash);
       
       // Wait for transaction to be mined
-      await tx.wait();
+      const receipt = await tx.wait();
+      console.log('Transaction confirmed in block:', receipt.blockNumber);
       
       setIsSuccess(true);
       setIsLoading(false);
@@ -82,6 +131,9 @@ export default function SendPage() {
       // Handle user rejection
       if (err.code === 'ACTION_REJECTED') {
         setError('Transaction was rejected by user');
+      } else if (err.message && err.message.includes('could not decode result data')) {
+        // Handle specifically the decimals() function error
+        setError('Transaction failed: could not decode result data from token contract. The token contract may not be fully compatible with ERC-20 standard.');
       } else {
         setError(`Transaction failed: ${err.message || 'Please try again'}`);
       }
@@ -140,15 +192,18 @@ export default function SendPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
           {!walletState.isConnected ? (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Please connect your wallet</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Connect Wallet to Send {selectedCoin}</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                You need to connect your wallet to send {selectedCoin}.
+                You need to connect your wallet to send {selectedCoin} transactions.
               </p>
+              <div className="flex justify-center">
+                <ImprovedWalletConnector />
+              </div>
             </div>
           ) : isSuccess ? (
             <div className="text-center py-8">
