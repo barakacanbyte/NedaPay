@@ -122,7 +122,28 @@ export default function SendPage() {
       console.log('Transaction submitted:', tx.hash);
       
       // Save transaction to localStorage for tracking
-      const chainId = await provider.getNetwork().then(network => network.chainId);
+      const network = await provider.getNetwork();
+      const chainId = Number(network.chainId);
+      console.log('Transaction on chainId:', chainId);
+      
+      // Get the explorer URL for the transaction
+      let explorerUrl = '#';
+      if (chainId === 84532) {
+        explorerUrl = `https://sepolia.basescan.org/tx/${tx.hash}`;
+      } else if (chainId === 8453) {
+        explorerUrl = `https://basescan.org/tx/${tx.hash}`;
+      } else if (chainId === 11155111) {
+        explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+      } else if (chainId === 1) {
+        explorerUrl = `https://etherscan.io/tx/${tx.hash}`;
+      } else if (chainId === 137) {
+        explorerUrl = `https://polygonscan.com/tx/${tx.hash}`;
+      } else if (chainId === 80001) {
+        explorerUrl = `https://mumbai.polygonscan.com/tx/${tx.hash}`;
+      } else if (chainId === 42161) {
+        explorerUrl = `https://arbiscan.io/tx/${tx.hash}`;
+      }
+      
       const newTransaction = {
         hash: tx.hash,
         from: userAddress,
@@ -131,7 +152,8 @@ export default function SendPage() {
         currency: selectedCoin,
         timestamp: Date.now(),
         status: 'pending',
-        chainId: Number(chainId)
+        chainId: chainId,
+        explorerUrl: explorerUrl
       };
       
       // Get existing pending transactions or initialize empty array
@@ -150,7 +172,7 @@ export default function SendPage() {
       console.log('Transaction confirmed in block:', receipt.blockNumber);
       
       // Update the transaction status to confirmed in localStorage
-      const updatedTxs = existingTxs.map(t => {
+      const updatedTxs = existingTxs.map((t: any) => {
         if (t.hash === tx.hash) {
           return { ...t, status: 'confirmed' };
         }
@@ -260,14 +282,7 @@ export default function SendPage() {
                       {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
                     </p>
                     <a 
-                      href={`${walletState.chainId === 84532 ? 'https://sepolia.basescan.org/tx/' : 
-                              walletState.chainId === 8453 ? 'https://basescan.org/tx/' : 
-                              walletState.chainId === 11155111 ? 'https://sepolia.etherscan.io/tx/' : 
-                              walletState.chainId === 1 ? 'https://etherscan.io/tx/' : 
-                              walletState.chainId === 137 ? 'https://polygonscan.com/tx/' : 
-                              walletState.chainId === 80001 ? 'https://mumbai.polygonscan.com/tx/' : 
-                              walletState.chainId === 42161 ? 'https://arbiscan.io/tx/' : 
-                              '#'}${transactionHash}`}
+                      href={`https://sepolia.basescan.org/tx/${transactionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"

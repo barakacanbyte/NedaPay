@@ -293,72 +293,67 @@ export default function WalletPage() {
         }
         return '#';
       };
-
-      try {
-        // For a real implementation, fetch transactions from an indexer or blockchain
-        // Here's how you would start implementing it with the provider
-        
-        // Try to get token transfer events
-        // This is a simplified approach - in production, you'd use an indexer API
-        
-        // Generate recent transactions with real explorer links
-        const recentTransactions = [
-          {
-            hash: '0x5d53558791c9346d644d077354420f9a93600acf54faff4c3693c8b171196cbd',
-            from: userAddress,
-            to: '0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db',
-            value: '10.0',
-            currency: currentStablecoin,
-            timestamp: Date.now() - 86400000, // 1 day ago
-            status: 'confirmed',
-            explorerUrl: getExplorerUrl('0x5d53558791c9346d644d077354420f9a93600acf54faff4c3693c8b171196cbd')
-          },
-          {
-            hash: '0x21fa4c61e5736ab13e3ab7c5d7fa54805325aa5de07065e8cba6a2f249b73325',
-            from: '0xA0Cf798816D4b9b9866b5330EEa46a18382f251e',
-            to: userAddress,
-            value: '5.0',
-            currency: currentStablecoin,
-            timestamp: Date.now() - 172800000, // 2 days ago
-            status: 'confirmed',
-            explorerUrl: getExplorerUrl('0x21fa4c61e5736ab13e3ab7c5d7fa54805325aa5de07065e8cba6a2f249b73325')
-          }
-        ];
-        
-        // Add any real pending transactions from localStorage
-        const pendingTxs = localStorage.getItem('pendingTransactions');
-        if (pendingTxs) {
-          try {
-            const parsedPendingTxs = JSON.parse(pendingTxs);
-            if (Array.isArray(parsedPendingTxs)) {
-              // Filter to only include transactions for the current chain
-              const currentChainPendingTxs = parsedPendingTxs.filter(tx => 
-                tx.chainId === chainId && tx.from.toLowerCase() === userAddress.toLowerCase()
-              );
+      
+      // Initialize with empty array
+      let userTransactions: Array<{
+        hash: string;
+        from: string;
+        to: string;
+        value: string;
+        currency: string;
+        timestamp: number;
+        status: string;
+        explorerUrl: string;
+      }> = [];
+      
+      // Get transactions from localStorage
+      const storedTxsJSON = localStorage.getItem('pendingTransactions');
+      if (storedTxsJSON) {
+        try {
+          const storedTxs = JSON.parse(storedTxsJSON);
+          console.log('All stored transactions:', storedTxs);
+          
+          if (Array.isArray(storedTxs) && storedTxs.length > 0) {
+            // Filter transactions for current user and network
+            const userNetworkTxs = storedTxs.filter(tx => {
+              // Match transactions on this chain
+              const isOnCurrentChain = tx.chainId === chainId;
               
-              // Add each pending transaction to the list
-              currentChainPendingTxs.forEach(pendingTx => {
-                recentTransactions.unshift({
-                  hash: pendingTx.hash,
-                  from: pendingTx.from,
-                  to: pendingTx.to,
-                  value: pendingTx.value,
-                  currency: currentStablecoin,
-                  timestamp: pendingTx.timestamp || Date.now(),
-                  status: 'pending',
-                  explorerUrl: getExplorerUrl(pendingTx.hash)
-                });
-              });
-            }
-          } catch (e) {
-            console.error('Error parsing pending transactions:', e);
+              // Match transactions where user is sender or receiver
+              const userIsSender = tx.from && tx.from.toLowerCase() === userAddress.toLowerCase();
+              const userIsReceiver = tx.to && tx.to.toLowerCase() === userAddress.toLowerCase();
+              
+              return isOnCurrentChain && (userIsSender || userIsReceiver);
+            });
+            
+            console.log('User network transactions:', userNetworkTxs.length);
+            
+            // Map to our transaction format
+            userTransactions = userNetworkTxs.map(tx => ({
+              hash: tx.hash,
+              from: tx.from,
+              to: tx.to,
+              value: tx.value,
+              currency: tx.currency || currentStablecoin,
+              timestamp: tx.timestamp,
+              status: tx.status,
+              explorerUrl: tx.explorerUrl || getExplorerUrl(tx.hash)
+            }));
           }
+        } catch (e) {
+          console.error('Error parsing stored transactions:', e);
         }
-        
-        setTransactions(recentTransactions);
-      } catch (subError) {
-        console.error('Error fetching transaction details:', subError);
-        // Fall back to basic transaction list if there's an error
+      }
+      
+      // If we have user transactions, use them
+      if (userTransactions.length > 0) {
+        // Sort transactions with most recent first
+        userTransactions.sort((a, b) => b.timestamp - a.timestamp);
+        console.log('Setting user transactions:', userTransactions);
+        setTransactions(userTransactions);
+      } else {
+        // Use fallback sample transactions
+        console.log('No transactions found, using fallback data');
         setTransactions([
           {
             hash: '0x5d53558791c9346d644d077354420f9a93600acf54faff4c3693c8b171196cbd',
@@ -366,7 +361,7 @@ export default function WalletPage() {
             to: '0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db',
             value: '10.0',
             currency: currentStablecoin,
-            timestamp: Date.now() - 86400000,
+            timestamp: Date.now() - 86400000, // 1 day ago
             status: 'confirmed',
             explorerUrl: getExplorerUrl('0x5d53558791c9346d644d077354420f9a93600acf54faff4c3693c8b171196cbd')
           }
@@ -518,6 +513,28 @@ export default function WalletPage() {
       };
     }
   }, []);
+  
+  // Listen for changes to the pendingTransactions in localStorage
+  useEffect(() => {
+    if (!mounted || !isConnected || !address) return;
+    
+    // Setup storage event listener to refresh transactions when localStorage changes
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'pendingTransactions' && isConnected && address) {
+        console.log('pendingTransactions changed in localStorage, refreshing...');
+        fetchTransactionHistory(address);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Directly check for transactions in case they were added in another tab
+    fetchTransactionHistory(address);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [mounted, isConnected, address, chainId]);
 
   // Fetch balance when connected, but only on client-side
   useEffect(() => {
