@@ -5,6 +5,7 @@ export interface WalletState {
   address: string | null;
   chainId: number | null;
   signature: string | null;
+  walletType?: 'metamask' | 'coinbase' | 'coinbase-smart' | string;
 }
 
 // Default empty state
@@ -12,7 +13,8 @@ const initialState: WalletState = {
   isConnected: false,
   address: null,
   chainId: null,
-  signature: null
+  signature: null,
+  walletType: undefined
 };
 
 // Save wallet state to localStorage

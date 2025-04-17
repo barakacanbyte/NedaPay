@@ -13,6 +13,7 @@ export default function SendPage() {
   const [selectedCoin, setSelectedCoin] = useState<string>('TSHC');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [transactionHash, setTransactionHash] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showCurrencySelector, setShowCurrencySelector] = useState<boolean>(false);
   
@@ -120,9 +121,42 @@ export default function SendPage() {
       const tx = await tokenContract.transfer(recipient, parsedAmount);
       console.log('Transaction submitted:', tx.hash);
       
+      // Save transaction to localStorage for tracking
+      const chainId = await provider.getNetwork().then(network => network.chainId);
+      const newTransaction = {
+        hash: tx.hash,
+        from: userAddress,
+        to: recipient,
+        value: amount,
+        currency: selectedCoin,
+        timestamp: Date.now(),
+        status: 'pending',
+        chainId: Number(chainId)
+      };
+      
+      // Get existing pending transactions or initialize empty array
+      const existingTxsJSON = localStorage.getItem('pendingTransactions');
+      const existingTxs = existingTxsJSON ? JSON.parse(existingTxsJSON) : [];
+      
+      // Add new transaction and save back to localStorage
+      existingTxs.push(newTransaction);
+      localStorage.setItem('pendingTransactions', JSON.stringify(existingTxs));
+      
+      // Save transaction hash for success screen
+      setTransactionHash(tx.hash);
+      
       // Wait for transaction to be mined
       const receipt = await tx.wait();
       console.log('Transaction confirmed in block:', receipt.blockNumber);
+      
+      // Update the transaction status to confirmed in localStorage
+      const updatedTxs = existingTxs.map(t => {
+        if (t.hash === tx.hash) {
+          return { ...t, status: 'confirmed' };
+        }
+        return t;
+      });
+      localStorage.setItem('pendingTransactions', JSON.stringify(updatedTxs));
       
       setIsSuccess(true);
       setIsLoading(false);
@@ -145,6 +179,7 @@ export default function SendPage() {
     setAmount('');
     setRecipient('');
     setIsSuccess(false);
+    setTransactionHash('');
     setError(null);
   };
 
@@ -213,15 +248,54 @@ export default function SendPage() {
                 </svg>
               </div>
               <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Transaction Successful!</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Your {selectedCoin} has been sent successfully.
               </p>
-              <button
-                onClick={resetForm}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
-              >
-                Send Another
-              </button>
+              
+              {transactionHash && (
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Transaction Hash:</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="font-mono text-sm text-blue-600 dark:text-blue-400 truncate max-w-xs">
+                      {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                    </p>
+                    <a 
+                      href={`${walletState.chainId === 84532 ? 'https://sepolia.basescan.org/tx/' : 
+                              walletState.chainId === 8453 ? 'https://basescan.org/tx/' : 
+                              walletState.chainId === 11155111 ? 'https://sepolia.etherscan.io/tx/' : 
+                              walletState.chainId === 1 ? 'https://etherscan.io/tx/' : 
+                              walletState.chainId === 137 ? 'https://polygonscan.com/tx/' : 
+                              walletState.chainId === 80001 ? 'https://mumbai.polygonscan.com/tx/' : 
+                              walletState.chainId === 42161 ? 'https://arbiscan.io/tx/' : 
+                              '#'}${transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                    >
+                      <span className="text-xs">View on Explorer</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={resetForm}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+                >
+                  Send Another
+                </button>
+                
+                <Link 
+                  href="/wallet" 
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-full transition-colors"
+                >
+                  View Wallet
+                </Link>
+              </div>
             </div>
           ) : (
             <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
