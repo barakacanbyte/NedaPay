@@ -470,7 +470,7 @@ export default function ImprovedWalletConnector() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-orange-200 flex items-center justify-center">
                           <img 
-                            src="/images/metamask-logo.svg" 
+                            src="/metamask-logo.svg" 
                             alt="MetaMask" 
                             width={30} 
                             height={30} 
@@ -504,7 +504,7 @@ export default function ImprovedWalletConnector() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-blue-200 flex items-center justify-center">
                           <img 
-                            src="/images/coinbase-logo.svg" 
+                            src="/coinbase-logo.svg" 
                             alt="Coinbase Wallet" 
                             width={30} 
                             height={30} 
@@ -546,7 +546,7 @@ export default function ImprovedWalletConnector() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 mr-3 flex-shrink-0 bg-white p-1.5 rounded-lg border border-indigo-200 flex items-center justify-center relative">
                           <img 
-                            src="/images/coinbase-logo.svg" 
+                            src="/coinbase-logo.svg" 
                             alt="Coinbase Smart Wallet" 
                             width={24} 
                             height={24} 
