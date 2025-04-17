@@ -125,22 +125,131 @@ export const stablecoins = [
 
 // Mock balances for demonstration purposes
 export const mockBalances = {
-  'TSHC': '850,000',
-  'cNGN': '500,000',
-  'ZARP': '75,000',
-  'MXNe': '120,000',
-  'EURC': '5,000',
-  'CADC': '7,500'
+  'TSHC': '25,000',
+  'cNGN': '8,500',
+  'IDRX': '12,000'
 };
 
 // Mock transaction data
 export const mockTransactions = [
-  { id: '0x123...abc', date: '2025-04-11 10:23', amount: '5,000', currency: 'TSHC', status: 'Completed', customer: 'John Doe' },
-  { id: '0x456...def', date: '2025-04-10 15:45', amount: '2,500', currency: 'KESC', status: 'Completed', customer: 'Jane Smith' },
-  { id: '0x789...ghi', date: '2025-04-10 09:12', amount: '10,000', currency: 'TSHC', status: 'Completed', customer: 'Acme Corp' },
-  { id: '0xabc...123', date: '2025-04-09 14:30', amount: '1,200', currency: 'UGSC', status: 'Completed', customer: 'Bob Johnson' },
-  { id: '0xdef...456', date: '2025-04-09 11:05', amount: '7,500', currency: 'TSHC', status: 'Completed', customer: 'Tech Solutions' },
-  { id: '0xghi...789', date: '2025-04-08 16:18', amount: '3,000', currency: 'cNGN', status: 'Completed', customer: 'Global Imports' },
-  { id: '0xjkl...012', date: '2025-04-08 09:45', amount: '15,000', currency: 'ZARP', status: 'Completed', customer: 'SA Ventures' },
-  { id: '0xmno...345', date: '2025-04-07 13:22', amount: '8,500', currency: 'MXNe', status: 'Completed', customer: 'Mex Trading Co.' }
+  { 
+    id: '0x123abc456def789ghi0123456789abcdef0123', 
+    shortId: '0x123...abc',
+    date: '2025-04-11 10:23', 
+    amount: '5,000', 
+    currency: 'TSHC', 
+    status: 'Completed', 
+    customer: 'John Doe',
+    sender: '0x7890abcdef123456789abcdef123456789abcde',
+    senderShort: '0x789...cde',
+    blockExplorerUrl: 'https://basescan.org/tx/0x123abc456def789ghi0123456789abcdef0123'
+  },
+  { 
+    id: '0x456def789ghi0123456789abcdef0123456789', 
+    shortId: '0x456...def',
+    date: '2025-04-10 15:45', 
+    amount: '2,500', 
+    currency: 'cNGN', 
+    status: 'Completed', 
+    customer: 'Jane Smith',
+    sender: '0xabcdef123456789abcdef123456789abcdef01',
+    senderShort: '0xabc...f01',
+    blockExplorerUrl: 'https://basescan.org/tx/0x456def789ghi0123456789abcdef0123456789'
+  },
+  { 
+    id: '0x789ghi0123456789abcdef0123456789abcdef', 
+    shortId: '0x789...ghi',
+    date: '2025-04-10 09:12', 
+    amount: '10,000', 
+    currency: 'TSHC', 
+    status: 'Completed', 
+    customer: 'Acme Corp',
+    sender: '0xdef123456789abcdef123456789abcdef01234',
+    senderShort: '0xdef...234',
+    blockExplorerUrl: 'https://basescan.org/tx/0x789ghi0123456789abcdef0123456789abcdef'
+  },
+  { 
+    id: '0xabc0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xabc...123',
+    date: '2025-04-09 14:30', 
+    amount: '1,200', 
+    currency: 'IDRX', 
+    status: 'Completed', 
+    customer: 'Bob Johnson',
+    sender: '0x123456789abcdef123456789abcdef12345678',
+    senderShort: '0x123...678',
+    blockExplorerUrl: 'https://basescan.org/tx/0xabc0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xdef0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xdef...456',
+    date: '2025-04-09 11:05', 
+    amount: '7,500', 
+    currency: 'TSHC', 
+    status: 'Completed', 
+    customer: 'Tech Solutions Ltd',
+    sender: '0x456789abcdef123456789abcdef123456789ab',
+    senderShort: '0x456...9ab',
+    blockExplorerUrl: 'https://basescan.org/tx/0xdef0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xghi0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xghi...789',
+    date: '2025-04-08 16:20', 
+    amount: '3,800', 
+    currency: 'cNGN', 
+    status: 'Completed', 
+    customer: 'Sarah Williams',
+    sender: '0x789abcdef123456789abcdef123456789abcde',
+    senderShort: '0x789...cde',
+    blockExplorerUrl: 'https://basescan.org/tx/0xghi0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xjkl0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xjkl...012',
+    date: '2025-04-08 09:45', 
+    amount: '4,200', 
+    currency: 'TSHC', 
+    status: 'Completed', 
+    customer: 'Global Traders',
+    sender: '0xabcdef123456789abcdef123456789abcdef01',
+    senderShort: '0xabc...f01',
+    blockExplorerUrl: 'https://basescan.org/tx/0xjkl0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xmno0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xmno...345',
+    date: '2025-04-07 14:15', 
+    amount: '6,300', 
+    currency: 'IDRX', 
+    status: 'Completed', 
+    customer: 'Local Market',
+    sender: '0xdef123456789abcdef123456789abcdef01234',
+    senderShort: '0xdef...234',
+    blockExplorerUrl: 'https://basescan.org/tx/0xmno0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xpqr0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xpqr...678',
+    date: '2025-04-07 10:30', 
+    amount: '9,100', 
+    currency: 'TSHC', 
+    status: 'Completed', 
+    customer: 'David Miller',
+    sender: '0x123456789abcdef123456789abcdef12345678',
+    senderShort: '0x123...678',
+    blockExplorerUrl: 'https://basescan.org/tx/0xpqr0123456789abcdef0123456789abcdef0123'
+  },
+  { 
+    id: '0xstu0123456789abcdef0123456789abcdef0123', 
+    shortId: '0xstu...901',
+    date: '2025-04-06 17:40', 
+    amount: '1,800', 
+    currency: 'cNGN', 
+    status: 'Completed', 
+    customer: 'Emma Davis',
+    sender: '0x456789abcdef123456789abcdef123456789ab',
+    senderShort: '0x456...9ab',
+    blockExplorerUrl: 'https://basescan.org/tx/0xstu0123456789abcdef0123456789abcdef0123'
+  }
 ];
