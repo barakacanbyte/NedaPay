@@ -5,9 +5,22 @@
 
 echo "🚀 Starting force build process for NEDA Pay Merchant Portal..."
 
-# Install necessary polyfills if they don't exist
-echo "📦 Installing required polyfills..."
-npm install --save crypto-browserify stream-browserify stream-http https-browserify os-browserify path-browserify
+# Clean install of dependencies to ensure everything is fresh
+echo "📦 Installing dependencies..."
+rm -rf node_modules package-lock.json .next out
+npm install --legacy-peer-deps
+
+# Verify node_modules exists
+if [ ! -d "node_modules" ] || [ ! -d "node_modules/next" ]; then
+  echo "❌ Dependencies installation failed. Retrying with npm..."
+  npm install --legacy-peer-deps --no-fund --no-audit
+  
+  # Check again
+  if [ ! -d "node_modules" ] || [ ! -d "node_modules/next" ]; then
+    echo "❌ Failed to install dependencies. Exiting."
+    exit 1
+  fi
+fi
 
 # Backup original files
 echo "💾 Backing up original files..."
@@ -25,9 +38,14 @@ else
   cp next.config.deploy.js next.config.js
 fi
 
-# Copy the simplified providers implementation
-echo "🔄 Using simplified providers implementation..."
-cp app/providers.deploy.tsx app/providers.tsx
+# Use the correct providers implementation based on build type
+if [ "$NETLIFY" = "true" ]; then
+  echo "🔄 Using simplified providers implementation for Netlify static build..."
+  cp app/providers.deploy.tsx app/providers.tsx
+else
+  echo "🔄 Using actual application providers implementation..."
+  cp app/providers.tsx.bak app/providers.tsx
+fi
 
 # Set environment variables to ignore TypeScript errors
 export NEXT_TYPESCRIPT_CHECK=false
@@ -37,10 +55,15 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 # Run the build
 echo "🏗️ Building the application..."
 
+# Set environment variables to ignore TypeScript errors
+export NEXT_TYPESCRIPT_CHECK=false
+export NEXT_ESLINT_CHECK=false
+export NODE_OPTIONS="--max-old-space-size=4096"
+
 # Check if we're running on Netlify
 if [ "$NETLIFY" = "true" ]; then
   echo "💾 Building for static export..."
-  npm run build
+  ./node_modules/.bin/next build
   
   # Create a _redirects file for Netlify
   echo "💾 Creating Netlify redirects file..."
@@ -53,7 +76,7 @@ if [ "$NETLIFY" = "true" ]; then
   fi
 else
   echo "💾 Building for standard deployment..."
-  npm run build
+  ./node_modules/.bin/next build
 fi
 
 # Restore original files
