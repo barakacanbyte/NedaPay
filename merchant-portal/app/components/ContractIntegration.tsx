@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import * as ethers from 'ethers';
+import { ethers } from 'ethers';
 
 // ABI for ERC20 token (simplified version)
 const erc20Abi = [
@@ -63,10 +63,10 @@ export default function ContractIntegration({
         // Connect to provider (Base network)
         let provider;
         if (window.ethereum) {
-          provider = new ethers.BrowserProvider(window.ethereum);
+          provider = new ethers.providers.Web3Provider(window.ethereum);
         } else {
           // Fallback to RPC
-          provider = new ethers.JsonRpcProvider(
+          provider = new ethers.providers.JsonRpcProvider(
             chainId === 8453 
               ? 'https://mainnet.base.org' 
               : 'https://goerli.base.org'
@@ -86,7 +86,7 @@ export default function ContractIntegration({
           name,
           symbol,
           decimals,
-          totalSupply: ethers.formatUnits(totalSupply, decimals),
+          totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
         });
         
         // Get reserve info if available
@@ -99,7 +99,7 @@ export default function ContractIntegration({
           
           setReserveInfo({
             ratio: (Number(ratio) / 100).toFixed(2) + '%',
-            totalReserves: ethers.formatUnits(totalReserves, decimals),
+            totalReserves: ethers.utils.formatUnits(totalReserves, decimals),
           });
         }
       } catch (err) {
