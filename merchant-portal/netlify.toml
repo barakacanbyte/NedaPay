@@ -1,6 +1,6 @@
 [build]
-  command = "node ensure-polyfills.js && npm install && npm run build && npm run export"
-  publish = "out"
+  command = "bash ./netlify-build-fix.sh"
+  publish = ".next"
 
 [build.environment]
   NETLIFY = "true"
@@ -8,6 +8,7 @@
   NEXT_TYPESCRIPT_CHECK = "false"
   NEXT_ESLINT_CHECK = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  NEXT_TELEMETRY_DISABLED = "1"
 
 # Handle client-side routing
 [[redirects]]
