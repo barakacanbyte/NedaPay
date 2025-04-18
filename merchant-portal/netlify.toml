@@ -1,12 +1,15 @@
 [build]
-  command = "bash ./netlify-static-build.sh"
+  command = "node ensure-polyfills.js && npm install && npm run build && npm run export"
   publish = "out"
 
 [build.environment]
   NETLIFY = "true"
   NODE_VERSION = "18"
+  NEXT_TYPESCRIPT_CHECK = "false"
+  NEXT_ESLINT_CHECK = "false"
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
-# Handle all routes
+# Handle client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"

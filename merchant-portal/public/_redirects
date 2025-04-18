@@ -1,1 +1,9 @@
-/* /index.html 200
+# Specific page redirects
+/             /index.html                  200
+/dashboard    /dashboard/index.html        200
+/analytics    /analytics/index.html        200
+/payment-link /payment-link/index.html     200
+/withdraw-funds /withdraw-funds/index.html 200
+
+# SPA fallback
+/*           /index.html                   200
