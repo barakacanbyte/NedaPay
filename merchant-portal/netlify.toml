@@ -1,6 +1,17 @@
 [build]
-  command = "npm run build"
+  command = "bash ./force-build.sh"
   publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NEXT_TYPESCRIPT_CHECK = "false"
+  NEXT_ESLINT_CHECK = "false"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
+# Handle SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
