@@ -1,40 +1,47 @@
 [build]
-  command = "bash ./force-build.sh"
+  command = "bash ./netlify-build.sh"
   publish = "out"
-  base = "/"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NEXT_TYPESCRIPT_CHECK = "false"
   NEXT_ESLINT_CHECK = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
-# Handle Next.js routing
+# Default redirect for SPA routing
 [[redirects]]
   from = "/*"
+  to = "/404.html"
+  status = 404
+
+# Specific page redirects
+[[redirects]]
+  from = "/"
   to = "/index.html"
   status = 200
-  force = true
 
-# Add specific redirects for Next.js pages
 [[redirects]]
   from = "/dashboard"
-  to = "/dashboard.html"
+  to = "/dashboard/index.html"
   status = 200
 
 [[redirects]]
   from = "/analytics"
-  to = "/analytics.html"
+  to = "/analytics/index.html"
   status = 200
 
 [[redirects]]
   from = "/payment-link"
-  to = "/payment-link.html"
+  to = "/payment-link/index.html"
   status = 200
 
 [[redirects]]
   from = "/withdraw-funds"
-  to = "/withdraw-funds.html"
+  to = "/withdraw-funds/index.html"
+  status = 200
+
+# Fallback for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
