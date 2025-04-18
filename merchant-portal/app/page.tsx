@@ -2,8 +2,9 @@
 export const dynamic = "force-dynamic";
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from './components/Header';
@@ -16,21 +17,30 @@ export default function HomePage() {
   
   // Get wallet connection status from wagmi
   const { address, isConnected } = useAccount();
+  const router = useRouter();
+  const prevConnected = useRef(isConnected);
   
   useEffect(() => {
     setMounted(true);
-    
     // Check if redirected from a protected route
     const walletRequired = searchParams.get('walletRequired');
     if (walletRequired === 'true') {
       setShowWalletPrompt(true);
     }
-    
-    // Auto-redirect to dashboard if wallet is connected (browser only)
-    if (typeof window !== 'undefined' && isConnected && address) {
-      window.location.href = '/dashboard';
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Only redirect if the wallet just became connected
+    if (
+      mounted &&
+      isConnected &&
+      address &&
+      !prevConnected.current
+    ) {
+      router.push('/dashboard');
     }
-  }, [searchParams, isConnected, address]);
+    prevConnected.current = isConnected;
+  }, [mounted, isConnected, address, router]);
 
   if (!mounted) return null;
   
