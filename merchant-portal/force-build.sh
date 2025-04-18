@@ -15,7 +15,15 @@ cp app/providers.tsx app/providers.tsx.bak
 
 # Copy the deployment config to next.config.js
 echo "⚙️ Setting up deployment configuration..."
-cp next.config.deploy.js next.config.js
+
+# Check if we're running on Netlify
+if [ "$NETLIFY" = "true" ]; then
+  echo "📦 Using Netlify-specific build configuration..."
+  cp netlify-build.js next.config.js
+else
+  echo "📦 Using standard deployment configuration..."
+  cp next.config.deploy.js next.config.js
+fi
 
 # Copy the simplified providers implementation
 echo "🔄 Using simplified providers implementation..."
@@ -28,7 +36,17 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 
 # Run the build
 echo "🏗️ Building the application..."
-npm run build
+
+# Check if we're running on Netlify
+if [ "$NETLIFY" = "true" ]; then
+  echo "💾 Building for static export..."
+  npm run build
+  echo "💾 Exporting static site..."
+  npm run export
+else
+  echo "💾 Building for standard deployment..."
+  npm run build
+fi
 
 # Restore original files
 echo "🔄 Restoring original files..."

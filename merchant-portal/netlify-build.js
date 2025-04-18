@@ -2,14 +2,25 @@
 const nextConfig = {
   // Set output directory for Netlify
   distDir: '.next',
+  
+  // Set output mode to export for static site generation
+  output: 'export',
+  
+  // Disable image optimization that causes issues on Netlify
+  images: {
+    unoptimized: true,
+  },
+  
   // Completely ignore TypeScript errors during build
   typescript: {
     ignoreBuildErrors: true,
   },
+  
   // Ignore ESLint errors during build
   eslint: {
     ignoreDuringBuilds: true,
   },
+  
   // Configure webpack with necessary polyfills
   webpack: (config) => {
     config.resolve.fallback = {
@@ -26,6 +37,7 @@ const nextConfig = {
     };
     return config;
   },
+  
   // Transpile problematic packages
   transpilePackages: [
     'wagmi', 

@@ -1,6 +1,7 @@
 [build]
   command = "bash ./force-build.sh"
-  publish = ".next"
+  publish = "out"
+  base = "/"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
