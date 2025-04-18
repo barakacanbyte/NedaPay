@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = "force-dynamic";
+
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
@@ -23,7 +25,12 @@ export default function HomePage() {
     if (walletRequired === 'true') {
       setShowWalletPrompt(true);
     }
-  }, [searchParams]);
+    
+    // Auto-redirect to dashboard if wallet is connected (browser only)
+    if (typeof window !== 'undefined' && isConnected && address) {
+      window.location.href = '/dashboard';
+    }
+  }, [searchParams, isConnected, address]);
 
   if (!mounted) return null;
   
