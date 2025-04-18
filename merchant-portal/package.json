@@ -5,11 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "export": "next export",
     "start": "next start",
     "lint": "next lint",
-    "force-build": "bash ./force-build.sh",
-    "netlify-build": "NEXT_TELEMETRY_DISABLED=1 NEXT_TYPESCRIPT_CHECK=false NEXT_ESLINT_CHECK=false next build"
+    "force-build": "bash ./force-build.sh"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.7",

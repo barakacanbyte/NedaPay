@@ -1,6 +1,6 @@
 [build]
-  command = "bash ./netlify-build-fix.sh"
-  publish = ".next"
+  command = "npm install && npm run build"
+  publish = "out"
 
 [build.environment]
   NETLIFY = "true"
