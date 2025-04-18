@@ -11,8 +11,30 @@
   NEXT_ESLINT_CHECK = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
 
-# Handle SPA routing
+# Handle Next.js routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
+  status = 200
+  force = true
+
+# Add specific redirects for Next.js pages
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/analytics"
+  to = "/analytics.html"
+  status = 200
+
+[[redirects]]
+  from = "/payment-link"
+  to = "/payment-link.html"
+  status = 200
+
+[[redirects]]
+  from = "/withdraw-funds"
+  to = "/withdraw-funds.html"
   status = 200

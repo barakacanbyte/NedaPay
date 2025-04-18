@@ -6,6 +6,9 @@ const nextConfig = {
   // Set output mode to export for static site generation
   output: 'export',
   
+  // Ensure all pages are statically generated
+  trailingSlash: true,
+  
   // Disable image optimization that causes issues on Netlify
   images: {
     unoptimized: true,

@@ -41,8 +41,16 @@ echo "🏗️ Building the application..."
 if [ "$NETLIFY" = "true" ]; then
   echo "💾 Building for static export..."
   npm run build
-  echo "💾 Exporting static site..."
-  npm run export
+  
+  # Create a _redirects file for Netlify
+  echo "💾 Creating Netlify redirects file..."
+  echo "/* /index.html 200" > out/_redirects
+  
+  # Copy 404 page to root
+  echo "💾 Setting up 404 page..."
+  if [ -f "out/404.html" ]; then
+    cp out/404.html out/not-found.html
+  fi
 else
   echo "💾 Building for standard deployment..."
   npm run build
