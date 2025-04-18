@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static exports for Netlify
-  output: 'export',
-  
-  // Disable image optimization that causes issues on Netlify
-  images: {
-    unoptimized: true,
-  },
   
   // Completely ignore TypeScript errors during build
   typescript: {
