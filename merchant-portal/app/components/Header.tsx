@@ -36,7 +36,7 @@ export default function Header() {
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center">
-              <span className="text-xl font-bold text-slate-800 dark:text-white">
+              <span className="text-xl font-bold text-slate-800 dark:text-white border-2 border-blue-400 dark:border-blue-600 rounded-lg px-3 py-1 shadow-md bg-white/80 dark:bg-slate-900/60">
                 NEDA Pay Merchant
               </span>
             </Link>
@@ -73,7 +73,7 @@ export default function Header() {
             </nav>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 border-2 border-blue-400 dark:border-blue-600 rounded-lg px-3 py-1 shadow-md bg-white/80 dark:bg-slate-900/60">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white"
