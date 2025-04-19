@@ -23,6 +23,7 @@ const nextConfig = {
       https: require.resolve('https-browserify'),
       os: require.resolve('os-browserify'),
       path: require.resolve('path-browserify'),
+      buffer: require.resolve('buffer'),
     };
     return config;
   },
