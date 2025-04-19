@@ -11,6 +11,13 @@ export default function PaymentLinkPage() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
+  const [recentLinks, setRecentLinks] = useState<Array<{
+    date: string;
+    amount: string;
+    currency: string;
+    status: string;
+    link: string;
+  }>>([]);
   const { isConnected, address } = useAccount();
 
   // Handle initial page load and cookie setting
@@ -70,6 +77,17 @@ export default function PaymentLinkPage() {
     
     // Set the generated link in state
     setGeneratedLink(link);
+    // Add to recent links
+    setRecentLinks(prev => [
+      {
+        date: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+        amount,
+        currency,
+        status: 'Active',
+        link,
+      },
+      ...prev
+    ]);
     
     // Ensure we stay on this page by setting the cookie again
     document.cookie = 'wallet_connected=true; path=/; max-age=86400';
@@ -209,7 +227,7 @@ export default function PaymentLinkPage() {
           )}
         </div>
         
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg mt-8">
           <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">Recent Payment Links</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
