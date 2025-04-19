@@ -10,6 +10,4 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Use the Next.js plugin with default configuration
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# Static export mode doesn't need the Next.js plugin
