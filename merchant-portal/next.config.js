@@ -9,8 +9,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Use Terser for minification instead of SWC
-  swcMinify: false,
+
   // Configure webpack with necessary polyfills
   webpack: (config) => {
     config.resolve.fallback = {
