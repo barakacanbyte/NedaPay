@@ -8,9 +8,24 @@ import WalletSelector from './WalletSelector';
 export default function Header() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const [walletConnected, setWalletConnected] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Check both cookie and localStorage on mount
+    const checkWallet = () => {
+      const cookieConnected = document.cookie.includes('wallet_connected=true');
+      const storageConnected = localStorage.getItem('walletConnected') === 'true';
+      setWalletConnected(cookieConnected || storageConnected);
+    };
+    checkWallet();
+    window.addEventListener('storage', checkWallet);
+    // Optionally poll cookie every second (cookies don't trigger events)
+    const interval = setInterval(checkWallet, 1000);
+    return () => {
+      window.removeEventListener('storage', checkWallet);
+      clearInterval(interval);
+    };
   }, []);
 
   if (!mounted) return null;
@@ -42,6 +57,19 @@ export default function Header() {
               <Link href="/settings" className="text-slate-800 hover:text-primary-dark dark:text-white dark:hover:text-primary-light font-medium">
                 Settings
               </Link>
+              {walletConnected && (
+                <button
+                  onClick={() => {
+                    document.cookie = 'wallet_connected=true; path=/; max-age=86400';
+                    setTimeout(() => {
+                      window.location.href = '/payment-link';
+                    }, 100);
+                  }}
+                  className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
+                >
+                  Generate Payment Link
+                </button>
+              )}
             </nav>
           </div>
           
@@ -53,7 +81,6 @@ export default function Header() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            
             <WalletSelector />
           </div>
         </div>
@@ -61,3 +88,4 @@ export default function Header() {
     </header>
   );
 }
+

@@ -38,36 +38,6 @@ export default function PaymentLinkContent() {
     };
   }, [isConnected, isSubmitting]);
   
-  // Override the Next.js history to prevent unwanted navigations from this page
-  useEffect(() => {
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-    
-    window.history.pushState = function() {
-      console.log('Intercepted pushState:', arguments);
-      // Check if it's a redirect to dashboard
-      if (arguments[2] && arguments[2].toString().includes('/dashboard')) {
-        console.log('Preventing navigation to dashboard');
-        return;
-      }
-      return originalPushState.apply(this, arguments as any);
-    };
-    
-    window.history.replaceState = function() {
-      console.log('Intercepted replaceState:', arguments);
-      // Check if it's a redirect to dashboard
-      if (arguments[2] && arguments[2].toString().includes('/dashboard')) {
-        console.log('Preventing navigation to dashboard');
-        return;
-      }
-      return originalReplaceState.apply(this, arguments as any);
-    };
-    
-    return () => {
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-    };
-  }, []);
 
   const handleCreateLink = (e: React.FormEvent) => {
     // Prevent the default form submission behavior

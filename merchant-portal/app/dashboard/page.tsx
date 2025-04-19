@@ -584,7 +584,12 @@ export default function MerchantDashboard() {
             
             <div className="space-y-4">
               <button 
-                onClick={() => router.push('/payment-link')} 
+                onClick={() => {
+  document.cookie = 'wallet_connected=true; path=/; max-age=86400';
+  setTimeout(() => {
+    window.location.href = '/payment-link';
+  }, 100);
+}} 
                 className="p-4 w-full bg-gray-100 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
               >
                 <h3 className="font-bold text-blue-900 dark:text-blue-300">Create Payment Link</h3>

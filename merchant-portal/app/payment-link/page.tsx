@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import { useAccount } from 'wagmi';
-import { useRouter } from 'next/navigation';
 
 export default function PaymentLinkPage() {
   const [amount, setAmount] = useState('');
@@ -13,7 +12,6 @@ export default function PaymentLinkPage() {
   const [copied, setCopied] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
   const { isConnected } = useAccount();
-  const router = useRouter();
 
   // Handle initial page load and cookie setting
   useEffect(() => {
@@ -72,15 +70,7 @@ export default function PaymentLinkPage() {
     // Ensure we stay on this page by setting the cookie again
     document.cookie = 'wallet_connected=true; path=/; max-age=86400';
     
-    // Prevent any default navigation
-    setTimeout(() => {
-      console.log('Ensuring we stay on payment link page');
-      // Make sure we're still on the payment link page
-      if (window.location.pathname !== '/payment-link') {
-        console.log('Detected navigation away from payment link page, redirecting back');
-        router.push('/payment-link');
-      }
-    }, 100);
+
   };
 
   const copyToClipboard = () => {

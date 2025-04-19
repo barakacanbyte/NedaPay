@@ -61,7 +61,9 @@ export default function WalletSelector() {
       // Redirect to dashboard after successful connection
       // Use a short timeout to ensure cookie is set before navigation
       setTimeout(() => {
-        router.push('/dashboard');
+        if (window.location.pathname !== '/payment-link') {
+          router.push('/dashboard');
+        }
       }, 500);
     } else {
       // Clear wallet connection from localStorage

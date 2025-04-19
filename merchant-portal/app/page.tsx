@@ -30,11 +30,13 @@ function HomeContent() {
 
   useEffect(() => {
     // Only redirect if the wallet just became connected
+    // Do NOT redirect if on /payment-link
     if (
       mounted &&
       isConnected &&
       address &&
-      !prevConnected.current
+      !prevConnected.current &&
+      window.location.pathname !== '/payment-link'
     ) {
       router.push('/dashboard');
     }
@@ -79,7 +81,9 @@ function HomeContent() {
                   // Set cookie before navigation
                   document.cookie = 'wallet_connected=true; path=/; max-age=86400';
                   // Navigate to dashboard
-                  window.location.href = '/dashboard';
+                  if (window.location.pathname !== '/payment-link') {
+  window.location.href = '/dashboard';
+}
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition"
               >
