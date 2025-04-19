@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Set to static export mode
+  output: 'export',
   // Completely ignore TypeScript errors during build
   typescript: {
     ignoreBuildErrors: true,
@@ -8,8 +10,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Ensure optimal compatibility with Netlify
-  swcMinify: false, // Disable SWC minification to prevent syntax errors
+  // Use Terser for minification instead of SWC
+  swcMinify: false,
   // Configure webpack with necessary polyfills
   webpack: (config) => {
     config.resolve.fallback = {
@@ -35,8 +37,11 @@ const nextConfig = {
     'next-themes',
     'ethers'
   ],
-  // Temporarily disable strict mode to help with deployment
+  // Use standard Next.js settings
+  poweredByHeader: false,
   reactStrictMode: false,
+  // Optimize for Netlify deployment
+  trailingSlash: false,
   // Ensure proper handling of SVG and other static assets
   images: {
     domains: ['nedapay.com'],

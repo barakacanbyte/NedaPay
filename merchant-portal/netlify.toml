@@ -1,15 +1,22 @@
+# Production settings for Next.js with static export
 [build]
-  command = "npm install && DISABLE_ESLINT_PLUGIN=true NODE_ENV=production npm run build"
-  publish = ".next"
-  
+  command = "NODE_ENV=production npm run build"
+  publish = "out"
+
+# Environment variables
 [build.environment]
   NETLIFY = "true"
   NODE_VERSION = "18"
-  NEXT_TYPESCRIPT_CHECK = "false"
-  NEXT_ESLINT_CHECK = "false"
-  NODE_OPTIONS = "--max-old-space-size=4096"
+  NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_SHARP_PATH = "/tmp/node_modules/sharp"
 
+# Force opt-in to all the required features for Next.js
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    # Disable Next.js in-source telemetry collection
+    skipTelemetry = true
+    # Enable all required features for stable SSR + ESM
+    frameworkVersion = "experimental"
+    # Use standard Next.js builds
+    useStandard = true
