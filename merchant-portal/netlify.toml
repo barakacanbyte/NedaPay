@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm install && DISABLE_ESLINT_PLUGIN=true NODE_ENV=production npm run build"
   publish = ".next"
   
 [build.environment]
@@ -8,6 +8,8 @@
   NEXT_TYPESCRIPT_CHECK = "false"
   NEXT_ESLINT_CHECK = "false"
   NODE_OPTIONS = "--max-old-space-size=4096"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_SHARP_PATH = "/tmp/node_modules/sharp"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

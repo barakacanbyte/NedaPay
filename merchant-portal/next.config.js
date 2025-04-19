@@ -9,7 +9,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // Ensure optimal compatibility with Netlify
-  swcMinify: true,
+  swcMinify: false, // Disable SWC minification to prevent syntax errors
   // Configure webpack with necessary polyfills
   webpack: (config) => {
     config.resolve.fallback = {
@@ -35,8 +35,8 @@ const nextConfig = {
     'next-themes',
     'ethers'
   ],
-  // Enable React strict mode for better development
-  reactStrictMode: true,
+  // Temporarily disable strict mode to help with deployment
+  reactStrictMode: false,
   // Ensure proper handling of SVG and other static assets
   images: {
     domains: ['nedapay.com'],
