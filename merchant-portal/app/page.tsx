@@ -4,16 +4,14 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from './components/Header';
 import { stablecoins } from './data/stablecoins';
 
-// Main component that uses Suspense
+// Client component with search params
 function HomeContent() {
   const [mounted, setMounted] = useState(false);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
-  const searchParams = useSearchParams();
   
   // Get wallet connection status from wagmi
   const { address, isConnected } = useAccount();
@@ -23,11 +21,12 @@ function HomeContent() {
   useEffect(() => {
     setMounted(true);
     // Check if redirected from a protected route
-    const walletRequired = searchParams.get('walletRequired');
+    const urlParams = new URLSearchParams(window.location.search);
+    const walletRequired = urlParams.get('walletRequired');
     if (walletRequired === 'true') {
       setShowWalletPrompt(true);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     // Only redirect if the wallet just became connected
@@ -232,13 +231,9 @@ function HomeContent() {
   );
 }
 
-// Export the page component with Suspense
+// Export the page component without using Suspense for useSearchParams
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white flex items-center justify-center">
-      <div className="animate-pulse text-xl font-medium">Loading...</div>
-    </div>}>
-      <HomeContent />
-    </Suspense>
+    <HomeContent />
   );
 }
