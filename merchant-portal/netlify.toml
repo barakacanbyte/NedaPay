@@ -10,12 +10,10 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Force opt-in to all the required features for Next.js
+# Use the Next.js plugin with correct configuration
 [[plugins]]
   package = "@netlify/plugin-nextjs"
   [plugins.inputs]
-    # Disable Next.js in-source telemetry collection
-    skipTelemetry = true
     # Enable all required features for stable SSR + ESM
     frameworkVersion = "experimental"
     # Use standard Next.js builds
