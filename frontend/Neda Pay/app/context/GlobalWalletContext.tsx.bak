@@ -1,0 +1,195 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as walletService from '../services/wallet';
+
+// Define the shape of our wallet context
+interface GlobalWalletContextType {
+  address: string | null;
+  isConnected: boolean;
+  chainId: number | null;
+  isConnecting: boolean;
+  connect: () => Promise<boolean>;
+  disconnect: () => void;
+  error: string | null;
+}
+
+// Create the context with a default value
+const GlobalWalletContext = createContext<GlobalWalletContextType>({
+  address: null,
+  isConnected: false,
+  chainId: null,
+  isConnecting: false,
+  connect: async () => false,
+  disconnect: () => {},
+  error: null
+});
+
+// Hook to use the wallet context
+export const useGlobalWallet = () => useContext(GlobalWalletContext);
+
+// Provider component to wrap our app
+export function GlobalWalletProvider({ children }: { children: ReactNode }) {
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [chainId, setChainId] = useState<number | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Check for wallet connection on mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Check connection when mounted
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const checkConnection = async () => {
+      try {
+        const connectedAddress = await walletService.checkWalletConnection();
+        
+        if (connectedAddress) {
+          console.log('GlobalWalletContext: Found connected account:', connectedAddress);
+          setAddress(connectedAddress);
+          setIsConnected(true);
+          
+          // Get chain ID
+          const currentChainId = await walletService.getChainId();
+          if (currentChainId) {
+            setChainId(currentChainId);
+          }
+        } else {
+          console.log('GlobalWalletContext: No connected accounts found');
+          setIsConnected(false);
+          setAddress(null);
+        }
+      } catch (error) {
+        console.error('GlobalWalletContext: Error checking connection:', error);
+        setError('Failed to check wallet connection');
+      }
+    };
+    
+    // Run check immediately
+    checkConnection();
+    
+    // Set up event listeners
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts.length === 0) {
+        setAddress(null);
+        setIsConnected(false);
+      } else {
+        setAddress(accounts[0]);
+        setIsConnected(true);
+      }
+    };
+    
+    const handleChainChanged = (chainIdHex: string) => {
+      setChainId(parseInt(chainIdHex, 16));
+    };
+    
+    // Setup wallet listeners and get cleanup function
+    const cleanup = walletService.setupWalletListeners(
+      handleAccountsChanged,
+      handleChainChanged
+    );
+    
+    // Set up an interval to periodically check connection status
+    const intervalId = setInterval(checkConnection, 5000);
+    
+    // Return cleanup function
+    return () => {
+      cleanup();
+      clearInterval(intervalId);
+    };
+  }, [mounted]);
+
+  // Connect wallet function
+  const connect = async (): Promise<boolean> => {
+    if (isConnecting) return false; // Prevent multiple connection attempts
+    
+    setIsConnecting(true);
+    setError(null);
+    
+    try {
+      // First check if we're already connected
+      let connectedAddress = await walletService.checkWalletConnection();
+      
+      // If not connected, try to connect
+      if (!connectedAddress) {
+        console.log('Not connected, attempting to connect...');
+        connectedAddress = await walletService.connectWallet();
+      }
+      
+      if (connectedAddress) {
+        console.log('Successfully connected to wallet:', connectedAddress);
+        setAddress(connectedAddress);
+        setIsConnected(true);
+        
+        // Get chain ID
+        const currentChainId = await walletService.getChainId();
+        if (currentChainId) {
+          setChainId(currentChainId);
+        }
+        
+        // Sign a message for authentication
+        try {
+          const message = `NEDA Pay Authentication\nConnecting wallet: ${connectedAddress}\nTimestamp: ${Date.now()}`;
+          await walletService.signMessage(connectedAddress, message);
+          console.log('GlobalWalletContext: Authentication successful');
+        } catch (signError) {
+          console.warn('GlobalWalletContext: User rejected signing, but connection will proceed');
+        }
+        
+        return true;
+      } else {
+        console.error('Failed to connect wallet - no address returned');
+        setError('Failed to connect wallet');
+        return false;
+      }
+    } catch (error: any) {
+      console.error('GlobalWalletContext: Error connecting wallet:', error);
+      setError(error.message || 'Failed to connect wallet');
+      return false;
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Disconnect wallet function
+  const disconnect = () => {
+    try {
+      console.log('Disconnecting wallet...');
+      walletService.disconnectWallet();
+      setAddress(null);
+      setIsConnected(false);
+      setChainId(null);
+      setError(null);
+      console.log('Wallet disconnected successfully');
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+    }
+  };
+
+  // Don't render children until we've mounted
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
+  return (
+    <GlobalWalletContext.Provider
+      value={{
+        address,
+        isConnected,
+        chainId,
+        isConnecting,
+        connect,
+        disconnect,
+        error
+      }}
+    >
+      {children}
+    </GlobalWalletContext.Provider>
+  );
+}

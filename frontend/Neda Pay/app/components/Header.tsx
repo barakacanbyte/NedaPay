@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import ImprovedWalletConnector from './ImprovedWalletConnector';
 import ThemeToggle from './ThemeToggle';
@@ -46,6 +47,7 @@ const features = [
 ];
 
 export default function Header() {
+  const pathname = typeof window !== 'undefined' ? usePathname() : '/';
   return (
     <header className="sticky top-0 z-10 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-blue-100 dark:border-blue-900">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -66,6 +68,17 @@ export default function Header() {
                 {feature.name}
               </Link>
             ))}
+            {/* For Merchants link only on homepage */}
+            {pathname === '/' && (
+              <a
+                href="https://nedapaymerchant.netlify.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors font-semibold"
+              >
+                For Merchants
+              </a>
+            )}
             <div className="relative group">
               <button className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors flex items-center">
                 More

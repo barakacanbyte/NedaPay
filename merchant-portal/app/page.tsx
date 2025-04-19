@@ -184,7 +184,16 @@ function HomeContent() {
           
           {!isConnected ? (
             <button
-              onClick={() => window.ethereum?.request({ method: 'eth_requestAccounts' })}
+              onClick={() => {
+                // Set cookie before wallet connection
+                document.cookie = 'wallet_connected=true; path=/; max-age=86400';
+                // Try to connect wallet
+                if (window.ethereum) {
+                  window.ethereum.request({ method: 'eth_requestAccounts' });
+                } else {
+                  alert('Please install a compatible wallet like MetaMask or Coinbase Wallet');
+                }
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition"
             >
               Connect Wallet

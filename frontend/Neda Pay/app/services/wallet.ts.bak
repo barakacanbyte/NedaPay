@@ -1,0 +1,175 @@
+// Wallet service to handle all wallet interactions
+// This provides a consistent interface for wallet operations across the app
+
+// Define the Ethereum window interface
+interface EthereumWindow extends Window {
+  ethereum?: {
+    isMetaMask?: boolean;
+    request: (args: { method: string; params?: any[] }) => Promise<any>;
+    on: (event: string, handler: (...args: any[]) => void) => void;
+    removeListener: (event: string, handler: (...args: any[]) => void) => void;
+  };
+}
+
+// Get the Ethereum provider
+const getEthereumProvider = () => {
+  if (typeof window !== 'undefined') {
+    return (window as unknown as EthereumWindow).ethereum;
+  }
+  return undefined;
+};
+
+// Check if MetaMask is installed
+export const isMetaMaskInstalled = (): boolean => {
+  const ethereum = getEthereumProvider();
+  return !!ethereum && !!ethereum.isMetaMask;
+};
+
+// Connect to wallet
+export const connectWallet = async (): Promise<string | null> => {
+  try {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) {
+      console.error('Ethereum provider not found');
+      alert('No Ethereum wallet found. Please install MetaMask!');
+      return null;
+    }
+
+    console.log('Requesting accounts...');
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    
+    if (!accounts || accounts.length === 0) {
+      console.error('No accounts returned from wallet');
+      return null;
+    }
+
+    const address = accounts[0];
+    console.log('Connected to wallet:', address);
+    
+    // Store connection info in localStorage
+    localStorage.setItem('wallet_connected', 'true');
+    localStorage.setItem('wallet_address', address);
+    
+    // Get chain ID
+    const chainIdHex = await ethereum.request({ method: 'eth_chainId' });
+    localStorage.setItem('wallet_chainId', parseInt(chainIdHex, 16).toString());
+    
+    return address;
+  } catch (error: any) {
+    console.error('Error connecting wallet:', error);
+    
+    // Handle user rejection
+    if (error.code === 4001) {
+      // User rejected the request
+      console.log('User rejected the connection request');
+    } else {
+      // Other errors
+      alert('Failed to connect to wallet: ' + (error.message || 'Unknown error'));
+    }
+    
+    return null;
+  }
+};
+
+// Check if wallet is connected
+export const checkWalletConnection = async (): Promise<string | null> => {
+  try {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) {
+      console.error('Ethereum provider not found');
+      return null;
+    }
+
+    // Use eth_accounts which doesn't trigger a popup
+    const accounts = await ethereum.request({ method: 'eth_accounts' });
+    
+    if (accounts && accounts.length > 0) {
+      console.log('Already connected to wallet:', accounts[0]);
+      return accounts[0];
+    }
+    
+    console.log('No connected accounts found');
+    return null;
+  } catch (error) {
+    console.error('Error checking wallet connection:', error);
+    return null;
+  }
+};
+
+// Disconnect wallet
+export const disconnectWallet = (): void => {
+  // Clear localStorage
+  localStorage.removeItem('wallet_connected');
+  localStorage.removeItem('wallet_address');
+  localStorage.removeItem('wallet_chainId');
+  
+  console.log('Wallet disconnected');
+};
+
+// Get current chain ID
+export const getChainId = async (): Promise<number | null> => {
+  try {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) return null;
+    
+    const chainIdHex = await ethereum.request({ method: 'eth_chainId' });
+    return parseInt(chainIdHex, 16);
+  } catch (error) {
+    console.error('Error getting chain ID:', error);
+    return null;
+  }
+};
+
+// Get wallet balance
+export const getBalance = async (address: string): Promise<string> => {
+  try {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) throw new Error('Ethereum provider not found');
+    
+    const balanceHex = await ethereum.request({
+      method: 'eth_getBalance',
+      params: [address, 'latest'],
+    });
+    
+    return balanceHex;
+  } catch (error) {
+    console.error('Error getting balance:', error);
+    return '0x0';
+  }
+};
+
+// Setup event listeners for a component
+export const setupWalletListeners = (
+  onAccountsChanged: (accounts: string[]) => void,
+  onChainChanged: (chainId: string) => void
+): (() => void) => {
+  const ethereum = getEthereumProvider();
+  if (!ethereum) return () => {};
+  
+  ethereum.on('accountsChanged', onAccountsChanged);
+  ethereum.on('chainChanged', onChainChanged);
+  
+  // Return cleanup function
+  return () => {
+    ethereum.removeListener('accountsChanged', onAccountsChanged);
+    ethereum.removeListener('chainChanged', onChainChanged);
+  };
+};
+
+// Sign a message for authentication
+export const signMessage = async (address: string, message: string): Promise<string | null> => {
+  try {
+    const ethereum = getEthereumProvider();
+    if (!ethereum) return null;
+    
+    const signature = await ethereum.request({
+      method: 'personal_sign',
+      params: [message, address]
+    });
+    
+    return signature;
+  } catch (error) {
+    console.error('Error signing message:', error);
+    return null;
+  }
+};

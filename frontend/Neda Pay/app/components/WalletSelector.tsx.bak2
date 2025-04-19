@@ -1,0 +1,293 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useGlobalWallet } from '../context/GlobalWalletContext';
+import { baseSepolia } from '../compatibility/chains-compat';
+import { useRouter } from 'next/navigation';
+
+export default function WalletSelector() {
+  const [showOptions, setShowOptions] = useState(false);
+  const [isCreatingSmartWallet, setIsCreatingSmartWallet] = useState(false);
+  const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  
+  // Use global wallet context
+  const { address, isConnected, chainId, connect, disconnect, isConnecting } = useGlobalWallet();
+  
+  // Check if we're on the correct network
+  const isOnCorrectNetwork = chainId === baseSepolia.id;
+
+  // Close dropdown when clicking outside
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setShowOptions(false);
+    }
+  };
+  
+  // Add event listener for clicking outside
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Check for connected wallet and store in localStorage and cookie
+  useEffect(() => {
+    if (address && isConnected) {
+      // Store wallet connection in localStorage
+      localStorage.setItem('walletConnected', 'true');
+      localStorage.setItem('walletAddress', address);
+      
+      // Set a cookie for the middleware to check
+      document.cookie = 'wallet_connected=true; path=/; max-age=86400'; // 24 hours
+      
+      // Check for existing smart wallet
+      const storedSmartWallet = localStorage.getItem(`smartWallet_${address}`);
+      if (storedSmartWallet) {
+        try {
+          const parsed = JSON.parse(storedSmartWallet);
+          setSmartWalletAddress(parsed.address);
+        } catch (e) {
+          console.error('Error parsing stored smart wallet:', e);
+        }
+      }
+    }
+  }, [address, isConnected]);
+  
+  // Function to create a smart wallet
+  const createSmartWallet = async () => {
+    if (!address || !isConnected) return;
+    
+    setIsCreatingSmartWallet(true);
+    try {
+      // Simulate smart wallet creation with a 2-second delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create a derived address to simulate a smart wallet
+      const simulatedSmartWallet = `0x${address.substring(2, 6)}5${address.substring(7, 42)}`;
+      
+      // Store the smart wallet address
+      setSmartWalletAddress(simulatedSmartWallet);
+      
+      // Store in local storage for future use
+      localStorage.setItem(`smartWallet_${address}`, JSON.stringify({
+        address: simulatedSmartWallet,
+        createdAt: new Date().toISOString()
+      }));
+      
+      // Redirect to dashboard after creating smart wallet
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error creating smart wallet:', error);
+    } finally {
+      setIsCreatingSmartWallet(false);
+      setShowOptions(false);
+    }
+  };
+  
+  // Function to handle MetaMask connection
+  const handleConnectMetaMask = async () => {
+    try {
+      await connect();
+      setShowOptions(false);
+    } catch (error) {
+      console.error('Error connecting to MetaMask', error);
+    }
+  };
+  
+  // Function to handle wallet disconnection
+  const handleDisconnect = () => {
+    disconnect();
+    setSmartWalletAddress(null);
+    setShowOptions(false);
+    
+    // Clear wallet connection from localStorage
+    localStorage.removeItem('walletConnected');
+    localStorage.removeItem('walletAddress');
+    
+    // Clear the cookie
+    document.cookie = 'wallet_connected=; path=/; max-age=0';
+  };
+
+  // Function to navigate to dashboard
+  const goToDashboard = () => {
+    router.push('/dashboard');
+    setShowOptions(false);
+  };
+
+  // Check if MetaMask is installed
+  const isMetaMaskInstalled = typeof window !== 'undefined' && window.ethereum && window.ethereum.isMetaMask;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {isConnected ? (
+        <button
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setShowOptions(!showOptions);
+          }}
+          className="flex items-center space-x-2 bg-slate-100 dark:bg-primary-dark hover:bg-slate-200 dark:hover:bg-primary text-slate-900 dark:text-white px-4 py-2 rounded-lg transition-all duration-200 border border-slate-200 dark:border-primary shadow-sm"
+        >
+          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-white dark:border-slate-700 shadow-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+              <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+              <path d="M18.4378 16.86L16.2378 20.46L20.9378 21.84L22.3378 16.92L18.4378 16.86Z" fill="#E27625"/>
+              <path d="M1.67782 16.92L3.05782 21.84L7.75782 20.46L5.55782 16.86L1.67782 16.92Z" fill="#E27625"/>
+            </svg>
+          </div>
+          <div className="flex flex-col">
+            <div className="text-sm font-medium">
+              {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
+            </div>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          id="wallet-selector-button"
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            setShowOptions(!showOptions);
+          }}
+          className="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition dark:bg-primary-dark dark:hover:bg-primary dark:text-white shadow-sm"
+          disabled={isConnecting}
+        >
+          <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1 inline">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+      )}
+      
+      {showOptions && (
+        <div 
+          className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200 dark:border-gray-700"
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          {isConnected ? (
+            <>
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">Connected Account</h3>
+              </div>
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-white dark:border-slate-700 shadow-sm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+                      <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+                      <path d="M18.4378 16.86L16.2378 20.46L20.9378 21.84L22.3378 16.92L18.4378 16.86Z" fill="#E27625"/>
+                      <path d="M1.67782 16.92L3.05782 21.84L7.75782 20.46L5.55782 16.86L1.67782 16.92Z" fill="#E27625"/>
+                    </svg>
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Connected with MetaMask</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {!isOnCorrectNetwork && (
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400">Wrong Network</div>
+                    <button 
+                      onClick={() => console.log('Switch network')}
+                      className="text-xs bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-2 rounded transition-colors"
+                    >
+                      Switch Network
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="p-2">
+                <button
+                  onClick={goToDashboard}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Dashboard
+                </button>
+                
+                {!smartWalletAddress && (
+                  <button
+                    onClick={createSmartWallet}
+                    disabled={isCreatingSmartWallet}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-between disabled:opacity-50"
+                  >
+                    <span>Create Smart Wallet</span>
+                    {isCreatingSmartWallet && (
+                      <svg className="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                  </button>
+                )}
+                
+                <button
+                  onClick={handleDisconnect}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">Connect Wallet</h3>
+              </div>
+              <div className="p-2">
+                {isMetaMaskInstalled ? (
+                  <button
+                    onClick={handleConnectMetaMask}
+                    disabled={isConnecting}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-3 disabled:opacity-50"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+                        <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+                        <path d="M18.4378 16.86L16.2378 20.46L20.9378 21.84L22.3378 16.92L18.4378 16.86Z" fill="#E27625"/>
+                        <path d="M1.67782 16.92L3.05782 21.84L7.75782 20.46L5.55782 16.86L1.67782 16.92Z" fill="#E27625"/>
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">MetaMask</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Connect to your MetaMask Wallet</span>
+                    </div>
+                  </button>
+                ) : (
+                  <a 
+                    href="https://metamask.io/download/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-3"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+                        <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+                        <path d="M18.4378 16.86L16.2378 20.46L20.9378 21.84L22.3378 16.92L18.4378 16.86Z" fill="#E27625"/>
+                        <path d="M1.67782 16.92L3.05782 21.84L7.75782 20.46L5.55782 16.86L1.67782 16.92Z" fill="#E27625"/>
+                      </svg>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">Install MetaMask</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Connect to your MetaMask Wallet</span>
+                    </div>
+                  </a>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

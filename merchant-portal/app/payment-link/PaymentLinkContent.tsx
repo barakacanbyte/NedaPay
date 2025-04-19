@@ -11,15 +11,63 @@ export default function PaymentLinkContent() {
   const [description, setDescription] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isConnected } = useAccount();
-  const router = useRouter();
+  // Remove router reference to prevent accidental navigations
+  // const router = useRouter();
 
-  // Completely remove any wallet connection checks or redirects
-  // Let the middleware handle all authentication
+  // Add debugging to track component lifecycle
   useEffect(() => {
-    // Just log the current state for debugging
     console.log('Payment Link Page - Mounted, isConnected:', isConnected);
-  }, [isConnected]);
+    
+    // Add event listener to detect navigations
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isSubmitting) {
+        console.log('Preventing navigation during form submission');
+        event.preventDefault();
+        return (event.returnValue = '');
+      }
+    };
+    
+    // Add event listener for navigation attempts
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      console.log('Payment Link Page - Unmounted');
+    };
+  }, [isConnected, isSubmitting]);
+  
+  // Override the Next.js history to prevent unwanted navigations from this page
+  useEffect(() => {
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+    
+    window.history.pushState = function() {
+      console.log('Intercepted pushState:', arguments);
+      // Check if it's a redirect to dashboard
+      if (arguments[2] && arguments[2].toString().includes('/dashboard')) {
+        console.log('Preventing navigation to dashboard');
+        return;
+      }
+      return originalPushState.apply(this, arguments as any);
+    };
+    
+    window.history.replaceState = function() {
+      console.log('Intercepted replaceState:', arguments);
+      // Check if it's a redirect to dashboard
+      if (arguments[2] && arguments[2].toString().includes('/dashboard')) {
+        console.log('Preventing navigation to dashboard');
+        return;
+      }
+      return originalReplaceState.apply(this, arguments as any);
+    };
+    
+    return () => {
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
+  }, []);
 
   const handleCreateLink = (e: React.FormEvent) => {
     // Prevent the default form submission behavior
@@ -29,18 +77,34 @@ export default function PaymentLinkContent() {
     e.stopPropagation();
     
     console.log('Generating payment link...');
+    setIsSubmitting(true);
     
-    // In a real implementation, this would call a backend API to create a payment link
-    // For now, we'll just generate a mock link
-    const linkId = Math.random().toString(36).substring(2, 10);
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
-    
-    // Set the generated link in state
-    setGeneratedLink(link);
-    
-    // Log success message
-    console.log('Payment link generated:', link);
+    try {
+      // In a real implementation, this would call a backend API to create a payment link
+      // For now, we'll just generate a mock link
+      const linkId = Math.random().toString(36).substring(2, 10);
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
+      
+      // Set the generated link in state
+      setGeneratedLink(link);
+      
+      // Log success message
+      console.log('Payment link generated:', link);
+      
+      // Force focus to the generated link to shift attention away from the form
+      setTimeout(() => {
+        const linkInput = document.querySelector('input[value="' + link + '"]') as HTMLInputElement;
+        if (linkInput) {
+          linkInput.focus();
+          linkInput.select();
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error generating payment link:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
     
     // Return false to prevent any further form handling
     return false;
@@ -67,7 +131,13 @@ export default function PaymentLinkContent() {
         </div>
         
         <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg mb-8">
-          <form onSubmit={handleCreateLink} className="space-y-6" action="javascript:void(0);">
+          <form 
+            onSubmit={handleCreateLink} 
+            className="space-y-6" 
+            action="javascript:void(0);" 
+            data-prevent-redirect="true"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div>
               <label htmlFor="amount" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Amount
@@ -122,7 +192,12 @@ export default function PaymentLinkContent() {
             
             <div>
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCreateLink(e as unknown as React.FormEvent);
+                }}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 Generate Payment Link

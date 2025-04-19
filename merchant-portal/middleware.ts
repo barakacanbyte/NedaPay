@@ -21,9 +21,15 @@ export function middleware(request: NextRequest) {
   
   // Skip middleware check for payment-link route if coming from another page
   // This prevents redirect loops when navigating to payment-link
-  if (isPaymentLinkRoute && request.headers.get('referer')?.includes(request.headers.get('host') || '')) {
-    console.log('Middleware: Allowing access to payment-link from internal navigation');
-    return NextResponse.next();
+  if (isPaymentLinkRoute) {
+    // Check if the request has a referer from the same host or if there's a wallet_connected cookie
+    const hasInternalReferer = request.headers.get('referer')?.includes(request.headers.get('host') || '');
+    const hasWalletCookie = request.cookies.get('wallet_connected')?.value === 'true';
+    
+    if (hasInternalReferer || hasWalletCookie) {
+      console.log('Middleware: Allowing access to payment-link from internal navigation or with wallet cookie');
+      return NextResponse.next();
+    }
   }
 
   if (isProtectedRoute) {

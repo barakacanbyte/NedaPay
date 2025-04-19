@@ -426,7 +426,22 @@ export default function WalletPage() {
         
         // Get chain ID
         const chainIdHex = await provider.request({ method: 'eth_chainId' });
-        setChainId(parseInt(chainIdHex, 16));
+        const currentChainId = parseInt(chainIdHex, 16);
+        setChainId(currentChainId);
+        
+        // Store wallet connection state in multiple places for consistency
+        // Use both the standardized keys (walletConnected) and legacy keys (wallet_connected)
+        localStorage.setItem('walletConnected', 'true');
+        localStorage.setItem('wallet_connected', 'true');
+        localStorage.setItem('wallet_address', userAddress);
+        localStorage.setItem('wallet_chainId', currentChainId.toString());
+        document.cookie = 'wallet_connected=true; path=/; max-age=86400'; // 24 hours
+        
+        console.log('Wallet connection state saved:', {
+          address: userAddress,
+          chainId: currentChainId,
+          isConnected: true
+        });
         
         // Request signature to authenticate
         try {
@@ -478,10 +493,57 @@ export default function WalletPage() {
     router.refresh();
   };
 
-  // Only set mounted state on mount, don't auto-connect
-  // Only set mounted after component mounts to avoid hydration mismatch
+  // Check for existing wallet connection and auto-connect if needed
   useEffect(() => {
     setMounted(true);
+    
+    // Check localStorage and cookies for existing wallet connection
+    const checkExistingConnection = async () => {
+      // Check both localStorage and cookies for connection state
+      const walletConnected = localStorage.getItem('walletConnected') === 'true' || 
+                            localStorage.getItem('wallet_connected') === 'true' || 
+                            document.cookie.includes('wallet_connected=true');
+      
+      const savedAddress = localStorage.getItem('wallet_address');
+      const savedChainId = localStorage.getItem('wallet_chainId');
+      
+      console.log('Checking existing connection:', { walletConnected, savedAddress, savedChainId });
+      
+      if (walletConnected && savedAddress) {
+        // Wallet was previously connected
+        const provider = getProvider();
+        if (provider) {
+          try {
+            // Verify the connection is still valid
+            const accounts = await provider.request({ method: 'eth_accounts' });
+            if (accounts && accounts.length > 0) {
+              console.log('Auto-connecting previously connected wallet:', accounts[0]);
+              
+              // Set connection state
+              setAddress(accounts[0]);
+              setIsConnected(true);
+              
+              // Get chain ID
+              const chainIdHex = await provider.request({ method: 'eth_chainId' });
+              setChainId(parseInt(chainIdHex, 16));
+              
+              // Fetch transaction history
+              fetchTransactionHistory(accounts[0]);
+              
+              // Update localStorage and cookies to ensure consistency
+              localStorage.setItem('walletConnected', 'true');
+              localStorage.setItem('wallet_connected', 'true');
+              localStorage.setItem('wallet_address', accounts[0]);
+              document.cookie = 'wallet_connected=true; path=/; max-age=86400';
+            }
+          } catch (error) {
+            console.error('Error verifying existing connection:', error);
+          }
+        }
+      }
+    };
+    
+    checkExistingConnection();
     
     // Set up event listeners for account changes
     const provider = getProvider();
@@ -493,10 +555,23 @@ export default function WalletPage() {
           setIsConnected(false);
           setBalance('0.00');
           setTransactions([]);
+          
+          // Clear localStorage and cookies
+          localStorage.removeItem('walletConnected');
+          localStorage.removeItem('wallet_connected');
+          localStorage.removeItem('wallet_address');
+          localStorage.removeItem('wallet_chainId');
+          document.cookie = 'wallet_connected=false; path=/; max-age=0';
         } else {
           setAddress(accounts[0]);
           setIsConnected(true);
           fetchTransactionHistory(accounts[0]);
+          
+          // Update localStorage and cookies
+          localStorage.setItem('walletConnected', 'true');
+          localStorage.setItem('wallet_connected', 'true');
+          localStorage.setItem('wallet_address', accounts[0]);
+          document.cookie = 'wallet_connected=true; path=/; max-age=86400';
         }
       };
       
