@@ -1,10 +1,8 @@
 # Production settings for Next.js with static export
 [build]
-  command = "NODE_ENV=production npm run build"
-  publish = ".next"
+  command = "npm run build && npm run export"
+  publish = "out"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
 
 # Environment variables
 [build.environment]
