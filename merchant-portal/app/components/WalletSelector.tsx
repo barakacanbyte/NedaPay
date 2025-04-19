@@ -51,6 +51,12 @@ export default function WalletSelector() {
         address: simulatedSmartWallet,
         createdAt: new Date().toISOString()
       }));
+      
+      // Redirect to dashboard after successful connection
+      // Use a short timeout to ensure cookie is set before navigation
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
     } else {
       // Clear wallet connection from localStorage
       localStorage.removeItem('walletConnected');
@@ -59,7 +65,7 @@ export default function WalletSelector() {
       // Clear the cookie
       document.cookie = 'wallet_connected=; path=/; max-age=0';
     }
-  }, [address, isConnected]);
+  }, [address, isConnected, router]);
   
   // Function to create a smart wallet
   const createSmartWallet = async () => {
@@ -98,6 +104,7 @@ export default function WalletSelector() {
     try {
       await connect({ connector: metaMask() });
       setShowOptions(false);
+      // Note: The redirect will happen in the useEffect when isConnected changes
     } catch (error) {
       console.error('Error connecting to MetaMask', error);
     } finally {
@@ -111,6 +118,7 @@ export default function WalletSelector() {
     try {
       await connect({ connector: coinbaseWallet({ appName: 'NEDA Pay Merchant' }) });
       setShowOptions(false);
+      // Note: The redirect will happen in the useEffect when isConnected changes
     } catch (error) {
       console.error('Error connecting to Coinbase Wallet', error);
     } finally {

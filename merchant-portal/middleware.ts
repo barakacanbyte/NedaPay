@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_ROUTES = [
   '/dashboard',
   '/payments',
+  '/payment-link',
   '/stablecoins',
   '/settings'
 ];
@@ -15,6 +16,16 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   );
 
+  // Special case for payment-link route to prevent redirect loops
+  const isPaymentLinkRoute = request.nextUrl.pathname.startsWith('/payment-link');
+  
+  // Skip middleware check for payment-link route if coming from another page
+  // This prevents redirect loops when navigating to payment-link
+  if (isPaymentLinkRoute && request.headers.get('referer')?.includes(request.headers.get('host') || '')) {
+    console.log('Middleware: Allowing access to payment-link from internal navigation');
+    return NextResponse.next();
+  }
+
   if (isProtectedRoute) {
     // Since we can't access localStorage directly in middleware,
     // we'll create a special cookie when the wallet connects
@@ -22,11 +33,15 @@ export function middleware(request: NextRequest) {
     const walletConnected = request.cookies.get('wallet_connected');
     
     // If wallet is not connected, redirect to home page
-    if (!walletConnected) {
+    if (!walletConnected || walletConnected.value !== 'true') {
+      console.log('Middleware: No wallet connection detected, redirecting to home');
       const url = new URL('/', request.url);
       url.searchParams.set('walletRequired', 'true');
       return NextResponse.redirect(url);
     }
+    
+    // Log successful authentication
+    console.log('Middleware: Wallet connection verified, allowing access to protected route');
   }
 
   return NextResponse.next();
@@ -37,6 +52,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/payments/:path*',
+    '/payment-link/:path*',
     '/stablecoins/:path*',
     '/settings/:path*',
   ],

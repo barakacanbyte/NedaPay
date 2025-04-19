@@ -14,20 +14,21 @@ export default function PaymentLinkContent() {
   const { isConnected } = useAccount();
   const router = useRouter();
 
-  // Check if wallet is connected using useEffect
+  // Completely remove any wallet connection checks or redirects
+  // Let the middleware handle all authentication
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const walletConnected = localStorage.getItem('walletConnected') === 'true';
-      const cookieWalletConnected = document.cookie.includes('wallet_connected=true');
-      
-      if (!isConnected && !walletConnected && !cookieWalletConnected) {
-        router.push('/?walletRequired=true');
-      }
-    }
-  }, [isConnected, router]);
+    // Just log the current state for debugging
+    console.log('Payment Link Page - Mounted, isConnected:', isConnected);
+  }, [isConnected]);
 
   const handleCreateLink = (e: React.FormEvent) => {
+    // Prevent the default form submission behavior
     e.preventDefault();
+    
+    // Stop event propagation to prevent any parent handlers from firing
+    e.stopPropagation();
+    
+    console.log('Generating payment link...');
     
     // In a real implementation, this would call a backend API to create a payment link
     // For now, we'll just generate a mock link
@@ -35,7 +36,14 @@ export default function PaymentLinkContent() {
     const baseUrl = window.location.origin;
     const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
     
+    // Set the generated link in state
     setGeneratedLink(link);
+    
+    // Log success message
+    console.log('Payment link generated:', link);
+    
+    // Return false to prevent any further form handling
+    return false;
   };
 
   const copyToClipboard = () => {
@@ -59,7 +67,7 @@ export default function PaymentLinkContent() {
         </div>
         
         <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg mb-8">
-          <form onSubmit={handleCreateLink} className="space-y-6">
+          <form onSubmit={handleCreateLink} className="space-y-6" action="javascript:void(0);">
             <div>
               <label htmlFor="amount" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Amount
