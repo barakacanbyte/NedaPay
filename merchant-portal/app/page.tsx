@@ -1,8 +1,7 @@
 'use client';
 export const dynamic = "force-dynamic";
 
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -10,7 +9,8 @@ import Link from 'next/link';
 import Header from './components/Header';
 import { stablecoins } from './data/stablecoins';
 
-export default function HomePage() {
+// Main component that uses Suspense
+function HomeContent() {
   const [mounted, setMounted] = useState(false);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const searchParams = useSearchParams();
@@ -229,5 +229,16 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Export the page component with Suspense
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white flex items-center justify-center">
+      <div className="animate-pulse text-xl font-medium">Loading...</div>
+    </div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

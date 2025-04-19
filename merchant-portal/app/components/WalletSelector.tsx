@@ -19,6 +19,12 @@ export default function WalletSelector() {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   
+  // Format address for display
+  const formatAddress = (address: string | undefined) => {
+    if (!address) return '';
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+  
   // Close dropdown when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -102,9 +108,18 @@ export default function WalletSelector() {
   const handleConnectMetaMask = async () => {
     setIsConnecting(true);
     try {
-      await connect({ connector: metaMask() });
-      setShowOptions(false);
-      // Note: The redirect will happen in the useEffect when isConnected changes
+      // Check if MetaMask is installed
+      if (typeof window.ethereum !== 'undefined') {
+        // Create MetaMask connector
+        const metamaskConnector = metaMask();
+        await connect({ connector: metamaskConnector });
+        setShowOptions(false);
+        // Note: The redirect will happen in the useEffect when isConnected changes
+      } else {
+        // MetaMask not installed, open download page
+        window.open('https://metamask.io/download/', '_blank');
+        throw new Error('MetaMask not installed');
+      }
     } catch (error) {
       console.error('Error connecting to MetaMask', error);
     } finally {
@@ -116,7 +131,13 @@ export default function WalletSelector() {
   const handleConnectCoinbase = async () => {
     setIsConnecting(true);
     try {
-      await connect({ connector: coinbaseWallet({ appName: 'NEDA Pay Merchant' }) });
+      // Create Coinbase Wallet connector
+      const coinbaseConnector = coinbaseWallet({
+        appName: 'NEDA Pay Merchant',
+        chainId: 1 // Ethereum Mainnet
+      });
+      
+      await connect({ connector: coinbaseConnector });
       setShowOptions(false);
       // Note: The redirect will happen in the useEffect when isConnected changes
     } catch (error) {
@@ -129,36 +150,37 @@ export default function WalletSelector() {
   // Function to handle wallet disconnection
   const handleDisconnect = () => {
     disconnect();
-    setSmartWalletAddress(null);
     setShowOptions(false);
-  };
-
-  // Function to navigate to dashboard
-  const goToDashboard = () => {
-    router.push('/dashboard');
-    setShowOptions(false);
+    
+    // Clear wallet connection from localStorage
+    localStorage.removeItem('walletConnected');
+    localStorage.removeItem('walletAddress');
+    
+    // Clear the cookie
+    document.cookie = 'wallet_connected=; path=/; max-age=0';
+    
+    // Redirect to home page
+    window.location.href = '/';
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
       {isConnected ? (
         <button
-          onClick={(e: React.MouseEvent) => {
+          onClick={(e) => {
             e.stopPropagation();
             setShowOptions(!showOptions);
           }}
           className="flex items-center space-x-2 bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-800/40 text-gray-900 dark:text-blue-300 px-4 py-2 rounded-lg transition-all duration-200"
         >
-          <div className={`w-6 h-6 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
+          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
               <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
             </svg>
           </div>
-          <div className="flex flex-col">
-            <div className="text-sm font-medium">
-              {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
-            </div>
+          <div className="text-sm font-medium">
+            {formatAddress(address)}
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
             <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -166,14 +188,14 @@ export default function WalletSelector() {
         </button>
       ) : (
         <button
-          id="wallet-selector-button"
-          onClick={(e: React.MouseEvent) => {
+          onClick={(e) => {
             e.stopPropagation();
             setShowOptions(!showOptions);
           }}
-          className="bg-gray-100 border border-blue-600 hover:bg-blue-50 text-blue-800 font-medium py-2 px-4 rounded-lg transition dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center"
+          disabled={isConnecting}
         >
-          <span>Connect Wallet</span>
+          <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1 inline">
             <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
           </svg>
@@ -182,55 +204,28 @@ export default function WalletSelector() {
       
       {showOptions && (
         <div 
-          className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden z-50 border border-gray-200 dark:border-gray-700"
+          className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
           {isConnected ? (
             <>
               <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">Connected Account</h3>
-              </div>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full ${connector?.name?.toLowerCase().includes('metamask') ? 'bg-orange-100 dark:bg-orange-900/50' : 'bg-blue-100 dark:bg-blue-900'} flex items-center justify-center`}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
-                      <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : ''}
-                    </div>
-                    <div className="text-xs text-gray-700 dark:text-gray-400">
-                      {connector?.name || 'Wallet'}
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">Connected Wallet</h3>
+                  <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">Active</span>
                 </div>
-                
-                {smartWalletAddress && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <div className="text-xs text-gray-700 dark:text-gray-400 mb-1">Smart Wallet</div>
-                    <div className="font-medium text-gray-900 dark:text-white text-sm">
-                      {`${smartWalletAddress.substring(0, 6)}...${smartWalletAddress.substring(smartWalletAddress.length - 4)}`}
-                    </div>
-                  </div>
-                )}
+                <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                  {formatAddress(address)}
+                </div>
               </div>
-              <div className="p-2">
-                <button 
-                  onClick={goToDashboard}
-                  className="block w-full text-left px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Dashboard
-                </button>
-                
+              
+              <div className="p-2 space-y-1">
                 <button 
                   onClick={createSmartWallet}
-                  disabled={isCreatingSmartWallet || !!smartWalletAddress}
-                  className={`block w-full text-left px-4 py-2 ${smartWalletAddress ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-blue-700 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700'} transition-colors`}
+                  disabled={isCreatingSmartWallet}
+                  className="block w-full text-left px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isCreatingSmartWallet ? 'Creating Smart Wallet...' : smartWalletAddress ? 'Smart Wallet Created' : 'Create Smart Wallet'}
+                  {isCreatingSmartWallet ? 'Creating Smart Wallet...' : 'Create Smart Wallet'}
                 </button>
                 
                 <button 
