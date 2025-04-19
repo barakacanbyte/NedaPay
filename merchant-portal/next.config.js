@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Set to static export mode
-  output: 'export',
+  // output: 'export',
   // Completely ignore TypeScript errors during build
   typescript: {
     ignoreBuildErrors: true,

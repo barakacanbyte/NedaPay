@@ -11,7 +11,7 @@ export default function PaymentLinkPage() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
 
   // Handle initial page load and cookie setting
   useEffect(() => {
@@ -58,19 +58,21 @@ export default function PaymentLinkPage() {
       alert('Please enter a valid amount');
       return;
     }
-    
+    if (!address) {
+      alert('Wallet address not found. Please connect your wallet.');
+      return;
+    }
     // Generate a mock link
     const linkId = Math.random().toString(36).substring(2, 10);
     const baseUrl = window.location.origin;
-    const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
+    // Include the merchant's address in the link
+    const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${address}`;
     
     // Set the generated link in state
     setGeneratedLink(link);
     
     // Ensure we stay on this page by setting the cookie again
     document.cookie = 'wallet_connected=true; path=/; max-age=86400';
-    
-
   };
 
   const copyToClipboard = () => {
