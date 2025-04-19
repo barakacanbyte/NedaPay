@@ -1,16 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  
   // Completely ignore TypeScript errors during build
   typescript: {
     ignoreBuildErrors: true,
   },
-  
   // Ignore ESLint errors during build
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
+  // Ensure optimal compatibility with Netlify
+  swcMinify: true,
   // Configure webpack with necessary polyfills
   webpack: (config) => {
     config.resolve.fallback = {
@@ -18,10 +17,15 @@ const nextConfig = {
       fs: false,
       net: false,
       tls: false,
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify'),
+      os: require.resolve('os-browserify'),
+      path: require.resolve('path-browserify'),
     };
     return config;
   },
-  
   // Transpile problematic packages
   transpilePackages: [
     'wagmi', 
@@ -30,6 +34,13 @@ const nextConfig = {
     'next-themes',
     'ethers'
   ],
-}
+  // Enable React strict mode for better development
+  reactStrictMode: true,
+  // Ensure proper handling of SVG and other static assets
+  images: {
+    domains: ['nedapay.com'],
+    dangerouslyAllowSVG: true,
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
