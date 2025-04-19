@@ -4,6 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import dynamicImport from "next/dynamic";
+
+const PaymentQRCode = dynamicImport(() => import("./QRCode"), { ssr: false });
+const PayWithWallet = dynamicImport(() => import("./PayWithWallet"), { ssr: false });
 
 export default function PayPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
@@ -34,17 +38,19 @@ export default function PayPage({ params }: { params: { id: string } }) {
           <span className="text-lg font-medium">Amount:</span>
           <span className="ml-2 text-xl font-bold">{amount} {currency}</span>
         </div>
-        <div className="mb-6 text-center">
+        <div className="mb-6 text-center flex flex-col items-center gap-2">
           <span className="text-lg font-medium">Merchant Wallet:</span>
-          <span className="ml-2 font-mono text-blue-900 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded select-all">{to}</span>
+          <span className="font-mono text-blue-900 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded select-all">{to}</span>
           <button
             onClick={handleCopy}
-            className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+            className="mt-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
           >
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>
-        <div className="text-center">
+        <PaymentQRCode to={to || ''} amount={amount || ''} currency={currency || ''} />
+        <PayWithWallet to={to || ''} amount={amount || ''} currency={currency || ''} />
+        <div className="text-center mt-4">
           <a
             href={`https://basescan.org/address/${to}`}
             target="_blank"
