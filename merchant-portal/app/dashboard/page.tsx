@@ -595,7 +595,15 @@ export default function MerchantDashboard() {
                 <h3 className="font-bold text-blue-900 dark:text-blue-300">Create Payment Link</h3>
                 <p className="text-sm text-blue-900 dark:text-blue-400 mt-1 font-medium">Generate a payment link to share with customers</p>
               </button>
-              
+
+              <button 
+                onClick={() => router.push('/invoice')} 
+                className="p-4 w-full bg-gray-100 dark:bg-green-900/30 rounded-lg border border-green-300 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 transition"
+              >
+                <h3 className="font-bold text-green-900 dark:text-green-300">Generate Invoice</h3>
+                <p className="text-sm text-green-900 dark:text-green-400 mt-1 font-medium">Send an invoice to your customer for payment</p>
+              </button>
+
               <button 
                 onClick={() => router.push('/analytics')} 
                 className="p-4 w-full bg-gray-100 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition"
