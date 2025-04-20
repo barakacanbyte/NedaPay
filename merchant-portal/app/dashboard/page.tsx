@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { Connector } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
 import { stablecoins, mockBalances, mockTransactions } from '../data/stablecoins';
@@ -140,7 +141,7 @@ export default function MerchantDashboard() {
   const [transactions, setTransactions] = useState(mockTransactions.slice(0, 5));
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const router = useRouter();
   
   // Set mounted state
@@ -161,7 +162,7 @@ export default function MerchantDashboard() {
     }
     
     // Fetch real balances when connected
-    if (isConnected && address) {
+    if (isConnected && address && connector) {
       fetchRealBalances(address);
     }
   }, [address, isConnected]);
@@ -199,7 +200,7 @@ export default function MerchantDashboard() {
     }
     
     // Fetch real balances when connected
-    if (isConnected && address) {
+    if (isConnected && address && connector) {
       fetchRealBalances(address);
     }
     
@@ -251,12 +252,24 @@ export default function MerchantDashboard() {
 ];
 
 const fetchRealBalances = async (walletAddress: string) => {
+  console.log('[DEBUG] fetchRealBalances called', { walletAddress, connector });
   try {
     setIsLoading(true);
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    let provider;
+    // Always use window.ethereum for both MetaMask and Coinbase Wallet
+    // Using connector.getProvider() for Coinbase Wallet is unreliable for ethers.js
+    // See: https://github.com/coinbase/coinbase-wallet-sdk/issues/119
+    if (typeof window !== 'undefined' && window.ethereum) {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      console.log('[DEBUG] Using window.ethereum as provider', provider);
+    } else {
+      console.error('[DEBUG] No wallet provider found');
+      throw new Error('No wallet provider found');
+    }
     const realBalances: Record<string, string> = {};
     for (const coin of stablecoins) {
       try {
+        console.log(`[DEBUG] Fetching balance for coin`, { coin, walletAddress });
         const tokenContract = new ethers.Contract(coin.address, ERC20_ABI, provider);
         const [balance, decimals] = await Promise.all([
           tokenContract.balanceOf(walletAddress),
@@ -264,7 +277,9 @@ const fetchRealBalances = async (walletAddress: string) => {
         ]);
         const formatted = ethers.utils.formatUnits(balance, decimals);
         realBalances[coin.baseToken] = parseFloat(formatted).toLocaleString();
+        console.log(`[DEBUG] Balance fetched`, { coin: coin.baseToken, formatted });
       } catch (err) {
+        console.error(`[DEBUG] Error fetching balance for ${coin.baseToken}`, err);
         realBalances[coin.baseToken] = '0';
       }
     }
