@@ -35,10 +35,13 @@ ChartJS.register(
 );
 
 // Function to process balances data
-const processBalances = (balanceData: Record<string, string>) => {
-  // Always show all stablecoins, defaulting to 0 if not present
+const processBalances = (balanceData: Record<string, string>, networkChainId?: number) => {
+  // Always show all stablecoins, but only real balances for tokens on the current network
   const processed = stablecoins.map((coin) => {
-    const balance = balanceData[coin.baseToken] || '0';
+    let balance = '0';
+    if (!networkChainId || coin.chainId === networkChainId) {
+      balance = balanceData[coin.baseToken] || '0';
+    }
     return {
       symbol: coin.baseToken,
       name: coin.name,
@@ -134,6 +137,9 @@ const mockTransactionsByDay = {
 };
 
 export default function MerchantDashboard() {
+  const [networkWarning, setNetworkWarning] = useState(false);
+  const [balanceError, setBalanceError] = useState(false);
+  const [errorTokens, setErrorTokens] = useState<Record<string, string>>({});
   const [mounted, setMounted] = useState(false);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
@@ -251,7 +257,11 @@ export default function MerchantDashboard() {
   "function decimals() view returns (uint8)"
 ];
 
+const BASE_MAINNET_CHAIN_ID = 8453;
+
 const fetchRealBalances = async (walletAddress: string) => {
+  let filteredCoins: any[] = [];
+
   console.log('[DEBUG] fetchRealBalances called', { walletAddress, connector });
   try {
     setIsLoading(true);
@@ -262,27 +272,56 @@ const fetchRealBalances = async (walletAddress: string) => {
     if (typeof window !== 'undefined' && window.ethereum) {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       console.log('[DEBUG] Using window.ethereum as provider', provider);
+      // Check network
+      const network = await provider.getNetwork();
+      if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
+        setNetworkWarning(true);
+        setIsLoading(false);
+        filteredCoins = [];
+        return;
+      } else {
+        setNetworkWarning(false);
+        filteredCoins = stablecoins.filter((coin: any) => coin.chainId === network.chainId);
+      }
     } else {
       console.error('[DEBUG] No wallet provider found');
       throw new Error('No wallet provider found');
     }
     const realBalances: Record<string, string> = {};
-    for (const coin of stablecoins) {
+    let anyError = false;
+    const tokenErrors: Record<string, string> = {};
+    // Only fetch balances for tokens on the current network
+    for (const coin of filteredCoins) {
       try {
         console.log(`[DEBUG] Fetching balance for coin`, { coin, walletAddress });
         const tokenContract = new ethers.Contract(coin.address, ERC20_ABI, provider);
-        const [balance, decimals] = await Promise.all([
-          tokenContract.balanceOf(walletAddress),
-          tokenContract.decimals()
-        ]);
-        const formatted = ethers.utils.formatUnits(balance, decimals);
+        let balance = '0';
+        let decimals = 18;
+        try {
+          [balance, decimals] = await Promise.all([
+            tokenContract.balanceOf(walletAddress),
+            tokenContract.decimals()
+          ]);
+        } catch (tokenErr: any) {
+          // Suppress error, log for debugging only
+          console.warn(`[WARN] Could not fetch balance/decimals for ${coin.baseToken}:`, tokenErr?.message);
+          tokenErrors[coin.baseToken] = tokenErr?.message || 'Error fetching balance';
+          anyError = true;
+        }
+        let formatted = '0';
+        try {
+          formatted = ethers.utils.formatUnits(balance, decimals);
+        } catch {}
         realBalances[coin.baseToken] = parseFloat(formatted).toLocaleString();
-        console.log(`[DEBUG] Balance fetched`, { coin: coin.baseToken, formatted });
-      } catch (err) {
-        console.error(`[DEBUG] Error fetching balance for ${coin.baseToken}`, err);
-        realBalances[coin.baseToken] = '0';
+        if (!tokenErrors[coin.baseToken]) {
+          console.log(`[DEBUG] Balance fetched`, { coin: coin.baseToken, formatted });
+        }
+      } catch (err: any) {
+        // Suppress error, do not propagate
       }
     }
+    setBalanceError(anyError);
+    setErrorTokens(tokenErrors);
     setBalances(realBalances);
     // Also fetch transactions
     setIsTransactionLoading(true);
@@ -300,6 +339,13 @@ const fetchRealBalances = async (walletAddress: string) => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
+      {networkWarning && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4">
+          <strong className="font-bold">Network Error:</strong>
+          <span className="block sm:inline"> Please switch your wallet to <b>Base Mainnet</b> (chainId 8453) to view your balances.</span>
+        </div>
+      )}
+      {/* No generic warning, handled per-token below */}
       <div className="flex-grow">
         <div className="container mx-auto max-w-6xl px-4 py-12">
           <div className="mb-8">
@@ -548,7 +594,7 @@ const fetchRealBalances = async (walletAddress: string) => {
                     </div>
                   ))
                 ) : (
-                  processBalances(balances).processedStablecoins.map((coin: any, index: number) => (
+                  processBalances(balances, BASE_MAINNET_CHAIN_ID).processedStablecoins.map((coin: any, index: number) => (
                     <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
                       <div className="flex items-center">
                         <span className="mr-2 text-lg">{coin.flag}</span>
@@ -557,7 +603,17 @@ const fetchRealBalances = async (walletAddress: string) => {
                           <span className="text-xs text-slate-600 dark:text-slate-400 block">{coin.name}</span>
                         </div>
                       </div>
-                      <span className="font-medium text-slate-800 dark:text-white">{coin.balance}</span>
+                      <span className="font-medium text-slate-800 dark:text-white flex items-center">
+                        {coin.balance}
+                        {errorTokens[coin.symbol] && (
+                          <span
+                            className="ml-2 text-yellow-500 cursor-pointer"
+                            title={`Error fetching balance: ${errorTokens[coin.symbol]}`}
+                          >
+                            ⚠️
+                          </span>
+                        )}
+                      </span>
                     </div>
                   ))
                 )}
