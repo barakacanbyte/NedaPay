@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
 import { stablecoins, mockBalances, mockTransactions } from '../data/stablecoins';
+import { ethers } from 'ethers';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -34,27 +35,27 @@ ChartJS.register(
 
 // Function to process balances data
 const processBalances = (balanceData: Record<string, string>) => {
-  const processed = Object.entries(balanceData).map(([symbol, balance]) => {
-    const coin = stablecoins.find(c => c.baseToken === symbol);
+  // Always show all stablecoins, defaulting to 0 if not present
+  const processed = stablecoins.map((coin) => {
+    const balance = balanceData[coin.baseToken] || '0';
     return {
-      symbol,
-      name: coin?.name || symbol,
+      symbol: coin.baseToken,
+      name: coin.name,
       balance,
-      flag: coin?.flag || '🌐',
-      region: coin?.region || 'Unknown'
+      flag: coin.flag || '🌐',
+      region: coin.region || 'Unknown',
     };
   });
-  
+
   // Calculate total received
-  const total = Object.values(balanceData)
-    .reduce((sum, balance) => sum + parseInt(balance.replace(/,/g, '')), 0);
-  
+  const total = processed.reduce((sum, coin) => sum + parseInt(coin.balance.replace(/,/g, '')), 0);
+
   // Calculate percentages
   const processedCoins = processed.map(coin => ({
     ...coin,
-    percentage: Math.round((parseInt(coin.balance.replace(/,/g, '')) / total) * 100)
-  })).sort((a, b) => b.percentage - a.percentage).slice(0, 5); // Top 5 by balance
-  
+    percentage: total > 0 ? Math.round((parseInt(coin.balance.replace(/,/g, '')) / total) * 100) : 0
+  }));
+
   return {
     processedBalances: processed,
     totalReceived: total.toLocaleString(),
@@ -133,7 +134,7 @@ const mockTransactionsByDay = {
 
 export default function MerchantDashboard() {
   const [mounted, setMounted] = useState(false);
-  const [balances, setBalances] = useState<Record<string, string>>(mockBalances);
+  const [balances, setBalances] = useState<Record<string, string>>({});
   const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState(mockTransactions.slice(0, 5));
@@ -244,74 +245,40 @@ export default function MerchantDashboard() {
   }, [address, isConnected, router]);
   
   // Function to fetch real balances from wallet
-  const fetchRealBalances = async (walletAddress: string) => {
-    try {
-      setIsLoading(true);
-      
-      // In a production environment, this would call the blockchain API to get real token balances
-      // For example using ethers.js to query ERC20 token balances:
-      
-      // const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // const realBalances: Record<string, string> = {};
-      // 
-      // // Get token contract addresses from our stablecoins list
-      // const tokenAddresses = stablecoins.reduce((acc, coin) => {
-      //   acc[coin.baseToken] = coin.address;
-      //   return acc;
-      // }, {} as Record<string, string>);
-      // 
-      // // Fetch real balances for each token
-      // for (const [token, address] of Object.entries(tokenAddresses)) {
-      //   const tokenContract = new ethers.Contract(address, ERC20_ABI, provider);
-      //   const balance = await tokenContract.balanceOf(walletAddress);
-      //   const decimals = await tokenContract.decimals();
-      //   const formattedBalance = ethers.utils.formatUnits(balance, decimals);
-      //   realBalances[token] = parseFloat(formattedBalance).toLocaleString();
-      // }
-      
-      // For this demo, we'll use real-looking balances based on the wallet address
-      const seed = walletAddress.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-      
-      const realBalances: Record<string, string> = {
-        'TSHC': ((seed % 100) * 125).toLocaleString(),
-        'cNGN': ((seed % 80) * 40).toLocaleString(),
-        'IDRX': ((seed % 60) * 95).toLocaleString()
-      };
-      
-      setBalances(realBalances);
-      
-      // Also fetch transactions
-      setIsTransactionLoading(true);
-      
-      // For this demo, we'll use the mock transactions plus one real-time transaction
-      const currentDate = new Date();
-      const formattedDate = `${currentDate.getMonth() + 1}/${currentDate.getDate()}/${currentDate.getFullYear()}, ${currentDate.getHours()}:${currentDate.getMinutes().toString().padStart(2, '0')}`;  
-      
-      // Add a current transaction at the top
-      const realTimeTransactions = [
-        {
-          id: '0x7680f4a2c5d3e9b1f8a7c0d9e8f7a6b5',
-          shortId: '0x7680...ab6',
-          date: `${formattedDate}`,
-          amount: '6,882',
-          currency: 'TSHC',
-          status: 'Completed',
-          customer: 'Recent Sender',
-          sender: '0xd83f1e2a3b4c5d6e7f8a9b0c1d2e3f1e',
-          senderShort: '0xd83...e13',
-          blockExplorerUrl: 'https://basescan.org/tx/0x7680f4a2c5d3e9b1f8a7c0d9e8f7a6b5'
-        },
-        ...mockTransactions.slice(0, 4)
-      ];
-      
-      setTransactions(realTimeTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setIsTransactionLoading(false);
-      setIsLoading(false);
+  const ERC20_ABI = [
+  "function balanceOf(address) view returns (uint256)",
+  "function decimals() view returns (uint8)"
+];
+
+const fetchRealBalances = async (walletAddress: string) => {
+  try {
+    setIsLoading(true);
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const realBalances: Record<string, string> = {};
+    for (const coin of stablecoins) {
+      try {
+        const tokenContract = new ethers.Contract(coin.address, ERC20_ABI, provider);
+        const [balance, decimals] = await Promise.all([
+          tokenContract.balanceOf(walletAddress),
+          tokenContract.decimals()
+        ]);
+        const formatted = ethers.utils.formatUnits(balance, decimals);
+        realBalances[coin.baseToken] = parseFloat(formatted).toLocaleString();
+      } catch (err) {
+        realBalances[coin.baseToken] = '0';
+      }
     }
-  };
+    setBalances(realBalances);
+    // Also fetch transactions
+    setIsTransactionLoading(true);
+    // ...existing transaction code...
+  } catch (error) {
+    console.error('Error fetching balances:', error);
+  } finally {
+    setIsTransactionLoading(false);
+    setIsLoading(false);
+  }
+};
 
   if (!mounted) return null;
   
@@ -351,7 +318,7 @@ export default function MerchantDashboard() {
                 {isLoading ? (
                   <div className="animate-pulse h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
                 ) : (
-                  <>{processBalances(balances).totalReceived} TSHC</>
+                  <>{processBalances(balances).totalReceived} {processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || ''}</>
                 )}
               </div>
             </div>
@@ -364,7 +331,12 @@ export default function MerchantDashboard() {
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Average Transaction</div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {Math.round(parseInt(processBalances(balances).totalReceived.replace(/,/g, '')) / mockTransactions.length).toLocaleString()} TSHC
+                {(() => {
+                  const total = parseInt(processBalances(balances).totalReceived.replace(/,/g, ''));
+                  const symbol = processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || '';
+                  if (total === 0) return `0 ${symbol}`;
+                  return `${Math.round(total / mockTransactions.length).toLocaleString()} ${symbol}`;
+                })()}
               </div>
             </div>
             
