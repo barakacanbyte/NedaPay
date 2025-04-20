@@ -36,8 +36,10 @@ function HomeContent() {
       isConnected &&
       address &&
       !prevConnected.current &&
-      window.location.pathname !== '/payment-link'
+      window.location.pathname !== '/payment-link' &&
+      !window.location.pathname.startsWith('/invoice')
     ) {
+      console.log('[DEBUG] Redirecting to /dashboard from HomeContent. Current path:', window.location.pathname);
       router.push('/dashboard');
     }
     prevConnected.current = isConnected;

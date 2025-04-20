@@ -61,7 +61,10 @@ export default function WalletSelector() {
       // Redirect to dashboard after successful connection
       // Use a short timeout to ensure cookie is set before navigation
       setTimeout(() => {
-        if (window.location.pathname !== '/payment-link') {
+        // Only redirect to dashboard if on the homepage/root ('' or '/')
+        let path = window.location.pathname.replace(/\/+$/, ''); // Remove all trailing slashes
+        if (path === '' || path === '/') {
+          console.log('[DEBUG] Redirecting to /dashboard from WalletSelector. Current path:', window.location.pathname);
           router.push('/dashboard');
         }
       }, 500);

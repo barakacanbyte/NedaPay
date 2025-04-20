@@ -16,7 +16,9 @@ export default function CreateInvoicePage() {
     const today = new Date();
     return today.toISOString().split("T")[0];
   });
-  const [currency, setCurrency] = useState(stablecoins[0]?.baseToken || "");
+  // Include USDC as a default option
+  const stablecoinOptions = [{ baseToken: 'USDC', name: 'USD Coin' }, ...stablecoins];
+  const [currency, setCurrency] = useState(stablecoinOptions[0]?.baseToken || "USDC");
   const [lineItems, setLineItems] = useState([{ description: "", amount: "" }]);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -85,7 +87,7 @@ export default function CreateInvoicePage() {
             onChange={e => setCurrency(e.target.value)}
             required
           >
-            {stablecoins.map((coin) => (
+            {stablecoinOptions.map((coin) => (
               <option key={coin.baseToken} value={coin.baseToken}>
                 {coin.baseToken} - {coin.name}
               </option>
