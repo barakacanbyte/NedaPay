@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NEDA Pay Merchant Portal Dashboard
+
+A robust, multi-chain merchant dashboard for the NEDA Pay ecosystem. Built with Next.js, React, ethers.js, and wagmi, it allows merchants to view real-time balances and manage stablecoins across supported EVM networks.
+
+---
+
+## Features
+
+- **Multi-Wallet Support:**
+  - Connect with MetaMask or Coinbase Wallet (via wagmi connectors).
+  - Persistent wallet connection state across all pages.
+- **Stablecoin Balances:**
+  - Real-time fetching of ERC-20 balances for supported stablecoins (e.g., cNGN, ZARP, EURC, etc.).
+  - Shows all stablecoins, but only fetches balances for tokens deployed on the connected network.
+- **Network Detection:**
+  - Detects the connected network and prompts users to switch if not on Base Mainnet.
+  - Only fetches balances for tokens on the current chain (using `chainId`).
+- **Error Handling:**
+  - Per-token error icons and tooltips for contract call failures (e.g., missing `decimals()` function).
+  - Suppresses uncaught contract errors in the browser console.
+- **User Experience:**
+  - Clean, modern UI with clear feedback for network and token issues.
+  - Always displays all tokens, with '0' balance for those not on the current network.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js (>=18)
+- npm, yarn, or pnpm
 
+### Installation
+```bash
+cd merchant-portal
+npm install
+# or
+yarn install
+```
+
+### Running Locally
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
+- Configure RPC endpoints and wallet connection settings in `.env.local` if needed.
+- No sensitive keys are stored in the frontend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Stablecoin Configuration
+- All supported stablecoins are listed in `app/data/stablecoins.ts`.
+- Each token includes a `chainId` property (e.g., `8453` for Base Mainnet, `11155111` for Sepolia Testnet).
+- Only tokens matching the connected network are queried for balances.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Wallet Connection & Persistence
+- Connection state is managed globally via `GlobalWalletContext`.
+- Users only need to connect once; state persists across navigation.
+- Supports network switching and smart wallet features.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Error Handling
+- Token contract errors (e.g., failed `decimals()` or `balanceOf`) are handled gracefully.
+- UI shows a warning icon and tooltip for affected tokens.
+- Errors are logged as warnings (not as uncaught exceptions).
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
+1. Fork the repo and create your branch (`git checkout -b feature/my-feature`).
+2. Commit your changes (`git commit -am 'Add new feature'`).
+3. Push to the branch (`git push origin feature/my-feature`).
+4. Create a Pull Request.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## License
+MIT
+
+---
+
+## Contact
+For support or questions, contact the NEDA Pay team at [https://nedapay.app](https://nedapay.app)
