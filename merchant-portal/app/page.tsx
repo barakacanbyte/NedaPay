@@ -182,6 +182,32 @@ function HomeContent() {
           </div>
         </div>
         
+        {/* FAQ Section */}
+        <div className="max-w-3xl mx-auto mb-16 mt-12">
+          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">What is NEDA Pay?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">NEDA Pay is a platform that enables merchants to accept and manage local stablecoin payments easily and securely on the Base blockchain.</div>
+            </details>
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">How do I receive stablecoin payments?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">Simply connect your Base wallet, generate payment links or QR codes, and share them with your customers. Payments are settled instantly to your wallet in local stablecoins.</div>
+            </details>
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Is NEDA Pay secure?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes! NEDA Pay uses secure wallet connections and never stores your private keys. All transactions happen directly on the blockchain for full transparency and safety.</div>
+            </details>
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Can I use NEDA Pay internationally?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes, NEDA Pay enables merchants to accept stablecoin payments from customers around the world, as long as they use supported wallets and stablecoins on the Base blockchain.</div>
+            </details>
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">What fees does NEDA Pay charge?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">NEDA Pay charges low transaction fees for each payment processed. You can view the detailed fee structure in your merchant dashboard or on our website.</div>
+            </details>
+          </div>
+        </div>
         {/* CTA Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-8 text-center text-white">
           <h2 className="text-2xl font-bold mb-4">Ready to accept stablecoin payments?</h2>
