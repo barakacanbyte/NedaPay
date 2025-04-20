@@ -32,17 +32,7 @@ export default function InvoicePage() {
       <p className="text-gray-500 mb-6">{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="md:col-span-2">
-          <div className="flex flex-wrap gap-6 mb-6">
-            {statusTabs.map((tab) => (
-              <div key={tab} className="flex flex-col items-center">
-                <span className={`text-base font-medium ${activeTab === tab ? "text-blue-600" : "text-gray-700"}`}>{tab}</span>
-                <span className="text-lg font-semibold text-gray-800 mt-1">0</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-50 rounded-xl shadow-md p-6 flex flex-col items-center justify-center">
+        <div className="bg-white dark:bg-gray-50 rounded-xl shadow-md p-6 flex flex-col items-center justify-center md:col-span-2">
           <FaFileInvoiceDollar className="text-4xl text-blue-600 mb-2" />
           <div className="font-semibold text-lg mb-1">Create Invoice</div>
           <div className="text-gray-500 text-sm mb-4">Create and Send Crypto Invoices</div>
