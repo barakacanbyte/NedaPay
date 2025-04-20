@@ -149,7 +149,8 @@ function HomeContent() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center">
+  {/* Add border and background to each step */}
+            <div className="flex flex-col items-center border border-blue-200 dark:border-blue-700 rounded-xl bg-white/70 dark:bg-gray-900/70 p-6 shadow-md transition hover:shadow-xl">
               <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl mb-4">
                 1
               </div>
@@ -159,7 +160,7 @@ function HomeContent() {
               </p>
             </div>
             
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center border border-blue-200 dark:border-blue-700 rounded-xl bg-white/70 dark:bg-gray-900/70 p-6 shadow-md transition hover:shadow-xl">
               <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl mb-4">
                 2
               </div>
@@ -169,7 +170,7 @@ function HomeContent() {
               </p>
             </div>
             
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center border border-blue-200 dark:border-blue-700 rounded-xl bg-white/70 dark:bg-gray-900/70 p-6 shadow-md transition hover:shadow-xl">
               <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl mb-4">
                 3
               </div>
@@ -185,7 +186,7 @@ function HomeContent() {
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-8 text-center text-white">
           <h2 className="text-2xl font-bold mb-4">Ready to accept stablecoin payments?</h2>
           <p className="mb-6 max-w-2xl mx-auto">
-            Join thousands of merchants across East Africa who are already accepting local stablecoins through NEDA Pay
+            Join thousands of merchants across the world who are already accepting local stablecoins through NEDA Pay
           </p>
           
           {!isConnected ? (
