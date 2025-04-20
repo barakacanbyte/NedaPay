@@ -183,7 +183,7 @@ function HomeContent() {
         </div>
         
         {/* FAQ Section */}
-        <div className="max-w-3xl mx-auto mt-20 mb-20">
+        <div id="faq" className="max-w-3xl mx-auto mt-20 mb-20">
           <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white">Frequently Asked Questions</h2>
           <div className="space-y-4">
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
