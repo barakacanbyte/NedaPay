@@ -171,8 +171,8 @@ export default function WalletSelector() {
     // Clear the cookie
     document.cookie = 'wallet_connected=; path=/; max-age=0';
     
-    // Redirect to home page
-    window.location.href = '/';
+    // Redirect to home page using Next.js router
+    router.push('/');
   };
 
   return (
