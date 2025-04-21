@@ -36,6 +36,11 @@ export default function CreateInvoicePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
+      <div className="my-4">
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium">
+          <span aria-hidden="true">←</span> Back
+        </button>
+      </div>
       <div className="max-w-2xl mx-auto py-10 px-4">
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-8 space-y-6">
 

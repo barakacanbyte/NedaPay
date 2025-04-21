@@ -27,6 +27,11 @@ export default function InvoicePage() {
   return (
     <>
       <Header />
+      <div className="my-4">
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium">
+          <span aria-hidden="true">←</span> Back
+        </button>
+      </div>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <div className="max-w-6xl mx-auto px-6 py-8">
       <p className="text-gray-500 mb-6">{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>

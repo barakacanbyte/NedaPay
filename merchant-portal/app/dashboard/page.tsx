@@ -106,6 +106,7 @@ async function fetchIncomingPayments(merchantAddress: string) {
     const symbol = coin.baseToken;
     for (const log of logs) {
       const { transactionHash, args, blockNumber } = log;
+      if (!args) continue;
       const from = args.from;
       const to = args.to;
       const value = ethers.utils.formatUnits(args.value, decimals);
@@ -396,6 +397,11 @@ const fetchRealBalances = async (walletAddress: string) => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
+      <div className="my-4">
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium">
+          <span aria-hidden="true">←</span> Back
+        </button>
+      </div>
       {networkWarning && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative m-4">
           <strong className="font-bold">Network Error:</strong>
@@ -652,7 +658,7 @@ const fetchRealBalances = async (walletAddress: string) => {
                   ))
                 ) : (
                   processBalances(balances, BASE_MAINNET_CHAIN_ID).processedStablecoins.map((coin: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
+                    <div key={coin.symbol + '-' + (coin.address || index)} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
                       <div className="flex items-center">
                         <span className="mr-2 text-lg">{coin.flag}</span>
                         <div>

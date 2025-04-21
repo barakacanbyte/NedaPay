@@ -34,7 +34,18 @@ body {
 }
 
 /* Futuristic Glassmorphism Cards */
+@media (max-width: 640px) {
+  .glass-card, .card, .dashboard-card {
+    padding: 1.2rem 0.7rem !important;
+    font-size: 0.97rem;
+  }
+  .neon-glow {
+    box-shadow: 0 0 8px 1px var(--primary), 0 0 18px 4px var(--accent-light);
+  }
+}
 .glass-card, .card, .dashboard-card {
+  position: relative;
+
   background: var(--glass);
   box-shadow: var(--card-glow);
   border: 1.5px solid var(--primary-light);
@@ -122,6 +133,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 @layer utilities {
+  .neon-glow {
+    box-shadow: 0 0 12px 2px var(--primary), 0 0 32px 8px var(--accent-light), 0 1.5px 12px 0 var(--accent);
+    transition: box-shadow 0.2s;
+  }
+  .drop-shadow-neon {
+    text-shadow: 0 0 8px var(--primary), 0 0 16px var(--accent-light), 0 0 2px #fff;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

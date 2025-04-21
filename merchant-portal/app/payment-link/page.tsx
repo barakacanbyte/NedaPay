@@ -20,7 +20,13 @@ export default function PaymentLinkPage() {
     currency: string;
     status: string;
     link: string;
-  }>>([]);
+  }>>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recentPaymentLinks');
+      if (stored) return JSON.parse(stored);
+    }
+    return [];
+  });
   const { isConnected, address: wagmiAddress } = useAccount();
   // Robust merchant address getter: wagmi first, then localStorage fallback
   const getMerchantAddress = () => {
@@ -35,7 +41,11 @@ export default function PaymentLinkPage() {
   // Handle initial page load and cookie setting
   useEffect(() => {
     console.log('Payment Link Page - Loading, isConnected:', isConnected);
-    
+    // Load recent links from localStorage on mount if not already loaded
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recentPaymentLinks');
+      if (stored) setRecentLinks(JSON.parse(stored));
+    }
     // Set a flag to indicate the page has been mounted
     setPageLoaded(true);
     
@@ -65,7 +75,7 @@ export default function PaymentLinkPage() {
     }
   }, [isConnected, pageLoaded]);
 
-  const handleCreateLink = (e: React.MouseEvent) => {
+  const handleCreateLink = (e: React.MouseEvent | React.FormEvent) => {
     // Prevent any default behavior
     e.preventDefault();
     e.stopPropagation();
@@ -90,16 +100,20 @@ export default function PaymentLinkPage() {
     // Set the generated link in state
     setGeneratedLink(link);
     // Add to recent links
-    setRecentLinks(prev => [
-      {
-        date: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
-        amount,
-        currency,
-        status: 'Active',
-        link,
-      },
-      ...prev
-    ]);
+    setRecentLinks(prev => {
+      const updated = [
+        {
+          date: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+          amount,
+          currency,
+          status: 'Active',
+          link,
+        },
+        ...prev
+      ];
+      localStorage.setItem('recentPaymentLinks', JSON.stringify(updated));
+      return updated;
+    });
     
     // Ensure we stay on this page by setting the cookie again
     document.cookie = 'wallet_connected=true; path=/; max-age=86400';
@@ -114,6 +128,11 @@ export default function PaymentLinkPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
+      <div className="my-4">
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium">
+          <span aria-hidden="true">←</span> Back
+        </button>
+      </div>
       <div className="flex-grow">
         <div className="container mx-auto max-w-6xl px-4 py-12">
         <div className="mb-8">
@@ -188,32 +207,7 @@ export default function PaymentLinkPage() {
             </div>
             
             <div>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Set authentication immediately
-                document.cookie = 'wallet_connected=true; path=/; max-age=86400';
-                localStorage.setItem('walletConnected', 'true');
-                
-                // Validate input
-                if (!amount || parseFloat(amount) <= 0) {
-                  alert('Please enter a valid amount');
-                  return false;
-                }
-                
-                // Generate link inline instead of using handler
-                const linkId = Math.random().toString(36).substring(2, 10);
-                const baseUrl = window.location.origin;
-                const merchantAddress = getMerchantAddress();
-                const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${merchantAddress}`;
-                
-                // Set the link directly
-                setGeneratedLink(link);
-                console.log('Payment link generated successfully:', link);
-                
-                return false; // Prevent any form submission
-              }}>
+              <form onSubmit={handleCreateLink}>
                 <button
                   type="submit"
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
@@ -262,45 +256,27 @@ export default function PaymentLinkPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 15, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">1,500</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">TSHC</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 10, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">2,000</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">cNGN</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 5, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">500</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">IDRX</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                      Expired
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
-                  </td>
-                </tr>
+                {recentLinks.length === 0 ? (
+                  <tr>
+                    <td className="text-center py-4 text-slate-500" colSpan={5}>No payment links yet.</td>
+                  </tr>
+                ) : (
+                  recentLinks.map((link, idx) => (
+                    <tr key={link.link + '-' + idx}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.amount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.currency}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                          {link.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
+                        <a href={link.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark dark:text-primary-light">View</a>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
