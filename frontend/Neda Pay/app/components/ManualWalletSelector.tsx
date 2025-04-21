@@ -279,6 +279,9 @@ export default function ManualWalletSelector() {
   // Filter available wallet options
   const availableWallets = walletOptions.filter(wallet => wallet.providerCheck());
 
+  // On mobile: If MetaMask or Coinbase Wallet is available, treat as available (do not fallback)
+  const showFallback = availableWallets.length === 0;
+
   if (!mounted) return null;
 
   return (
@@ -336,7 +339,7 @@ export default function ManualWalletSelector() {
                 </p>
                 
                 <div className="space-y-3">
-                  {availableWallets.length > 0 ? (
+                  {!showFallback ? (
                     availableWallets.map((wallet) => (
                       <button
                         key={wallet.name}
