@@ -123,40 +123,36 @@ const currencyDistributionData = getPaymentMethodsData(balances);
       legend: {
         position: 'top' as const,
         labels: {
-          color: typeof window !== 'undefined' && 
-                 window.matchMedia && 
-                 window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                 '#f1f5f9' : '#1e293b',
+          color: '#111', // Always black for visibility
+          font: { size: 14, weight: 'bold' },
         },
+      },
+      tooltip: {
+        titleColor: '#111',
+        bodyColor: '#111',
+        footerColor: '#111',
+        backgroundColor: '#fff',
+        borderColor: '#111',
+        borderWidth: 1,
       },
     },
     scales: {
       x: {
-        grid: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-        },
         ticks: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                '#cbd5e1' : '#475569',
+          color: '#111',
+          font: { size: 13, weight: 'bold' },
+        },
+        grid: {
+          color: '#eee',
         },
       },
       y: {
-        grid: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-        },
         ticks: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                '#cbd5e1' : '#475569',
+          color: '#111',
+          font: { size: 13, weight: 'bold' },
+        },
+        grid: {
+          color: '#eee',
         },
       },
     },
@@ -169,14 +165,21 @@ const currencyDistributionData = getPaymentMethodsData(balances);
       legend: {
         position: 'top' as const,
         labels: {
-          color: typeof window !== 'undefined' && 
-                 window.matchMedia && 
-                 window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                 '#f1f5f9' : '#1e293b',
+          color: '#111',
+          font: { size: 14, weight: 'bold' },
         },
+      },
+      tooltip: {
+        titleColor: '#111',
+        bodyColor: '#111',
+        footerColor: '#111',
+        backgroundColor: '#fff',
+        borderColor: '#111',
+        borderWidth: 1,
       },
     },
   };
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
