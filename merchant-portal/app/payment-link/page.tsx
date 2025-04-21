@@ -6,6 +6,8 @@ import { useAccount } from 'wagmi';
 import { stablecoins } from '../data/stablecoins';
 
 export default function PaymentLinkPage() {
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => { setIsClient(true); }, []);
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('TSHC');
   const [description, setDescription] = useState('');
@@ -19,7 +21,16 @@ export default function PaymentLinkPage() {
     status: string;
     link: string;
   }>>([]);
-  const { isConnected, address } = useAccount();
+  const { isConnected, address: wagmiAddress } = useAccount();
+  // Robust merchant address getter: wagmi first, then localStorage fallback
+  const getMerchantAddress = () => {
+    if (wagmiAddress && wagmiAddress.length > 10) return wagmiAddress;
+    if (typeof window !== 'undefined') {
+      const lsAddr = localStorage.getItem('walletAddress');
+      if (lsAddr && lsAddr.length > 10) return lsAddr;
+    }
+    return '';
+  };
 
   // Handle initial page load and cookie setting
   useEffect(() => {
@@ -66,15 +77,15 @@ export default function PaymentLinkPage() {
       alert('Please enter a valid amount');
       return;
     }
-    if (!address) {
+    const merchantAddress = getMerchantAddress();
+    if (!merchantAddress) {
       alert('Wallet address not found. Please connect your wallet.');
       return;
     }
     // Generate a mock link
     const linkId = Math.random().toString(36).substring(2, 10);
     const baseUrl = window.location.origin;
-    // Include the merchant's address in the link
-    const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${address}`;
+    const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${getMerchantAddress()}`;
     
     // Set the generated link in state
     setGeneratedLink(link);
@@ -109,9 +120,15 @@ export default function PaymentLinkPage() {
           <h1 className="text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">
             Create Payment Link
           </h1>
-          <p className="text-slate-600 dark:text-slate-300 text-base">
+          <p className="text-slate-600 dark:text-slate-300 text-base mb-2">
             Generate a payment link to share with your customers
           </p>
+          {isClient && (
+          <div className={`rounded-md px-4 py-2 mt-2 text-sm ${getMerchantAddress() ? 'bg-green-50 text-green-900 border border-green-200' : 'bg-yellow-50 text-yellow-900 border border-yellow-300'}`}>
+            <strong>Merchant Wallet Address:</strong>
+            <span className="ml-2 font-mono break-all">{getMerchantAddress() || 'No wallet connected. Please connect your wallet.'}</span>
+          </div>
+        )}
         </div>
         
         <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg mb-8">
@@ -188,7 +205,8 @@ export default function PaymentLinkPage() {
                 // Generate link inline instead of using handler
                 const linkId = Math.random().toString(36).substring(2, 10);
                 const baseUrl = window.location.origin;
-                const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
+                const merchantAddress = getMerchantAddress();
+                const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${merchantAddress}`;
                 
                 // Set the link directly
                 setGeneratedLink(link);

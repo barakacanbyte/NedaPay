@@ -13,7 +13,17 @@ export default function PaymentLinkContent() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isConnected } = useAccount();
+  const { isConnected, address: wagmiAddress } = useAccount();
+  // Helper to get the freshest address at any moment
+  const getMerchantAddress = () => {
+    if (wagmiAddress && wagmiAddress.length > 10) return wagmiAddress;
+    if (typeof window !== 'undefined') {
+      const lsAddr = localStorage.getItem('walletAddress');
+      if (lsAddr && lsAddr.length > 10) return lsAddr;
+    }
+    return '';
+  };
+  const merchantAddress = getMerchantAddress();
   // Remove router reference to prevent accidental navigations
   // const router = useRouter();
 
@@ -41,13 +51,26 @@ export default function PaymentLinkContent() {
   
 
   const handleCreateLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Always get the freshest address at the moment of link creation
+    const address = getMerchantAddress();
+    if (!address || address.length < 10) {
+      alert('Wallet address not found. Please connect your wallet using the selector at the top right, then try again.');
+      return;
+    }
+    // Prevent link creation if wallet is not connected
+    if (!merchantAddress) {
+      alert('Please connect your wallet before generating a payment link.');
+      return;
+    }
     // Prevent the default form submission behavior
     e.preventDefault();
     
     // Stop event propagation to prevent any parent handlers from firing
     e.stopPropagation();
     
-    console.log('Generating payment link...');
+    console.log('merchantAddress in PaymentLinkContent:', merchantAddress);
     setIsSubmitting(true);
     
     try {
@@ -55,10 +78,8 @@ export default function PaymentLinkContent() {
       // For now, we'll just generate a mock link
       const linkId = Math.random().toString(36).substring(2, 10);
       const baseUrl = window.location.origin;
-      // Get merchant address from connected wallet (if available)
-      const merchantAddress = (window as any).ethereum?.selectedAddress || '';
       // Always include merchant address in the payment link
-      const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${merchantAddress}`;
+      const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${address}`;
       
       // Set the generated link in state
       setGeneratedLink(link);
@@ -103,7 +124,24 @@ export default function PaymentLinkContent() {
             Generate a payment link to share with your customers
           </p>
         </div>
-        
+
+        <div className="mb-4">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Merchant Wallet:</span>
+          <span className="ml-2 font-mono text-blue-900 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded select-all">{merchantAddress ? merchantAddress : 'Not connected'}</span>
+        </div>
+        {!merchantAddress && (
+          <div className="mb-4 text-red-600 dark:text-red-400 font-semibold">
+            Please connect your wallet (MetaMask or Coinbase) using the Wallet Selector at the top right. Your address will appear here when connected.
+          </div>
+        )}
+        {merchantAddress && (
+          <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Payment link preview (with merchant address):</div>
+            <div className="break-all font-mono text-xs text-blue-700 dark:text-blue-300">
+              {`${window.location.origin}/pay/EXAMPLEID?amount=${amount || '<amount>'}&currency=${currency || '<currency>'}&to=${merchantAddress}`}
+            </div>
+          </div>
+        )}
         <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg mb-8">
           <form 
             onSubmit={handleCreateLink} 
@@ -168,20 +206,21 @@ export default function PaymentLinkContent() {
             
             <div>
               <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCreateLink(e as unknown as React.FormEvent);
-                }}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                Generate Payment Link
-              </button>
+              type="button"
+              disabled={!merchantAddress || isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCreateLink(e as unknown as React.FormEvent);
+              }}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+            >
+              Generate Payment Link
+            </button>
             </div>
           </form>
           
-          {generatedLink && (
+          {generatedLink && merchantAddress && (
             <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg">
               <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Your Payment Link</h3>
               <div className="flex items-center">
@@ -194,6 +233,7 @@ export default function PaymentLinkContent() {
                 <button
                   onClick={copyToClipboard}
                   className="bg-primary text-white px-4 py-2 rounded-r-md hover:bg-primary-dark"
+                  disabled={!merchantAddress}
                 >
                   {copied ? 'Copied!' : 'Copy'}
                 </button>

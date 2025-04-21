@@ -38,6 +38,13 @@ export default function WalletSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Always write the connected wallet address to localStorage on change
+  useEffect(() => {
+    if (address && isConnected) {
+      localStorage.setItem('walletAddress', address);
+    }
+  }, [address, isConnected]);
+
   // Check for connected wallet and store in localStorage and cookie
   useEffect(() => {
     if (address && isConnected) {
