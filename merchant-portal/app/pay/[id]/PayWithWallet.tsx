@@ -47,9 +47,17 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
       if (token && token.address && token.address !== "0x0000000000000000000000000000000000000000") {
         // ERC-20 transfer (EIP-681 style)
         const erc20ABI = [
-          "function transfer(address to, uint256 amount) public returns (bool)"
+          "function transfer(address to, uint256 amount) public returns (bool)",
+          "function decimals() public view returns (uint8)"
         ];
-        const decimals = 18; // Default to 18 decimals for now
+        const contract = new ethers.Contract(token.address, erc20ABI, signer);
+        let decimals = 18;
+        try {
+          decimals = await contract.decimals();
+        } catch {
+          // fallback to 18 if decimals() fails
+          decimals = 18;
+        }
         let value;
         try {
           value = utils.parseUnits(amount, decimals);
@@ -58,7 +66,6 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
           setLoading(false);
           return;
         }
-        const contract = new ethers.Contract(token.address, erc20ABI, signer);
         const tx = await contract.transfer(to, value);
         setTxHash(tx.hash);
         await tx.wait();
