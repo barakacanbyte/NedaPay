@@ -1,7 +1,5 @@
 "use client";
 import { QRCodeSVG } from "qrcode.react";
-
-import { QRCodeSVG } from "qrcode.react";
 import { stablecoins } from "../../data/stablecoins";
 import { utils } from "ethers";
 
