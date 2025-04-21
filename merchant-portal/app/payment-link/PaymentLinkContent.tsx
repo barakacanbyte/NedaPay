@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import { stablecoins } from '../data/stablecoins';
 
 export default function PaymentLinkContent() {
   const [amount, setAmount] = useState('');
@@ -137,9 +138,11 @@ export default function PaymentLinkContent() {
                 onChange={(e) => setCurrency(e.target.value)}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-primary focus:border-primary rounded-md"
               >
-                <option value="TSHC">TSHC</option>
-                <option value="cNGN">cNGN</option>
-                <option value="IDRX">IDRX</option>
+                {stablecoins.stablecoins.map((coin: any) => (
+                  <option key={coin.baseToken} value={coin.baseToken}>
+                    {coin.baseToken} {coin.name ? `- ${coin.name}` : ''}
+                  </option>
+                ))}
               </select>
             </div>
             
