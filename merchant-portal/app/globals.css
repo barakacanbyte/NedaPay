@@ -29,6 +29,83 @@
 body {
   color: var(--foreground);
   background: var(--background);
+  font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Futuristic Glassmorphism Cards */
+.glass-card, .card, .dashboard-card {
+  background: var(--glass);
+  box-shadow: var(--card-glow);
+  border: 1.5px solid var(--primary-light);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(18px) saturate(140%);
+  transition: box-shadow 0.2s;
+}
+.glass-card:hover, .card:hover, .dashboard-card:hover {
+  box-shadow: 0 0 16px 4px var(--primary), 0 4px 32px 0 var(--accent);
+}
+
+/* Neon Buttons */
+.btn, .button, button {
+  background: linear-gradient(90deg, var(--primary), var(--accent) 70%);
+  color: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 12px 0 var(--primary-light);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.75em 2em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.btn:hover, .button:hover, button:hover {
+  background: linear-gradient(90deg, var(--accent), var(--primary) 70%);
+  box-shadow: 0 0 16px 4px var(--accent-light);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Futuristic Inputs */
+input, select, textarea {
+  color: #171717 !important;
+
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  color: var(--foreground);
+  border-radius: 0.7rem;
+  padding: 0.7em 1em;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--accent), var(--primary));
+}
+
+/* Neon Glow Text */
+.neon-text {
+  color: var(--primary);
+  text-shadow: 0 0 8px var(--primary), 0 0 16px var(--accent-light);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background-image: linear-gradient(to right, var(--primary-dark), var(--primary));
+  background-clip: text;
+  color: transparent;
 }
 
 /* Futuristic UI Elements */
@@ -42,13 +119,6 @@ body {
 .dark .glass-card {
   background: rgba(15, 23, 42, 0.3);
   border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-/* Gradient Text */
-.gradient-text {
-  background-image: linear-gradient(to right, var(--primary-dark), var(--primary));
-  background-clip: text;
-  color: transparent;
 }
 
 @layer utilities {
