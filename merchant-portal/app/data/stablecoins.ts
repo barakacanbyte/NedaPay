@@ -30,7 +30,7 @@ export const stablecoins = [
     currency: 'NGN',
     baseToken: 'NGNC',
     name: 'Nigerian Naira Coin',
-    address: '0x182c76e977a3f0c1e5e5a9268c8438a07e427e17', // Real address from stablecoins.earth
+    address: '0xe743f13623e000261b634f0e5676f294475ec24d', // Updated NGNC address
     issuer: 'Link',
     description: 'Stablecoin pegged 1:1 to the Nigerian Naira (NGN)',
     website: 'https://stablecoins.earth',
@@ -137,7 +137,7 @@ export const stablecoins = [
     currency: 'USD',
     baseToken: 'USDC',
     name: 'USD Coin',
-    address: '0xd9AAEC86B65d86f6A7B5B1b0c42FFA531710b6CA', // Base Mainnet
+    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base Mainnet
     issuer: 'Circle',
     description: 'USD-backed stablecoin by Circle (Base Mainnet)',
     website: 'https://www.circle.com/usdc',
