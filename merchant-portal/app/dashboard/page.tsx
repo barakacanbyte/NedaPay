@@ -68,17 +68,67 @@ const processBalances = (balanceData: Record<string, string>, networkChainId?: n
 };
 
 // Format transactions for display with links and currency
-const mockRecentTransactions = mockTransactions.slice(0, 5).map(tx => ({
-  id: tx.id,
-  shortId: tx.shortId,
-  date: tx.date,
-  amount: tx.amount,
-  currency: tx.currency,
-  status: tx.status,
-  sender: tx.sender,
-  senderShort: tx.senderShort,
-  blockExplorerUrl: tx.blockExplorerUrl
-}));
+// Utility to fetch real incoming payments (ERC20 Transfer events) for all stablecoins on Base
+async function fetchIncomingPayments(merchantAddress: string) {
+  if (!merchantAddress) return [];
+  const ethers = (await import('ethers')).ethers;
+  // Base Mainnet RPC (public)
+  const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+  const ERC20_ABI = [
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "function decimals() view returns (uint8)",
+    "function symbol() view returns (string)"
+  ];
+  const latestBlock = await provider.getBlockNumber();
+  const fromBlock = Math.max(latestBlock - 10000, 0); // last ~10000 blocks
+  let allTxs: any[] = [];
+  for (const coin of stablecoins.filter(c => c.chainId === 8453 && c.address && /^0x[a-fA-F0-9]{40}$/.test(c.address))) {
+    const contract = new ethers.Contract(coin.address, ERC20_ABI, provider);
+    let logs;
+    let decimals;
+    try {
+      // Try to fetch decimals, skip if fails (not a real ERC20)
+      decimals = await contract.decimals();
+    } catch (e) {
+      console.warn(`Skipping token ${coin.baseToken} at ${coin.address}: decimals() call failed.`);
+      continue;
+    }
+    try {
+      logs = await contract.queryFilter(
+        contract.filters.Transfer(null, merchantAddress),
+        fromBlock,
+        latestBlock
+      );
+    } catch (e) {
+      console.warn(`Skipping token ${coin.baseToken} at ${coin.address}: queryFilter failed.`);
+      continue;
+    }
+    const symbol = coin.baseToken;
+    for (const log of logs) {
+      const { transactionHash, args, blockNumber } = log;
+      const from = args.from;
+      const to = args.to;
+      const value = ethers.utils.formatUnits(args.value, decimals);
+      const block = await provider.getBlock(blockNumber);
+      const date = new Date(block.timestamp * 1000);
+      allTxs.push({
+        id: transactionHash,
+        shortId: transactionHash.slice(0, 6) + '...' + transactionHash.slice(-4),
+        date: date.toISOString().replace('T', ' ').slice(0, 16),
+        amount: value,
+        currency: symbol,
+        status: 'Completed',
+        sender: from,
+        senderShort: from.slice(0, 6) + '...' + from.slice(-4),
+        blockExplorerUrl: `https://basescan.org/tx/${transactionHash}`
+      });
+    }
+  }
+  // Sort by most recent
+  allTxs.sort((a, b) => b.date.localeCompare(a.date));
+  return allTxs.slice(0, 10); // Limit to 10 most recent
+}
+
 
 // Function to get payment methods data for charts
 const getPaymentMethodsData = (balanceData: Record<string, string>) => {
@@ -144,7 +194,7 @@ export default function MerchantDashboard() {
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [transactions, setTransactions] = useState(mockTransactions.slice(0, 5));
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   
   const { address, isConnected, connector } = useAccount();
@@ -166,10 +216,17 @@ export default function MerchantDashboard() {
         }
       }
     }
-    
     // Fetch real balances when connected
     if (isConnected && address && connector) {
       fetchRealBalances(address);
+    }
+    // Fetch real incoming payments
+    if (isConnected && address) {
+      setIsTransactionLoading(true);
+      fetchIncomingPayments(address).then((txs) => {
+        setTransactions(txs);
+        setIsTransactionLoading(false);
+      });
     }
   }, [address, isConnected]);
   
