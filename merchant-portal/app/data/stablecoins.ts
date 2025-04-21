@@ -130,6 +130,18 @@ export const stablecoins = [
     issuer: 'Etherfuse/Brale',
     description: 'Stablecoin pegged 1:1 to the Mexican Peso (MXN)',
     website: 'https://stablecoins.earth'
+  },
+  {
+    region: 'United States',
+    flag: '🇺🇸',
+    currency: 'USD',
+    baseToken: 'USDC',
+    name: 'USD Coin',
+    address: '0xd9AAEC86B65d86f6A7B5B1b0c42FFA531710b6CA', // Base Mainnet
+    issuer: 'Circle',
+    description: 'USD-backed stablecoin by Circle (Base Mainnet)',
+    website: 'https://www.circle.com/usdc',
+    chainId: 8453 // Base Mainnet
   }
 ];
 
