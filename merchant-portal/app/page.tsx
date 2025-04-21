@@ -61,20 +61,24 @@ function HomeContent() {
             Accept local stablecoins for your business and manage payments with ease
           </p>
           
-          {!isConnected && (
-            <div className="mt-8 flex flex-col items-center">
-              <div className="mb-4 flex justify-center">
-                <div className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg border-2 border-blue-400 dark:border-blue-300 transition shadow-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300" onClick={() => document.getElementById('wallet-selector-button')?.click()}>
-                  Connect Wallet
-                </div>
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="flex flex-col items-center text-left">
+              <div className="text-3xl mb-4">🚀</div>
+              <h2 className="text-xl font-bold mb-4">Why Choose NEDA Pay?</h2>
+              <div className="w-full bg-white/60 dark:bg-gray-800/80 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-xl p-6">
+                <ul className="space-y-4 list-disc list-inside text-lg text-gray-700 dark:text-gray-200 custom-bullets">
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-blue-500">🌍</span><span><span className="font-semibold">Accept Local & Global Stablecoins:</span> TSHC, cNGN, IDRX, USDC, and more</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-yellow-500">⚡</span><span><span className="font-semibold">Instant Settlement:</span> Receive funds instantly—no waiting for banks</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-green-600">🔒</span><span><span className="font-semibold">No Chargebacks:</span> Crypto payments are final, reducing fraud risk</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-pink-500">📈</span><span><span className="font-semibold">Analytics Built In:</span> Track sales, performance, and customer behavior</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-cyan-600">🌐</span><span><span className="font-semibold">Global Reach:</span> Accept payments from customers worldwide</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-indigo-500">🛠️</span><span><span className="font-semibold">Simple Integration:</span> Easy setup, no technical expertise required</span></li>
+                  <li className="flex items-start"><span className="mr-2 mt-1 text-yellow-400">💡</span><span><span className="font-semibold">Transparent Fees:</span> Clear, low-cost pricing—no hidden charges</span></li>
+                </ul>
               </div>
-              {showWalletPrompt && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md text-center mt-4">
-                  <p className="text-yellow-800 font-medium">You need to connect your wallet to access the dashboard</p>
-                </div>
-              )}
             </div>
-          )}
+
+          </div>
           
           {isConnected && (
             <div className="mt-8">
