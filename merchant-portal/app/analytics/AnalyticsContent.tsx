@@ -17,6 +17,10 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { processBalances, fetchIncomingPayments, getPaymentMethodsData } from './analyticsUtils';
+import { stablecoins } from '../data/stablecoins';
+import { ethers } from 'ethers';
+
 
 // Register ChartJS components
 ChartJS.register(
@@ -33,7 +37,7 @@ ChartJS.register(
 
 export default function AnalyticsContent() {
   const [dateRange, setDateRange] = useState('7d');
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const router = useRouter();
 
   // Check if wallet is connected using useEffect
@@ -48,47 +52,69 @@ export default function AnalyticsContent() {
     }
   }, [isConnected, router]);
 
-  // Mock data for charts
-  const revenueData = {
-    labels: ['Apr 11', 'Apr 12', 'Apr 13', 'Apr 14', 'Apr 15', 'Apr 16', 'Apr 17'],
-    datasets: [
-      {
-        label: 'Revenue',
-        data: [4500, 5200, 3800, 6000, 5600, 7200, 6800],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        tension: 0.3,
-      },
-    ],
-  };
+  // --- Real Data State ---
+const [balances, setBalances] = useState<Record<string, string>>({});
+const [transactions, setTransactions] = useState<any[]>([]);
+const [isLoading, setIsLoading] = useState(false);
+const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+// useAccount already declared above, so just use address and isConnected from there
 
-  const transactionsData = {
-    labels: ['Apr 11', 'Apr 12', 'Apr 13', 'Apr 14', 'Apr 15', 'Apr 16', 'Apr 17'],
-    datasets: [
-      {
-        label: 'Transactions',
-        data: [12, 19, 15, 22, 18, 24, 21],
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderRadius: 6,
-      },
-    ],
-  };
+// Fetch real balances and transactions
+useEffect(() => {
+  async function fetchData() {
+    if (!address) return;
+    setIsLoading(true);
+    setIsTransactionLoading(true);
+    // Fetch balances
+    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+    const ERC20_ABI = [
+      'function balanceOf(address owner) view returns (uint256)',
+      'function decimals() view returns (uint8)'
+    ];
+    const balancesObj: Record<string, string> = {};
+    for (const coin of stablecoins.filter((c) => c.chainId === 8453 && c.address)) {
+      try {
+        const contract = new ethers.Contract(coin.address, ERC20_ABI, provider);
+        const bal = await contract.balanceOf(address);
+        const decimals = await contract.decimals();
+        balancesObj[coin.baseToken] = ethers.utils.formatUnits(bal, decimals);
+      } catch (e) {
+        balancesObj[coin.baseToken] = '0';
+      }
+    }
+    setBalances(balancesObj);
+    // Fetch transactions
+    const txs = await fetchIncomingPayments(address);
+    setTransactions(txs);
+    setIsLoading(false);
+    setIsTransactionLoading(false);
+  }
+  if (isConnected && address) fetchData();
+}, [isConnected, address]);
 
-  const currencyDistributionData = {
-    labels: ['TSHC', 'cNGN', 'IDRX'],
-    datasets: [
-      {
-        label: 'Currency Distribution',
-        data: [65, 20, 15],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(245, 158, 11, 0.8)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+// --- Derived Data ---
+const { processedBalances, totalReceived, processedStablecoins } = processBalances(balances);
+const revenueData = {
+  labels: transactions.map(tx => tx.date),
+  datasets: [{
+    label: 'Revenue',
+    data: transactions.map(tx => Number(tx.amount)),
+    borderColor: 'rgb(59, 130, 246)',
+    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+    tension: 0.3,
+  }],
+};
+const transactionsData = {
+  labels: transactions.map(tx => tx.date),
+  datasets: [{
+    label: 'Transactions',
+    data: transactions.map(() => 1),
+    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+    borderRadius: 6,
+  }],
+};
+const currencyDistributionData = getPaymentMethodsData(balances);
+
 
   const chartOptions = {
     responsive: true,
@@ -210,7 +236,13 @@ export default function AnalyticsContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Total Revenue</h3>
-            <p className="text-3xl font-bold text-primary">39,100 TSHC</p>
+            {(() => {
+  const maxCoin = processedBalances.reduce((max, coin) => {
+    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
+    return max;
+  }, processedBalances[0] || { balance: '0', symbol: '' });
+  return <p className="text-3xl font-bold text-primary">{maxCoin.balance} {maxCoin.symbol}</p>;
+})()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586l3.293-3.293A1 1 0 0112 7z" clipRule="evenodd" />
@@ -221,7 +253,14 @@ export default function AnalyticsContent() {
           
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Transactions</h3>
-            <p className="text-3xl font-bold text-primary">131</p>
+            {(() => {
+  const maxCoin = processedBalances.reduce((max, coin) => {
+    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
+    return max;
+  }, processedBalances[0] || { balance: '0', symbol: '' });
+  const txsForCoin = transactions.filter(tx => tx.currency === maxCoin.symbol);
+  return <p className="text-3xl font-bold text-primary">{txsForCoin.length}</p>;
+})()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586l3.293-3.293A1 1 0 0112 7z" clipRule="evenodd" />
@@ -232,7 +271,15 @@ export default function AnalyticsContent() {
           
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Average Transaction</h3>
-            <p className="text-3xl font-bold text-primary">298 TSHC</p>
+            {(() => {
+  const maxCoin = processedBalances.reduce((max, coin) => {
+    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
+    return max;
+  }, processedBalances[0] || { balance: '0', symbol: '' });
+  const txsForCoin = transactions.filter(tx => tx.currency === maxCoin.symbol);
+  const avg = txsForCoin.length > 0 ? (parseFloat(maxCoin.balance.replace(/,/g, '')) / txsForCoin.length).toFixed(2) : '0';
+  return <p className="text-3xl font-bold text-primary">{avg} {maxCoin.symbol}</p>;
+})()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586l3.293-3.293A1 1 0 0112 7z" clipRule="evenodd" />
@@ -280,26 +327,25 @@ export default function AnalyticsContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 17, 2025</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">450</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">TSHC</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        Completed
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 16, 2025</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">1200</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">TSHC</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        Completed
-                      </span>
-                    </td>
-                  </tr>
+  {transactions.length === 0 ? (
+    <tr>
+      <td colSpan={4} className="px-6 py-4 text-center text-slate-500 dark:text-slate-300">No transactions found</td>
+    </tr>
+  ) : (
+    transactions.map((tx, idx) => (
+      <tr key={tx.id || idx}>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.date}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.amount}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.currency}</td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+            {tx.status}
+          </span>
+        </td>
+      </tr>
+    ))
+  )
+}
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 15, 2025</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">800</td>
