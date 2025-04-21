@@ -55,7 +55,10 @@ export default function PaymentLinkContent() {
       // For now, we'll just generate a mock link
       const linkId = Math.random().toString(36).substring(2, 10);
       const baseUrl = window.location.origin;
-      const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}`;
+      // Get merchant address from connected wallet (if available)
+      const merchantAddress = (window as any).ethereum?.selectedAddress || '';
+      // Always include merchant address in the payment link
+      const link = `${baseUrl}/pay/${linkId}?amount=${amount}&currency=${currency}&to=${merchantAddress}`;
       
       // Set the generated link in state
       setGeneratedLink(link);
@@ -138,9 +141,9 @@ export default function PaymentLinkContent() {
                 onChange={(e) => setCurrency(e.target.value)}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-primary focus:border-primary rounded-md"
               >
-                {stablecoins.stablecoins.map((coin: any) => (
+                {stablecoins.map((coin: any) => (
                   <option key={coin.baseToken} value={coin.baseToken}>
-                    {coin.baseToken} {coin.name ? `- ${coin.name}` : ''}
+                    {coin.baseToken} - {coin.name || coin.currency || coin.region}
                   </option>
                 ))}
               </select>
