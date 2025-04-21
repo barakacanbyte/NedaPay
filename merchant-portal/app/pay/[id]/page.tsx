@@ -5,6 +5,8 @@ export const dynamic = "force-dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import dynamicImport from "next/dynamic";
+import { useAccount } from "wagmi";
+import { utils } from "ethers";
 
 const PaymentQRCode = dynamicImport(() => import("./QRCode"), { ssr: false });
 const PayWithWallet = dynamicImport(() => import("./PayWithWallet"), { ssr: false });
@@ -14,7 +16,13 @@ export default function PayPage({ params }: { params: { id: string } }) {
   const [copied, setCopied] = useState(false);
   const amount = searchParams.get("amount");
   const currency = searchParams.get("currency");
-  const to = searchParams.get("to");
+  const { address: connectedAddress } = useAccount();
+  let to = searchParams.get("to");
+
+  // Validate 'to', fallback to connected wallet if invalid
+  if (!to || !utils.isAddress(to)) {
+    to = connectedAddress || "";
+  }
 
   useEffect(() => {
     setCopied(false);
