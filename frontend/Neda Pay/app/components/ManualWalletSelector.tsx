@@ -1,5 +1,50 @@
 'use client';
 
+// Utility to detect mobile browsers
+function isMobile() {
+  if (typeof navigator === 'undefined') return false;
+  return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
+
+// Fallback component for mobile wallet connection
+function MobileWalletFallback() {
+  if (isMobile()) {
+    return (
+      <div className="text-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+        <p className="text-gray-600 dark:text-gray-400 mb-2">
+          To connect your wallet on mobile, please open this site directly in your <b>MetaMask</b> or <b>Coinbase Wallet</b> app using their built-in browser.<br /><br />
+          <span className="text-xs text-gray-500 dark:text-gray-400">(Tap the browser icon in your wallet app and enter this URL)</span>
+        </p>
+      </div>
+    );
+  }
+  // Desktop fallback: show install links
+  return (
+    <div className="text-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+      <p className="text-gray-600 dark:text-gray-400 mb-2">No compatible wallets found</p>
+      <div className="flex flex-col space-y-2 mt-4">
+        <a
+          href="https://metamask.io/download/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          Install MetaMask
+        </a>
+        <a
+          href="https://www.coinbase.com/wallet"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          Install Coinbase Wallet
+        </a>
+      </div>
+    </div>
+  );
+}
+
+
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { loadWalletState, saveWalletState, clearWalletState, WalletState } from '../utils/wallet-state';
@@ -321,27 +366,7 @@ export default function ManualWalletSelector() {
                       </button>
                     ))
                   ) : (
-                    <div className="text-center p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                      <p className="text-gray-600 dark:text-gray-400 mb-2">No compatible wallets found</p>
-                      <div className="flex flex-col space-y-2 mt-4">
-                        <a
-                          href="https://metamask.io/download/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Install MetaMask
-                        </a>
-                        <a
-                          href="https://www.coinbase.com/wallet"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          Install Coinbase Wallet
-                        </a>
-                      </div>
-                    </div>
+                    <MobileWalletFallback />
                   )}
                 </div>
               </div>
