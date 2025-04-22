@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi';
 import { Connector } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
-import { stablecoins, mockBalances, mockTransactions } from '../data/stablecoins';
+import { stablecoins } from '../data/stablecoins';
 import { ethers } from 'ethers';
 import { 
   Chart as ChartJS, 
@@ -161,31 +161,56 @@ const getPaymentMethodsData = (balanceData: Record<string, string>) => {
 };
 
 // Daily revenue data
-const mockDailyRevenue = {
-  labels: ['Apr 5', 'Apr 6', 'Apr 7', 'Apr 8', 'Apr 9', 'Apr 10', 'Apr 11'],
-  datasets: [
-    {
-      label: 'Daily Revenue (TSHC)',
-      data: [45000, 52000, 38000, 61000, 42000, 55000, 48000],
-      borderColor: 'rgb(59, 130, 246)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      tension: 0.3,
-      fill: true
+// Generate daily revenue data from real transactions
+function getDailyRevenueData(transactions: any[]) {
+  // Group by day (YYYY-MM-DD)
+  const dayMap: Record<string, number> = {};
+  transactions.forEach(tx => {
+    const day = tx.date.slice(0, 10);
+    const amount = parseFloat(tx.amount.replace(/,/g, ''));
+    if (!isNaN(amount)) {
+      dayMap[day] = (dayMap[day] || 0) + amount;
     }
-  ]
-};
+  });
+  // Get last 7 days
+  const days = Array.from(new Set(transactions.map(tx => tx.date.slice(0, 10)))).sort().slice(-7);
+  return {
+    labels: days,
+    datasets: [
+      {
+        label: 'Daily Revenue',
+        data: days.map(day => dayMap[day] || 0),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.3,
+        fill: true
+      }
+    ]
+  };
+}
 
 // Transactions by day data
-const mockTransactionsByDay = {
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      label: 'Transactions',
-      data: [65, 78, 52, 91, 83, 56, 42],
-      backgroundColor: 'rgba(59, 130, 246, 0.8)'
-    }
-  ]
-};
+// Generate transactions by day data from real transactions
+function getTransactionsByDayData(transactions: any[]) {
+  // Group by weekday
+  const dayMap: Record<string, number> = { 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0 };
+  transactions.forEach(tx => {
+    const dateObj = new Date(tx.date);
+    const day = dateObj.toLocaleDateString(undefined, { weekday: 'short' });
+    dayMap[day] = (dayMap[day] || 0) + 1;
+  });
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return {
+    labels: weekDays,
+    datasets: [
+      {
+        label: 'Transactions',
+        data: weekDays.map(day => dayMap[day] || 0),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)'
+      }
+    ]
+  };
+}
 
 export default function MerchantDashboard() {
   const [networkWarning, setNetworkWarning] = useState(false);
@@ -449,19 +474,21 @@ const fetchRealBalances = async (walletAddress: string) => {
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Transactions</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">{mockTransactions.length.toString()}</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">{transactions.length}</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Average Transaction</div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {(() => {
-                  const total = parseInt(processBalances(balances).totalReceived.replace(/,/g, ''));
-                  const symbol = processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || '';
-                  if (total === 0) return `0 ${symbol}`;
-                  return `${Math.round(total / mockTransactions.length).toLocaleString()} ${symbol}`;
-                })()}
-              </div>
+  {(() => {
+    const total = parseInt(processBalances(balances).totalReceived.replace(/,/g, ''));
+    const symbol = processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || '';
+    if (total === 0 || transactions.length === 0) return `0 ${symbol}`;
+    // Average over real transactions
+    const sum = transactions.reduce((acc, tx) => acc + (parseFloat(tx.amount.replace(/,/g, '')) || 0), 0);
+    return `${Math.round(sum / transactions.length).toLocaleString()} ${symbol}`;
+  })()}
+</div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
@@ -477,42 +504,42 @@ const fetchRealBalances = async (walletAddress: string) => {
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Revenue</h3>
               <div className="h-64">
                 <Line 
-                  data={mockDailyRevenue} 
-                  options={{ 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          color: 'rgba(156, 163, 175, 0.1)'
-                        },
-                        ticks: {
-                          color: typeof window !== 'undefined' && 
-                                window.matchMedia && 
-                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                                '#9ca3af' : '#4b5563',
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        },
-                        ticks: {
-                          color: typeof window !== 'undefined' && 
-                                window.matchMedia && 
-                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                                '#9ca3af' : '#4b5563',
-                        }
-                      }
-                    },
-                    plugins: {
-                      legend: {
-                        display: false
-                      }
-                    }
-                  }} 
-                />
+  data={getDailyRevenueData(transactions)} 
+  options={{ 
+    responsive: true, 
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(156, 163, 175, 0.1)'
+        },
+        ticks: {
+          color: typeof window !== 'undefined' && 
+                window.matchMedia && 
+                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                '#9ca3af' : '#4b5563',
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: typeof window !== 'undefined' && 
+                window.matchMedia && 
+                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                '#9ca3af' : '#4b5563',
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
+  }} 
+/>
               </div>
             </div>
             
