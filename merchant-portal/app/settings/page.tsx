@@ -65,27 +65,26 @@ export default function SettingsPage() {
   if (!mounted) return null;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
-      <Header />
-      
-      <div className="container mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 gradient-text">
-            Settings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Manage your merchant account settings
-          </p>
-        </div>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
+        <Header />
+        <div className="container mx-auto max-w-6xl px-4 py-12">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2 gradient-text">
+              Settings
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Manage your merchant account settings
+            </p>
+          </div>
 
-        {/* Wallet Connection Prompt */}
+          {/* Wallet Connection Prompt */}
         {!isConnected && (
           <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8 text-center">
             <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-300 mb-2">Connect Your Wallet</h2>
             <p className="text-blue-600 dark:text-blue-400 mb-4">Connect your wallet to access your merchant settings</p>
           </div>
         )}
-
         {isConnected && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Settings Navigation */}
@@ -555,6 +554,7 @@ export default function SettingsPage() {
         )}
       </div>
     </div>
-    <Footer />
+      <Footer />
+    </>
   );
 }

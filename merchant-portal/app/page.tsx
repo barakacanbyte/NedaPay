@@ -246,8 +246,7 @@ function HomeContent() {
         </div>
       </div>
       
-      {/* Footer */}
-      <Footer />
+      {/* Footer intentionally removed here to avoid duplication. It should only be rendered globally (e.g., in layout.tsx). */}
     </div>
   );
 }
