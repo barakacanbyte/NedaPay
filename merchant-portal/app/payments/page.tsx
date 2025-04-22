@@ -18,7 +18,6 @@ const mockPaymentHistory = mockTransactions.map(tx => {
   };
 });
 
-import Footer from '../components/Footer';
 
 export default function PaymentsPage() {
   const [mounted, setMounted] = useState(false);
@@ -360,6 +359,5 @@ export default function PaymentsPage() {
         )}
       </div>
     </div>
-    <Footer />
   );
 }
