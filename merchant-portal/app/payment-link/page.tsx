@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import { useAccount } from 'wagmi';
 import { stablecoins } from '../data/stablecoins';
 
+
 export default function PaymentLinkPage() {
   const [isClient, setIsClient] = useState(false);
   useEffect(() => { setIsClient(true); }, []);

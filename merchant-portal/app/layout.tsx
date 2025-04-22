@@ -2,6 +2,7 @@ import '@coinbase/onchainkit/styles.css';
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
+import Footer from './components/Footer';
 
 export const metadata: Metadata = {
   title: 'NEDA Pay Merchant Portal',
@@ -16,7 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-background">
-        <Providers>{children}</Providers>
+        <div className="flex flex-col min-h-screen">
+          <Providers>
+            <main className="flex-grow">{children}</main>
+          </Providers>
+          <Footer />
+        </div>
       </body>
     </html>
   );

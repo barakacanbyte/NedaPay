@@ -28,6 +28,8 @@ const processedStablecoins = stablecoins.map(coin => {
   };
 });
 
+import Footer from '../components/Footer';
+
 export default function StablecoinsPage() {
   const [mounted, setMounted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -328,5 +330,6 @@ export default function StablecoinsPage() {
         )}
       </div>
     </div>
+    <Footer />
   );
 }

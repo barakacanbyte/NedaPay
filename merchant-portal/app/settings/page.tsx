@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useOnchainKit } from '@coinbase/onchainkit';
 import Header from '../components/Header';
 
+import Footer from '../components/Footer';
+
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -553,5 +555,6 @@ export default function SettingsPage() {
         )}
       </div>
     </div>
+    <Footer />
   );
 }

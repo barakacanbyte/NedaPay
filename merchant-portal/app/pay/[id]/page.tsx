@@ -11,6 +11,7 @@ import { utils } from "ethers";
 const PaymentQRCode = dynamicImport(() => import("./QRCode"), { ssr: false });
 const PayWithWallet = dynamicImport(() => import("./PayWithWallet"), { ssr: false });
 
+
 export default function PayPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const [copied, setCopied] = useState(false);

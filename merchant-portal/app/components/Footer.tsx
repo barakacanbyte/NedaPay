@@ -15,7 +15,7 @@ export default function Footer() {
         </div>
         {/* Tagline */}
         <div className="text-lg text-slate-600 dark:text-slate-300 mb-8 max-w-2xl">
-          A futuristic payment solution leveraging Base stablecoins and the Tanzania Shilling stablecoin (TSHC) for seamless global transactions.
+          Empowering merchants to accept stablecoin payments easily and securely—anywhere, anytime.
         </div>
         {/* Social Links */}
         <div className="flex space-x-8 mt-2">
