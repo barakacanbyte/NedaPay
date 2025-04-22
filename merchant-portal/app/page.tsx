@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef, Suspense } from 'react';
+import Footer from './components/Footer';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -246,35 +247,7 @@ function HomeContent() {
       </div>
       
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 py-8 mt-12">
-        <div className="container mx-auto max-w-6xl px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
-                NEDA Pay Merchant
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                © 2025 NEDA Pay. All rights reserved.
-              </p>
-            </div>
-            
-            <div className="flex space-x-6 text-2xl">
-              <a href="https://x.com/yourprofile" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition">
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.53 6.47a.75.75 0 0 1 1.06 1.06l-10 10a.75.75 0 1 1-1.06-1.06l10-10z"></path><path d="M6.47 6.47a.75.75 0 0 1 1.06 0l10 10a.75.75 0 1 1-1.06 1.06l-10-10a.75.75 0 0 1 0-1.06z"></path></svg>
-              </a>
-              <a href="https://github.com/0xMgwan/NedaPay" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition">
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.49 2.87 8.3 6.84 9.64.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.61-3.37-1.36-3.37-1.36-.46-1.19-1.12-1.5-1.12-1.5-.92-.64.07-.63.07-.63 1.02.07 1.56 1.06 1.56 1.06.9 1.57 2.36 1.12 2.94.85.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.74-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.04A9.38 9.38 0 0 1 12 7.43c.85.004 1.71.12 2.51.34 1.91-1.32 2.75-1.04 2.75-1.04.55 1.4.2 2.44.1 2.7.64.71 1.03 1.62 1.03 2.74 0 3.93-2.34 4.8-4.57 5.06.36.32.68.95.68 1.92 0 1.39-.01 2.52-.01 2.86 0 .27.18.58.69.48A10.01 10.01 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"></path></svg>
-              </a>
-              <a href="https://medium.com/@yourprofile" target="_blank" rel="noopener noreferrer" aria-label="Medium" className="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition">
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 6.52c.02-.24-.07-.48-.25-.65L.28 4.13V3.89h6.24l4.81 10.54 4.23-10.54h5.98v.24l-1.68 1.61c-.14.11-.21.29-.19.46v12.99c-.02.17.05.34.19.45l1.64 1.61v.24h-8.44v-.24l1.7-1.65c.17-.17.17-.22.17-.45V7.96l-4.75 12.04h-.64L3.13 7.96v8.18c-.05.33.07.67.32.9l2.21 2.68v.24H.26v-.24l2.21-2.68c.24-.23.35-.57.29-.9V6.52z"></path></svg>
-              </a>
-              <a href="mailto:hello@nedapay.com" aria-label="Email" className="text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition">
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19.75 4.75H4.25C3.01 4.75 2 5.76 2 7v10c0 1.24 1.01 2.25 2.25 2.25h15.5c1.24 0 2.25-1.01 2.25-2.25V7c0-1.24-1.01-2.25-2.25-2.25zm0 1.5c.41 0 .75.34.75.75v.37l-8.5 5.48-8.5-5.48V7c0-.41.34-.75.75-.75h15.5zm.75 3.17v8.58c0 .41-.34.75-.75.75H4.25a.75.75 0 0 1-.75-.75v-8.58l8.22 5.31c.24.15.54.15.78 0l8.25-5.31z"></path></svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

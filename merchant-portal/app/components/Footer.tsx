@@ -5,134 +5,38 @@ import { useTheme } from 'next-themes';
 
 export default function Footer() {
   const { theme } = useTheme();
-  const currentYear = new Date().getFullYear();
-  
   return (
     <footer className="bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-12">
-      <div className="container mx-auto max-w-6xl px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">NEDA Pay</h3>
-            <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
-              Empowering merchants with stablecoin payment solutions across Southeast Asia and Africa.
-            </p>
-            <div className="flex space-x-4">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/>
-                </svg>
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
-                </svg>
-              </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-semibold uppercase text-slate-800 dark:text-white mb-4">Products</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/payment-link" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Payment Links
-                </Link>
-              </li>
-              <li>
-                <Link href="/withdraw-funds" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Withdrawals
-                </Link>
-              </li>
-              <li>
-                <Link href="/analytics" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Analytics
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Dashboard
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-semibold uppercase text-slate-800 dark:text-white mb-4">Resources</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  API Reference
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Tutorials
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Blog
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-sm font-semibold uppercase text-slate-800 dark:text-white mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary-light text-sm">
-                  Terms of Service
-                </a>
-              </li>
-            </ul>
-          </div>
+      <div className="container mx-auto max-w-3xl px-4 flex flex-col items-center justify-center text-center">
+        {/* Logo and Title */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold text-2xl">N</div>
+          <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">NEDA Pay</span>
         </div>
-        
-        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-600 dark:text-slate-400 text-sm">
-              © {currentYear} NEDA Pay. All rights reserved.
-            </p>
-            <div className="mt-4 md:mt-0">
-              <div className="flex space-x-4">
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light text-sm">
-                  Privacy Policy
-                </a>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light text-sm">
-                  Terms of Service
-                </a>
-                <a href="#" className="text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-primary-light text-sm">
-                  Contact Us
-                </a>
-              </div>
-            </div>
-          </div>
+        {/* Tagline */}
+        <div className="text-lg text-slate-600 dark:text-slate-300 mb-8 max-w-2xl">
+          A futuristic payment solution leveraging Base stablecoins and the Tanzania Shilling stablecoin (TSHC) for seamless global transactions.
+        </div>
+        {/* Social Links */}
+        <div className="flex space-x-8 mt-2">
+          {/* X (Twitter) */}
+          <a href="https://x.com/NedaLabs" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition">
+            <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M18.26 3H21.5l-7.36 8.39L22.5 21h-6.69l-5.21-6.28L4.5 21H1.25l7.93-9.04L1.5 3h6.82l4.76 5.75L18.26 3zm-1.01 15.19h1.85L7.21 4.62H5.27l12.98 13.57z"/>
+            </svg>
+          </a>
+          {/* Medium */}
+          <a href="https://medium.com/@nedalabs" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition">
+            <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M2.01 6.61c.02-.2-.06-.4-.22-.53L.27 4.09V3.82h6.16l4.75 10.41L15.24 3.82h5.86v.27l-1.49 1.43c-.13.1-.19.26-.15.42v12.2c-.04.16.02.32.15.42l1.46 1.43v.27h-8.27v-.27l1.51-1.46c.15-.15.15-.19.15-.42V8.45l-4.21 10.41h-.57L3.19 8.45v7.89c-.04.3.06.6.28.81l1.96 2.39v.27H.23v-.27l1.96-2.39c.21-.21.31-.51.28-.81V6.61z"/>
+            </svg>
+          </a>
+          {/* GitHub */}
+          <a href="https://github.com/0xMgwan/NedaPay/tree/main/merchant-portal" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition">
+            <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.36-3.37-1.36-.45-1.17-1.1-1.48-1.1-1.48-.9-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.05 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05A9.18 9.18 0 0 1 12 7.62c.85.01 1.7.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.92-2.34 4.78-4.57 5.04.36.32.68.95.68 1.91 0 1.38-.01 2.5-.01 2.84 0 .27.18.58.69.48A10.02 10.02 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/>
+            </svg>
+          </a>
         </div>
       </div>
     </footer>
