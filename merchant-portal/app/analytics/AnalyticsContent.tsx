@@ -35,6 +35,9 @@ ChartJS.register(
   Legend
 );
 
+import CurrencyFilter from './CurrencyFilter';
+import { exportTransactionsToCSV } from './ExportCSV';
+
 export default function AnalyticsContent() {
   const [dateRange, setDateRange] = useState('7d');
   const { address, isConnected } = useAccount();
@@ -57,6 +60,7 @@ const [balances, setBalances] = useState<Record<string, string>>({});
 const [transactions, setTransactions] = useState<any[]>([]);
 const [isLoading, setIsLoading] = useState(false);
 const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+const [selectedCurrency, setSelectedCurrency] = useState<string>('');
 // useAccount already declared above, so just use address and isConnected from there
 
 // Fetch real balances and transactions
@@ -92,28 +96,44 @@ useEffect(() => {
   if (isConnected && address) fetchData();
 }, [isConnected, address]);
 
-// --- Derived Data ---
-const { processedBalances, totalReceived, processedStablecoins } = processBalances(balances);
+// --- Derived & Filtered Data ---
+const now = new Date();
+const getDateThreshold = () => {
+  if (dateRange === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  if (dateRange === '30d') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  if (dateRange === '90d') return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  return new Date(0);
+};
+const dateThreshold = getDateThreshold();
+const filteredTxs = transactions.filter(tx => {
+  const txDate = new Date(tx.date);
+  const currencyMatch = !selectedCurrency || tx.currency === selectedCurrency;
+  return txDate >= dateThreshold && currencyMatch;
+});
+const filteredBalances = selectedCurrency
+  ? Object.fromEntries(Object.entries(balances).filter(([k]) => k === selectedCurrency))
+  : balances;
+const { processedBalances, totalReceived, processedStablecoins } = processBalances(filteredBalances);
 const revenueData = {
-  labels: transactions.map(tx => tx.date),
+  labels: filteredTxs.map(tx => tx.date),
   datasets: [{
     label: 'Revenue',
-    data: transactions.map(tx => Number(tx.amount)),
+    data: filteredTxs.map(tx => Number(tx.amount)),
     borderColor: 'rgb(59, 130, 246)',
     backgroundColor: 'rgba(59, 130, 246, 0.5)',
     tension: 0.3,
   }],
 };
 const transactionsData = {
-  labels: transactions.map(tx => tx.date),
+  labels: filteredTxs.map(tx => tx.date),
   datasets: [{
     label: 'Transactions',
-    data: transactions.map(() => 1),
+    data: filteredTxs.map(() => 1),
     backgroundColor: 'rgba(59, 130, 246, 0.8)',
     borderRadius: 6,
   }],
 };
-const currencyDistributionData = getPaymentMethodsData(balances);
+const currencyDistributionData = getPaymentMethodsData(filteredBalances);
 
 
   const chartOptions = {
@@ -187,6 +207,21 @@ const currencyDistributionData = getPaymentMethodsData(balances);
       <div className="flex-grow">
       
       <div className="container mx-auto max-w-6xl px-4 py-12">
+  {/* Controls */}
+  <div className="flex flex-wrap gap-4 items-center mb-8">
+    <CurrencyFilter
+      currencies={[...new Set(transactions.map(tx => tx.currency))].filter(Boolean)}
+      selected={selectedCurrency}
+      onChange={setSelectedCurrency}
+    />
+    <button
+      className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+      onClick={() => exportTransactionsToCSV(filteredTxs)}
+      disabled={filteredTxs.length === 0}
+    >
+      Export CSV
+    </button>
+  </div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">
             Analytics
@@ -240,11 +275,28 @@ const currencyDistributionData = getPaymentMethodsData(balances);
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Total Revenue</h3>
             {(() => {
-  const maxCoin = processedBalances.reduce((max, coin) => {
-    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
-    return max;
-  }, processedBalances[0] || { balance: '0', symbol: '' });
-  return <p className="text-3xl font-bold text-primary">{maxCoin.balance} {maxCoin.symbol}</p>;
+  if (!transactions.length) return <p className="text-3xl font-bold text-primary">0</p>;
+  // Group by currency
+  const sums: Record<string, number> = {};
+  transactions.forEach(tx => {
+    const amt = parseFloat((tx.amount || '0').replace(/,/g, '')) || 0;
+    sums[tx.currency] = (sums[tx.currency] || 0) + amt;
+  });
+  const entries = Object.entries(sums);
+  if (entries.length === 1) {
+    const [currency, sum] = entries[0];
+    return <p className="text-3xl font-bold text-primary">{sum.toLocaleString()} {currency}</p>;
+  }
+  // Multi-currency breakdown
+  return (
+    <div>
+      {entries.map(([currency, sum]) => (
+        <div key={currency} className="text-sm text-primary font-semibold">
+          {sum.toLocaleString()} {currency}
+        </div>
+      ))}
+    </div>
+  );
 })()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -257,12 +309,8 @@ const currencyDistributionData = getPaymentMethodsData(balances);
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Transactions</h3>
             {(() => {
-  const maxCoin = processedBalances.reduce((max, coin) => {
-    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
-    return max;
-  }, processedBalances[0] || { balance: '0', symbol: '' });
-  const txsForCoin = transactions.filter(tx => tx.currency === maxCoin.symbol);
-  return <p className="text-3xl font-bold text-primary">{txsForCoin.length}</p>;
+  // Show total number of transactions
+  return <p className="text-3xl font-bold text-primary">{transactions.length}</p>;
 })()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -275,13 +323,30 @@ const currencyDistributionData = getPaymentMethodsData(balances);
           <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Average Transaction</h3>
             {(() => {
-  const maxCoin = processedBalances.reduce((max, coin) => {
-    if (parseFloat(coin.balance.replace(/,/g, '')) > parseFloat(max.balance.replace(/,/g, ''))) return coin;
-    return max;
-  }, processedBalances[0] || { balance: '0', symbol: '' });
-  const txsForCoin = transactions.filter(tx => tx.currency === maxCoin.symbol);
-  const avg = txsForCoin.length > 0 ? (parseFloat(maxCoin.balance.replace(/,/g, '')) / txsForCoin.length).toFixed(2) : '0';
-  return <p className="text-3xl font-bold text-primary">{avg} {maxCoin.symbol}</p>;
+  if (!transactions.length) return <p className="text-3xl font-bold text-primary">0</p>;
+  // Group by currency
+  const sums: Record<string, { sum: number, count: number }> = {};
+  transactions.forEach(tx => {
+    const amt = parseFloat((tx.amount || '0').replace(/,/g, '')) || 0;
+    if (!sums[tx.currency]) sums[tx.currency] = { sum: 0, count: 0 };
+    sums[tx.currency].sum += amt;
+    sums[tx.currency].count += 1;
+  });
+  const entries = Object.entries(sums);
+  if (entries.length === 1) {
+    const [currency, { sum, count }] = entries[0];
+    return <p className="text-3xl font-bold text-primary">{(sum / count).toLocaleString(undefined, { maximumFractionDigits: 2 })} {currency}</p>;
+  }
+  // Multi-currency breakdown
+  return (
+    <div>
+      {entries.map(([currency, { sum, count }]) => (
+        <div key={currency} className="text-sm text-primary font-semibold">
+          {(sum / count).toLocaleString(undefined, { maximumFractionDigits: 2 })} {currency}
+        </div>
+      ))}
+    </div>
+  );
 })()}
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -318,41 +383,40 @@ const currencyDistributionData = getPaymentMethodsData(balances);
           </div>
           
           <div className="col-span-1 md:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Recent Transactions</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                <thead className="bg-slate-50 dark:bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Currency</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-  {transactions.length === 0 ? (
-    <tr>
-      <td colSpan={4} className="px-6 py-4 text-center text-slate-500 dark:text-slate-300">No transactions found</td>
-    </tr>
-  ) : (
-    transactions.map((tx, idx) => (
-      <tr key={tx.id || idx}>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.date}</td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.amount}</td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.currency}</td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-            {tx.status}
-          </span>
-        </td>
-      </tr>
-    ))
-  )
-}
-                </tbody>
-              </table>
-            </div>
-          </div>
+  <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Filtered Transactions</h3>
+  <div className="overflow-x-auto">
+    <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+      <thead className="bg-slate-50 dark:bg-slate-700">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Amount</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Currency</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
+        </tr>
+      </thead>
+      <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+        {filteredTxs.length === 0 ? (
+          <tr>
+            <td colSpan={4} className="px-6 py-4 text-center text-slate-500 dark:text-slate-300">No transactions found</td>
+          </tr>
+        ) : (
+          filteredTxs.map((tx, idx) => (
+            <tr key={tx.id || idx}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.date}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.amount}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{tx.currency}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  {tx.status}
+                </span>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
         </div>
         
       </div>

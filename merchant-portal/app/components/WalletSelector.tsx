@@ -29,6 +29,13 @@ function useBaseName(address: string | undefined) {
   return baseName;
 }
 
+// Utility to detect mobile browsers
+function isMobile() {
+  return /android|iphone|ipad|ipod|opera mini|iemobile|mobile/i.test(
+    typeof navigator === 'undefined' ? '' : navigator.userAgent
+  );
+}
+
 export default function WalletSelector() {
   const [showOptions, setShowOptions] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -49,8 +56,8 @@ export default function WalletSelector() {
 
   
   // Format address for display
-  const formatAddress = (address: string | undefined) => {
-    if (!address) return '';
+  const formatAddress = (address: string | undefined): string => {
+    if (!address || typeof address !== 'string' || !address.startsWith('0x') || address.length < 10) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
   
@@ -156,6 +163,10 @@ export default function WalletSelector() {
         await connect({ connector: metamaskConnector });
         setShowOptions(false);
         // Note: The redirect will happen in the useEffect when isConnected changes
+      } else if (isMobile()) {
+        // On mobile, open MetaMask deep link to this dapp
+        const dappUrl = encodeURIComponent(window.location.href);
+        window.open(`https://metamask.app.link/dapp/${window.location.host}`, '_blank');
       } else {
         // MetaMask not installed, open download page
         window.open('https://metamask.io/download/', '_blank');
@@ -172,7 +183,13 @@ export default function WalletSelector() {
   const handleConnectCoinbase = async () => {
     setIsConnecting(true);
     try {
-      // Create Coinbase Wallet connector
+      // Coinbase Wallet deep link for mobile
+      if (isMobile() && typeof window.ethereum === 'undefined') {
+        // Open Coinbase Wallet deep link to this dapp
+        window.open(`https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(window.location.href)}`,'_blank');
+        return;
+      }
+      // Create Coinbase Wallet connector (desktop or mobile in-app browser)
       const coinbaseConnector = coinbaseWallet({
         appName: 'NEDA Pay Merchant',
         chainId: 1 // Ethereum Mainnet
