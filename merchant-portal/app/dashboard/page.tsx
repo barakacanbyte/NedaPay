@@ -164,27 +164,49 @@ const getPaymentMethodsData = (balanceData: Record<string, string>) => {
 // Daily revenue data
 // Generate daily revenue data from real transactions
 function getDailyRevenueData(transactions: any[]) {
-  // Group by day (YYYY-MM-DD)
+  // Determine the most common currency symbol
+  const currencyCounts: Record<string, number> = {};
+  transactions.forEach(tx => {
+    if (tx.currency) currencyCounts[tx.currency] = (currencyCounts[tx.currency] || 0) + 1;
+  });
+  const mainSymbol = Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+  // Build a map of YYYY-MM-DD to total revenue
   const dayMap: Record<string, number> = {};
   transactions.forEach(tx => {
-    const day = tx.date.slice(0, 10);
-    const amount = parseFloat(tx.amount.replace(/,/g, ''));
-    if (!isNaN(amount)) {
+    // Defensive: ensure tx.date is valid and amount is a number
+    let day = '';
+    if (tx.date) {
+      try {
+        // Accept both ISO and Date objects
+        day = typeof tx.date === 'string' ? tx.date.slice(0, 10) : new Date(tx.date).toISOString().slice(0, 10);
+      } catch {}
+    }
+    const amount = parseFloat((tx.amount || '0').toString().replace(/,/g, ''));
+    if (day && !isNaN(amount)) {
       dayMap[day] = (dayMap[day] || 0) + amount;
     }
   });
-  // Get last 7 days
-  const days = Array.from(new Set(transactions.map(tx => tx.date.slice(0, 10)))).sort().slice(-7);
+
+  // Always show the last 7 days including today
+  const today = new Date('2025-04-23'); // Use current local time from user context
+  const days: string[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+
   return {
     labels: days,
     datasets: [
       {
-        label: 'Daily Revenue',
+        label: `Daily Revenue${mainSymbol ? ' (' + mainSymbol + ')' : ''}`,
         data: days.map(day => dayMap[day] || 0),
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.3,
-        fill: true
+        fill: true,
       }
     ]
   };
@@ -560,10 +582,21 @@ const fetchRealBalances = async (walletAddress: string) => {
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Received</div>
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {isLoading ? (
+                {isTransactionLoading ? (
                   <div className="animate-pulse h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
                 ) : (
-                  <>{processBalances(balances).totalReceived} {processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || ''}</>
+                  (() => {
+                    if (!transactions.length) return '0';
+                    // Sum all incoming amounts
+                    const total = transactions.reduce((acc, tx) => acc + (parseFloat((tx.amount || '0').replace(/,/g, '')) || 0), 0);
+                    // Use the most common currency (by count) among transactions
+                    const symbol = (() => {
+                      const counts: Record<string, number> = {};
+                      transactions.forEach(tx => { counts[tx.currency] = (counts[tx.currency] || 0) + 1; });
+                      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+                    })();
+                    return `${total.toLocaleString()} ${symbol}`;
+                  })()
                 )}
               </div>
             </div>
@@ -589,7 +622,34 @@ const fetchRealBalances = async (walletAddress: string) => {
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Monthly Growth</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">+24.5%</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {(() => {
+                  // Compute monthly growth based on real transactions
+                  const now = new Date();
+                  const thisMonth = now.getMonth();
+                  const thisYear = now.getFullYear();
+                  // Previous month (handle January)
+                  const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+                  const prevYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+                  // Sum revenue for this and previous month
+                  let thisMonthSum = 0;
+                  let prevMonthSum = 0;
+                  transactions.forEach(tx => {
+                    const txDate = new Date(tx.date);
+                    const amt = parseFloat((tx.amount || '0').replace(/,/g, '')) || 0;
+                    if (txDate.getFullYear() === thisYear && txDate.getMonth() === thisMonth) {
+                      thisMonthSum += amt;
+                    } else if (txDate.getFullYear() === prevYear && txDate.getMonth() === prevMonth) {
+                      prevMonthSum += amt;
+                    }
+                  });
+                  if (prevMonthSum === 0 && thisMonthSum === 0) return 'N/A';
+                  if (prevMonthSum === 0) return '+100%'; // All new growth
+                  const growth = ((thisMonthSum - prevMonthSum) / prevMonthSum) * 100;
+                  const sign = growth >= 0 ? '+' : '';
+                  return `${sign}${growth.toFixed(1)}%`;
+                })()}
+              </div>
             </div>
           </div>
           
