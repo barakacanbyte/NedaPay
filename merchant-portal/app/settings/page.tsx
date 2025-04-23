@@ -57,6 +57,13 @@ export default function SettingsPage() {
     }
   }, [address, isConnected]);
 
+  // Redirect to dashboard only after mounted and not connected
+  useEffect(() => {
+    if (mounted && !isConnected) {
+      window.location.href = '/dashboard';
+    }
+  }, [mounted, isConnected]);
+
   const saveSettings = () => {
     // In a real app, this would save settings to the backend
     alert('Settings saved successfully!');
