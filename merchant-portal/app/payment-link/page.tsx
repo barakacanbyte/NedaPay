@@ -7,6 +7,16 @@ import { stablecoins } from '../data/stablecoins';
 
 
 export default function PaymentLinkPage() {
+  const { isConnected, address: wagmiAddress } = useAccount();
+  // Robust merchant address getter: wagmi first, then localStorage fallback
+  const getMerchantAddress = () => {
+    if (wagmiAddress && wagmiAddress.length > 10) return wagmiAddress;
+    if (typeof window !== 'undefined') {
+      const lsAddr = localStorage.getItem('walletAddress');
+      if (lsAddr && lsAddr.length > 10) return lsAddr;
+    }
+    return '';
+  };
   const [isClient, setIsClient] = useState(false);
   useEffect(() => { setIsClient(true); }, []);
   const [amount, setAmount] = useState('');
@@ -23,29 +33,29 @@ export default function PaymentLinkPage() {
     link: string;
   }>>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('recentPaymentLinks');
-      if (stored) return JSON.parse(stored);
+      const address = getMerchantAddress();
+      if (address) {
+        const stored = localStorage.getItem(`recentPaymentLinks_${address}`);
+        if (stored) return JSON.parse(stored);
+      }
     }
     return [];
   });
-  const { isConnected, address: wagmiAddress } = useAccount();
-  // Robust merchant address getter: wagmi first, then localStorage fallback
-  const getMerchantAddress = () => {
-    if (wagmiAddress && wagmiAddress.length > 10) return wagmiAddress;
-    if (typeof window !== 'undefined') {
-      const lsAddr = localStorage.getItem('walletAddress');
-      if (lsAddr && lsAddr.length > 10) return lsAddr;
-    }
-    return '';
-  };
+
 
   // Handle initial page load and cookie setting
   useEffect(() => {
     console.log('Payment Link Page - Loading, isConnected:', isConnected);
-    // Load recent links from localStorage on mount if not already loaded
+    // Load recent links for the current merchant address from localStorage
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('recentPaymentLinks');
-      if (stored) setRecentLinks(JSON.parse(stored));
+      const address = getMerchantAddress();
+      if (address) {
+        const stored = localStorage.getItem(`recentPaymentLinks_${address}`);
+        if (stored) setRecentLinks(JSON.parse(stored));
+        else setRecentLinks([]);
+      } else {
+        setRecentLinks([]);
+      }
     }
     // Set a flag to indicate the page has been mounted
     setPageLoaded(true);
@@ -64,7 +74,7 @@ export default function PaymentLinkPage() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []);
+  }, [isConnected, wagmiAddress]);
   
   // Effect to monitor connection state
   useEffect(() => {
@@ -100,7 +110,7 @@ export default function PaymentLinkPage() {
     
     // Set the generated link in state
     setGeneratedLink(link);
-    // Add to recent links
+    // Add to recent links (scoped to merchant address)
     setRecentLinks(prev => {
       const updated = [
         {
@@ -112,7 +122,9 @@ export default function PaymentLinkPage() {
         },
         ...prev
       ];
-      localStorage.setItem('recentPaymentLinks', JSON.stringify(updated));
+      if (merchantAddress) {
+        localStorage.setItem(`recentPaymentLinks_${merchantAddress}`, JSON.stringify(updated));
+      }
       return updated;
     });
     
