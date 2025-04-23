@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { metaMask, coinbaseWallet } from 'wagmi/connectors';
+import { metaMask, coinbaseWallet, walletConnect } from 'wagmi/connectors';
 import { useRouter } from 'next/navigation';
 import { base } from 'wagmi/chains';
 import { useName } from '@coinbase/onchainkit/identity';
@@ -179,6 +179,25 @@ export default function WalletSelector() {
     }
   };
   
+  // Function to handle WalletConnect connection
+  const handleConnectWalletConnect = async () => {
+    setIsConnecting(true);
+    try {
+      const walletConnectConnector = walletConnect({
+        projectId: '0ba1867b1fc0af11b0cf14a0ec8e5b0f', // Replace with your WalletConnect Project ID
+        chains: [base.id],
+        showQrModal: true,
+      });
+      await connect({ connector: walletConnectConnector });
+      setShowOptions(false);
+      // Note: The redirect will happen in the useEffect when isConnected changes
+    } catch (error) {
+      console.error('Error connecting with WalletConnect', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   // Function to handle Coinbase Wallet connection
   const handleConnectCoinbase = async () => {
     setIsConnecting(true);
@@ -300,6 +319,25 @@ export default function WalletSelector() {
                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-300">Select Wallet</h3>
               </div>
               <div className="p-2 space-y-2">
+                {/* WalletConnect Option */}
+                <button
+                  onClick={handleConnectWalletConnect}
+                  disabled={isConnecting}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-green-100 dark:hover:bg-green-700 transition-colors text-left"
+                >
+                  <div className="w-8 h-8 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm3.536-10.95a1 1 0 0 1 1.415 1.415l-4.95 4.95a1 1 0 0 1-1.415 0l-2.121-2.122a1 1 0 1 1 1.415-1.415l1.414 1.415 4.242-4.243z" fill="#3396FF"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">WalletConnect</div>
+                    <div className="text-xs text-gray-700 dark:text-gray-400">
+                      {isConnecting ? 'Connecting...' : 'Connect with WalletConnect (Mobile/Desktop)'}
+                    </div>
+                  </div>
+                </button>
+
                 {/* Coinbase Wallet Option */}
                 <div>
                   <button
