@@ -323,6 +323,17 @@ export default function MerchantDashboard() {
                     txHash,
                   })
                 });
+                // Show toast notification for new payment
+                const shortSender = from.slice(0, 6) + '...' + from.slice(-4);
+                (await import('react-hot-toast')).toast.success(
+                  `Payment received: ${parseFloat(ethersLib.utils.formatUnits(value, decimals))} ${symbol} from ${shortSender}`
+                );
+                // Dispatch notification event for NotificationTab
+                window.dispatchEvent(new CustomEvent('neda-notification', {
+                  detail: {
+                    message: `Payment received: ${parseFloat(ethersLib.utils.formatUnits(value, decimals))} ${symbol} from ${shortSender}`
+                  }
+                }));
                 // Optionally, refresh the UI
                 fetchIncomingPayments(address).then(setTransactions);
               }

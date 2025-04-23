@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 import Footer from './components/Footer';
+import AppToaster from './components/Toaster';
 
 export const metadata: Metadata = {
   title: 'NEDA Pay Merchant Portal',
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body className="bg-background">
         <div className="flex flex-col min-h-screen">
           <Providers>
+            <AppToaster />
             <main className="flex-grow">{children}</main>
           </Providers>
           <Footer />
