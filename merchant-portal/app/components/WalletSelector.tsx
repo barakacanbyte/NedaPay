@@ -53,9 +53,8 @@ export default function WalletSelector() {
   function isHexAddress(addr: string | undefined): addr is `0x${string}` {
   return typeof addr === 'string' && addr.startsWith('0x') && addr.length === 42;
 }
-const ensName = isHexAddress(address)
-  ? useName({ address, chain: baseChain }).data
-  : undefined;
+const nameResult = useName({ address: isHexAddress(address) ? address : undefined, chain: baseChain });
+const ensName = isHexAddress(address) ? nameResult.data : undefined;
   // Resolve Base Name using custom hook (for .base)
   const baseName = useBaseName(address);
 
