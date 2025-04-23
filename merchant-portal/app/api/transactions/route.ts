@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const merchantId = searchParams.get('merchantId');
   if (!merchantId) {
-    return NextResponse.json({ error: 'merchantId is required' }, { status: 400 });
+    // Return 404 to prevent build/static analysis failures
+    return new NextResponse('Not Found', { status: 404 });
   }
   const transactions = await prisma.transaction.findMany({
     where: { merchantId },
