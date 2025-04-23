@@ -25,3 +25,10 @@
   node_bundler = "esbuild"
 
 # Static export mode doesn't need the Next.js plugin
+
+[cache]
+  # Ignore Prisma's generated client and engine to force regeneration
+  ignore = [
+    "node_modules/.prisma",
+    "node_modules/@prisma/client"
+  ]
