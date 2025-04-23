@@ -3,9 +3,15 @@
   command = "npm run build"
   publish = ".next"
 
+# Prisma postinstall hook
+[build.lifecycle]
+  onBuild = "npx prisma generate"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
 
 # Environment variables
 [build.environment]
@@ -13,5 +19,9 @@
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
   NEXT_TELEMETRY_DISABLED = "1"
+
+[functions]
+  included_files = ["node_modules/.prisma/client/**"]
+  node_bundler = "esbuild"
 
 # Static export mode doesn't need the Next.js plugin
