@@ -5,6 +5,10 @@ const prisma = new PrismaClient();
 
 // GET: Fetch all transactions for a merchant (by merchantId query param)
 export async function GET(req: NextRequest) {
+  // Prevent build/static analysis from triggering this API route
+  if (process.env.NODE_ENV === 'production' && process.env.NETLIFY === 'true') {
+    return new NextResponse('Not Found', { status: 404 });
+  }
   const { searchParams } = new URL(req.url);
   const merchantId = searchParams.get('merchantId');
   if (!merchantId) {
