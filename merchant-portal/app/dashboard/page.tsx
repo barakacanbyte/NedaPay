@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { Connector } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
+import TransactionTable from './TransactionTable';
 import { stablecoins } from '../data/stablecoins';
 import { ethers } from 'ethers';
 import { 
@@ -213,6 +214,8 @@ function getTransactionsByDayData(transactions: any[]) {
 }
 
 export default function MerchantDashboard() {
+  // ...existing state and hooks...
+  const { address, isConnected, connector } = useAccount();
   const [networkWarning, setNetworkWarning] = useState(false);
   const [balanceError, setBalanceError] = useState(false);
   const [errorTokens, setErrorTokens] = useState<Record<string, string>>({});
@@ -222,8 +225,6 @@ export default function MerchantDashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
-  
-  const { address, isConnected, connector } = useAccount();
   const router = useRouter();
   
   // Set mounted state
@@ -249,12 +250,96 @@ export default function MerchantDashboard() {
     // Fetch real incoming payments
     if (isConnected && address) {
       setIsTransactionLoading(true);
-      fetchIncomingPayments(address).then((txs) => {
+      fetchIncomingPayments(address).then(async (txs) => {
         setTransactions(txs);
         setIsTransactionLoading(false);
+        // Automatically save new transactions to the database
+        if (txs.length > 0) {
+          // Fetch existing transactions from the DB for this merchant
+          const res = await fetch(`/api/transactions?merchantId=${address}`);
+          const dbTxs = res.ok ? await res.json() : [];
+          const dbHashes = new Set(dbTxs.map((t: any) => t.txHash));
+          // Only POST transactions that aren't already in DB
+          for (const tx of txs) {
+            if (!dbHashes.has(tx.id)) {
+              await fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  merchantId: address,
+                  wallet: tx.sender,
+                  amount: parseFloat(tx.amount),
+                  currency: tx.currency,
+                  status: tx.status,
+                  txHash: tx.id,
+                })
+              });
+            }
+          }
+        }
       });
     }
   }, [address, isConnected]);
+
+  // --- Live Blockchain Event Listeners for Instant Updates ---
+  useEffect(() => {
+    if (!isConnected || !address) return;
+    let listeners: Array<() => void> = [];
+    let cancelled = false;
+    (async () => {
+      const ethersLib = (await import('ethers')).ethers;
+      // Use public Base Mainnet RPC
+      const provider = new ethersLib.providers.JsonRpcProvider('https://mainnet.base.org');
+      const ERC20_ABI = [
+        "event Transfer(address indexed from, address indexed to, uint256 value)",
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)"
+      ];
+      // For each supported stablecoin on Base
+      for (const coin of stablecoins.filter(c => c.chainId === 8453 && c.address && /^0x[a-fA-F0-9]{40}$/.test(c.address))) {
+        try {
+          const contract = new ethersLib.Contract(coin.address, ERC20_ABI, provider);
+          const decimals = await contract.decimals();
+          const symbol = coin.baseToken;
+          // Listener callback
+          const onTransfer = async (from: string, to: string, value: ethers.BigNumber, event: any) => {
+            if (cancelled) return;
+            if (to.toLowerCase() === address.toLowerCase()) {
+              const txHash = event.transactionHash;
+              // Check if already in DB
+              const res = await fetch(`/api/transactions?merchantId=${address}`);
+              const dbTxs = res.ok ? await res.json() : [];
+              const dbHashes = new Set(dbTxs.map((t: any) => t.txHash));
+              if (!dbHashes.has(txHash)) {
+                await fetch('/api/transactions', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    merchantId: address,
+                    wallet: from,
+                    amount: parseFloat(ethersLib.utils.formatUnits(value, decimals)),
+                    currency: symbol,
+                    status: 'Completed',
+                    txHash,
+                  })
+                });
+                // Optionally, refresh the UI
+                fetchIncomingPayments(address).then(setTransactions);
+              }
+            }
+          };
+          contract.on('Transfer', onTransfer);
+          listeners.push(() => contract.off('Transfer', onTransfer));
+        } catch (e) {
+          // Ignore tokens that can't be listened to
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      listeners.forEach(off => off());
+    };
+  }, [isConnected, address]);
   
   // Check wallet connection and redirect if needed
   useEffect(() => {

@@ -7,10 +7,27 @@ import { useRouter } from 'next/navigation';
 import { base } from 'wagmi/chains';
 import { useName } from '@coinbase/onchainkit/identity';
 import { base as baseChain } from 'viem/chains';
+import { getBaseName } from '../utils/getBaseName';
 
 // --- ENS-style fallback ---
 // (no-op here, logic will be in component)
 
+// Custom hook to resolve Base Name
+function useBaseName(address: string | undefined) {
+  const [baseName, setBaseName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!address) {
+      setBaseName(null);
+      return;
+    }
+    let cancelled = false;
+    getBaseName(address).then((name) => {
+      if (!cancelled) setBaseName(name);
+    });
+    return () => { cancelled = true; };
+  }, [address]);
+  return baseName;
+}
 
 export default function WalletSelector() {
   const [showOptions, setShowOptions] = useState(false);
@@ -25,9 +42,10 @@ export default function WalletSelector() {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
 
-  // Resolve Base Name using OnchainKit
-  const { data: baseName } = useName({ address, chain: baseChain });
-
+    // Resolve ENS Name using OnchainKit (for .eth)
+  const { data: ensName } = useName({ address, chain: 1 });
+  // Resolve Base Name using custom hook (for .base)
+  const baseName = useBaseName(address);
 
   
   // Format address for display
@@ -203,7 +221,7 @@ export default function WalletSelector() {
             </svg>
           </div>
           <div className="text-sm font-medium">
-            {baseName || formatAddress(address)}
+            {baseName || ensName || formatAddress(address)}
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 ml-1">
             <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -238,7 +256,7 @@ export default function WalletSelector() {
                   <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">Active</span>
                 </div>
                 <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                  {baseName || formatAddress(address)}
+                  {baseName || ensName || formatAddress(address)}
                 </div>
               </div>
               
