@@ -3,9 +3,6 @@
   command = "npm run build"
   publish = ".next"
 
-# Prisma postinstall hook
-[build.lifecycle]
-  onBuild = "npx prisma generate"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -26,9 +23,3 @@
 
 # Static export mode doesn't need the Next.js plugin
 
-[cache]
-  # Ignore Prisma's generated client and engine to force regeneration
-  ignore = [
-    "node_modules/.prisma",
-    "node_modules/@prisma/client"
-  ]
