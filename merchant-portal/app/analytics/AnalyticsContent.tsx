@@ -144,7 +144,7 @@ const currencyDistributionData = getPaymentMethodsData(filteredBalances);
         position: 'top' as const,
         labels: {
           color: '#111', // Always black for visibility
-          font: { size: 14, weight: 'bold' },
+          font: { size: 14, weight: 'bold' as const },
         },
       },
       tooltip: {
@@ -160,7 +160,7 @@ const currencyDistributionData = getPaymentMethodsData(filteredBalances);
       x: {
         ticks: {
           color: '#111',
-          font: { size: 13, weight: 'bold' },
+          font: { size: 13, weight: 'bold' as const },
         },
         grid: {
           color: '#eee',
@@ -169,7 +169,7 @@ const currencyDistributionData = getPaymentMethodsData(filteredBalances);
       y: {
         ticks: {
           color: '#111',
-          font: { size: 13, weight: 'bold' },
+          font: { size: 13, weight: 'bold' as const },
         },
         grid: {
           color: '#eee',
@@ -186,7 +186,7 @@ const currencyDistributionData = getPaymentMethodsData(filteredBalances);
         position: 'top' as const,
         labels: {
           color: '#111',
-          font: { size: 14, weight: 'bold' },
+          font: { size: 14, weight: 'bold' as const },
         },
       },
       tooltip: {

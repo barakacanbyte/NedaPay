@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useOnchainKit } from '@coinbase/onchainkit';
+import { useAccount } from 'wagmi';
 import Header from '../components/Header';
 
 import Footer from '../components/Footer';
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [account, setAccount] = useState('');
   const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'payment', 'security', 'notifications'
-  
+
+  // Use wagmi for wallet connection state (consistent with rest of app)
+  const { address, isConnected } = useAccount();
+  const [account, setAccount] = useState('');
+
   // Form states
   const [businessName, setBusinessName] = useState('Neda Merchant Store');
   const [businessEmail, setBusinessEmail] = useState('merchant@example.com');
@@ -30,32 +32,12 @@ export default function SettingsPage() {
   const [withdrawalConfirmation, setWithdrawalConfirmation] = useState(true);
   const [transactionNotifications, setTransactionNotifications] = useState(true);
   
-  // Get wallet connection status from OnchainKit
-  const { address } = useOnchainKit();
-  
   useEffect(() => {
     setMounted(true);
-    
     if (address) {
       setAccount(address);
-      setIsConnected(true);
     }
-    
-    // Check if already connected to MetaMask
-    if (typeof window !== 'undefined') {
-      const ethereum = (window as any).ethereum;
-      if (ethereum && ethereum.isMetaMask) {
-        ethereum.request({ method: 'eth_accounts' })
-          .then((accounts: string[]) => {
-            if (accounts.length > 0 && !isConnected) {
-              setAccount(accounts[0]);
-              setIsConnected(true);
-            }
-          })
-          .catch(console.error);
-      }
-    }
-  }, [address, isConnected]);
+  }, [address]);
 
   // Redirect to dashboard only after mounted and not connected
   useEffect(() => {

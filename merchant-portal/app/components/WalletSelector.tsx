@@ -50,7 +50,12 @@ export default function WalletSelector() {
   const { disconnect } = useDisconnect();
 
     // Resolve ENS Name using OnchainKit (for .eth)
-  const { data: ensName } = useName({ address, chain: 1 });
+  function isHexAddress(addr: string | undefined): addr is `0x${string}` {
+  return typeof addr === 'string' && addr.startsWith('0x') && addr.length === 42;
+}
+const ensName = isHexAddress(address)
+  ? useName({ address, chain: baseChain }).data
+  : undefined;
   // Resolve Base Name using custom hook (for .base)
   const baseName = useBaseName(address);
 
@@ -185,8 +190,8 @@ export default function WalletSelector() {
     try {
       const walletConnectConnector = walletConnect({
         projectId: '0ba1867b1fc0af11b0cf14a0ec8e5b0f', // Replace with your WalletConnect Project ID
-        chains: [base.id],
         showQrModal: true,
+        // If required, add chainId: base.id,
       });
       await connect({ connector: walletConnectConnector });
       setShowOptions(false);
@@ -197,6 +202,7 @@ export default function WalletSelector() {
       setIsConnecting(false);
     }
   };
+
 
   // Function to handle Coinbase Wallet connection
   const handleConnectCoinbase = async () => {
