@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface Transaction {
   id: string;
@@ -16,32 +17,28 @@ interface Props {
 }
 
 export default function TransactionTable({ merchantId }: Props) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchTransactions() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/transactions?merchantId=${merchantId}`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        setTransactions(data);
-      } catch (err: any) {
-        setError(err.message || 'Error');
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (merchantId) fetchTransactions();
-  }, [merchantId]);
+  const {
+    data: transactions,
+    isLoading,
+    error,
+  } = useQuery<Transaction[], Error>([
+    'transactions', merchantId
+  ], async () => {
+    if (!merchantId) return [];
+    const res = await fetch(`/api/transactions?merchantId=${merchantId}`);
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  }, {
+    enabled: !!merchantId,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
+  });
 
   if (!merchantId) return <div className="text-red-500">No merchantId provided.</div>;
-  if (loading) return <div>Loading transactions...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
-  if (transactions.length === 0) return <div>No transactions found.</div>;
+  if (isLoading) return <div>Loading transactions...</div>;
+  if (error) return <div className="text-red-500">{error.message}</div>;
+  if (!transactions || transactions.length === 0) return <div>No transactions found.</div>;
 
   return (
     <div className="overflow-x-auto">
@@ -57,7 +54,7 @@ export default function TransactionTable({ merchantId }: Props) {
           </tr>
         </thead>
         <tbody>
-          {transactions.map(tx => (
+          {(transactions ?? []).map((tx: Transaction) => (
             <tr key={tx.id} className="border-t">
               <td className="px-3 py-2 whitespace-nowrap">{new Date(tx.createdAt).toLocaleString()}</td>
               <td className="px-3 py-2">{tx.amount}</td>
