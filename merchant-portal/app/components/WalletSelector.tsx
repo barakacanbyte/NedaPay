@@ -80,6 +80,14 @@ const ensName = isHexAddress(address) ? nameResult.data : undefined;
 
   // Always write the connected wallet address to localStorage on change
   useEffect(() => {
+    if (isConnected && address) {
+      localStorage.setItem('walletAddress', address);
+    } else {
+      localStorage.removeItem('walletAddress');
+    }
+  }, [isConnected, address]);
+
+  useEffect(() => {
     if (address && isConnected) {
       localStorage.setItem('walletAddress', address);
     }

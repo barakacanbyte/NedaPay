@@ -25,11 +25,5 @@ const wagmiConfig = createConfig({
 });
 
 export default function PaymentLinkWrapper() {
-  return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <PaymentLinkContent />
-      </QueryClientProvider>
-    </WagmiProvider>
-  );
+  return <PaymentLinkContent />;
 }

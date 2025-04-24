@@ -189,7 +189,7 @@ function getDailyRevenueData(transactions: any[]) {
   });
 
   // Always show the last 7 days including today
-  const today = new Date('2025-04-23'); // Use current local time from user context
+  const today = new Date('2025-04-24'); // Use current local time from user context
   const days: string[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);

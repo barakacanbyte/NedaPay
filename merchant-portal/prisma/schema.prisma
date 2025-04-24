@@ -20,3 +20,16 @@ model Transaction {
   txHash     String
   createdAt  DateTime @default(now())
 }
+
+model PaymentLink {
+  id           String   @id @default(uuid())
+  merchantId   String
+  url          String   @unique
+  amount       Float
+  currency     String
+  description  String?
+  status       String   // e.g. 'active', 'redeemed', 'expired'
+  createdAt    DateTime @default(now())
+  redeemedAt   DateTime?
+}
+
