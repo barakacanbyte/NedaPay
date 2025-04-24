@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import Header from '../components/Header';
 
-import Footer from '../components/Footer';
+import { stablecoins } from '../data/stablecoins';
 
 export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
@@ -47,7 +47,22 @@ export default function SettingsPage() {
   }, [mounted, isConnected]);
 
   const saveSettings = () => {
-    // In a real app, this would save settings to the backend
+    // TODO: Integrate with backend API for real persistence
+    const settings = {
+      businessName,
+      businessEmail,
+      businessPhone,
+      businessCategory,
+      businessDescription,
+      autoSettlement,
+      settlementThreshold,
+      settlementCurrency,
+      paymentExpiry,
+      twoFactorEnabled,
+      withdrawalConfirmation,
+      transactionNotifications,
+    };
+    localStorage.setItem(`merchant_settings_${account}`, JSON.stringify(settings));
     alert('Settings saved successfully!');
   };
 
@@ -274,9 +289,11 @@ export default function SettingsPage() {
                               value={settlementCurrency}
                               onChange={(e) => setSettlementCurrency(e.target.value)}
                             >
-                              <option value="TSHC">TSHC</option>
-                              <option value="KESC">KESC</option>
-                              <option value="UGSC">UGSC</option>
+                              {stablecoins.map((coin) => (
+                                <option key={coin.baseToken} value={coin.baseToken}>
+                                  {coin.baseToken} - {coin.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -543,7 +560,7 @@ export default function SettingsPage() {
         )}
       </div>
     </div>
-      <Footer />
+
     </>
   );
 }

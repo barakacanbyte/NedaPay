@@ -11,12 +11,15 @@ import '@rainbow-me/rainbowkit/styles.css';
 const { wallets } = getDefaultWallets({
   appName: 'NEDA Pay',
   projectId: 'neda-pay', // You'll need to replace this with your actual project ID
-  chains: [baseSepolia, base]
 });
 
-const connectors = connectorsForWallets([
-  ...wallets,
-]);
+const connectors = connectorsForWallets(
+  wallets,
+  {
+    appName: 'NEDA Pay',
+    projectId: 'neda-pay',
+  }
+);
 
 const wagmiConfig = createConfig({
   connectors,
@@ -31,7 +34,6 @@ export function Providers({ children }: { children: ReactNode }) {
       <WagmiConfig config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <RainbowKitProvider 
-            chains={[baseSepolia, base]} 
             theme={{
               lightMode: lightTheme({
                 accentColor: '#3b82f6', // Blue accent color
