@@ -59,7 +59,7 @@ export const stablecoins = [
     description: 'Stablecoin pegged 1:1 to the Indonesian Rupiah (IDR)',
     website: 'https://stablecoins.earth',
     chainId: 8453, // Base Mainnet
-    decimals: 18
+    decimals: 2
   },
   {
     region: 'Europe',
@@ -130,7 +130,8 @@ export const stablecoins = [
     address: '0x043eB4B75d0805c43D7C834902E335621983Cf03', // CADC address confirmed
     issuer: 'Etherfuse/Brale',
     description: 'Stablecoin pegged 1:1 to the Mexican Peso (MXN)',
-    website: 'https://stablecoins.earth'
+    website: 'https://stablecoins.earth',
+    decimals: 6
   },
   {
     region: 'United States',

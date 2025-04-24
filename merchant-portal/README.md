@@ -6,6 +6,7 @@ A robust, multi-chain merchant dashboard for the NEDA Pay ecosystem. Built with 
 
 ## Table of Contents
 - [Features](#features)
+- [Aerodrome Swaps](#aerodrome-swaps)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
 - [Wallet Connection & Persistence](#wallet-connection--persistence)
@@ -21,12 +22,19 @@ A robust, multi-chain merchant dashboard for the NEDA Pay ecosystem. Built with 
 
 ## Features
 
+- **Aerodrome DEX Integration:**
+  - Robust, direct integration with Aerodrome for on-chain swaps.
+  - Supports both stable and volatile pools, with automatic pool selection.
+  - Accurate quote fetching and swap execution, using the official Aerodrome router and factory addresses.
+  - All token amounts and outputs are formatted with the correct decimals for each stablecoin.
+
 - **Multi-Wallet Support:**
   - Connect with MetaMask or Coinbase Wallet (via wagmi connectors).
   - Persistent wallet connection state across all pages.
   - ENS (.eth) and Base Name (.base) resolution for user-friendly display.
 - **Stablecoin Balances:**
   - Real-time fetching of ERC-20 balances for supported stablecoins (e.g., cNGN, ZARP, EURC, etc.).
+  - Each stablecoin entry now includes an explicit `decimals` field for precise formatting and conversion.
   - Shows all stablecoins, but only fetches balances for tokens deployed on the connected network.
 - **Network Detection:**
   - Detects the connected network and prompts users to switch if not on Base Mainnet.
@@ -38,7 +46,17 @@ A robust, multi-chain merchant dashboard for the NEDA Pay ecosystem. Built with 
   - Suppresses uncaught contract errors in the browser console.
 - **User Experience:**
   - Clean, modern UI with clear feedback for network and token issues.
+  - Swap modal displays user-friendly quotes and output estimates, clamped to the correct number of decimals for each token.
   - Always displays all tokens, with '0' balance for those not on the current network.
+
+---
+
+## Aerodrome Swaps
+
+- The dashboard integrates directly with the Aerodrome DEX for token swaps.
+- Supports both stable and volatile pools, using the official Aerodrome router and factory.
+- Swap modal fetches quotes and executes swaps with proper decimals for every supported stablecoin.
+- Output estimates are always formatted for human readability, based on each token's decimals.
 
 ---
 
@@ -87,6 +105,9 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## Wallet Connection & Persistence
+
+- Wallet connection state is persistent across all pages (MetaMask and Coinbase Wallet supported via wagmi and Coinbase OnchainKit).
+- Users only need to connect once for the entire merchant dashboard session.
 - **Connect Wallet:**
   - Use MetaMask or Coinbase Wallet.
   - Connection state is managed globally via `GlobalWalletContext`.
@@ -101,6 +122,9 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## Stablecoin Management
+
+- Each supported stablecoin is defined in `app/data/stablecoins.ts` with its correct on-chain decimals for accurate display and conversion.
+- If you add a new stablecoin, ensure you specify its `decimals` value to guarantee proper quoting and formatting in the UI.
 - All supported stablecoins are listed in `app/data/stablecoins.ts`.
 - Each token includes a `chainId` property (e.g., `8453` for Base Mainnet, `11155111` for Sepolia Testnet).
 - Only tokens matching the connected network are queried for balances.
