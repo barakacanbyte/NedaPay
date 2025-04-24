@@ -54,11 +54,12 @@ export const stablecoins = [
     currency: 'IDR',
     baseToken: 'IDRX',
     name: 'Indonesian Rupiah Coin',
-    address: '0x2dD087589ce9C5b2D1b42e20d2519B3c8cF022b7', // NZD address confirmed
+    address: '0x18Bc5bcC660cf2B9cE3cd51a404aFe1a0cBD3C22', // Updated to correct IDRX address
     issuer: 'IDRX.co',
     description: 'Stablecoin pegged 1:1 to the Indonesian Rupiah (IDR)',
     website: 'https://stablecoins.earth',
-    chainId: 8453 // Base Mainnet
+    chainId: 8453, // Base Mainnet
+    decimals: 18
   },
   {
     region: 'Europe',
@@ -141,7 +142,8 @@ export const stablecoins = [
     issuer: 'Circle',
     description: 'USD-backed stablecoin by Circle (Base Mainnet)',
     website: 'https://www.circle.com/usdc',
-    chainId: 8453 // Base Mainnet
+    chainId: 8453, // Base Mainnet
+    decimals: 6
   }
 ];
 

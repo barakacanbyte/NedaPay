@@ -235,6 +235,9 @@ function getTransactionsByDayData(transactions: any[]) {
   };
 }
 
+import Balances from './Balances';
+import SwapModal from './SwapModal';
+
 export default function MerchantDashboard() {
   // ...existing state and hooks...
   const { address, isConnected, connector } = useAccount();
@@ -243,6 +246,26 @@ export default function MerchantDashboard() {
   const [errorTokens, setErrorTokens] = useState<Record<string, string>>({});
   const [mounted, setMounted] = useState(false);
   const [balances, setBalances] = useState<Record<string, string>>({});
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [swapFromSymbol, setSwapFromSymbol] = useState<string>('');
+
+  // Prepare balances for Balances component
+  const { processedBalances } = processBalances(balances);
+
+  // Handler for Swap button
+  const handleSwapClick = (fromSymbol: string) => {
+    setSwapFromSymbol(fromSymbol);
+    setSwapModalOpen(true);
+  };
+
+  // Handler for SwapModal swap action
+  const handleSwap = (from: string, to: string, amount: string) => {
+    // TODO: Integrate Aerodrome swap logic here
+    console.log(`Swap ${amount} ${from} to ${to}`);
+    setSwapModalOpen(false);
+    // Optionally refresh balances
+  };
+
   const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -820,51 +843,21 @@ const fetchRealBalances = async (walletAddress: string) => {
               </div>
             </div>
             
-            {/* Wallet Balances */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Wallet Balances</h3>
-              
-              <div className="space-y-4">
-                {isLoading ? (
-                  // Loading skeleton for balances
-                  Array(3).fill(0).map((_, index) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                      <div className="flex items-center">
-                        <div className="animate-pulse h-6 w-6 bg-slate-200 dark:bg-slate-700 rounded-full mr-2"></div>
-                        <div>
-                          <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded mb-1"></div>
-                          <div className="animate-pulse h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                        </div>
-                      </div>
-                      <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                  ))
-                ) : (
-                  processBalances(balances, BASE_MAINNET_CHAIN_ID).processedStablecoins.map((coin: any, index: number) => (
-                    <div key={coin.symbol + '-' + (coin.address || index)} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                      <div className="flex items-center">
-                        <span className="mr-2 text-lg">{coin.flag}</span>
-                        <div>
-                          <span className="font-medium text-slate-800 dark:text-white">{coin.symbol}</span>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 block">{coin.name}</span>
-                        </div>
-                      </div>
-                      <span className="font-medium text-slate-800 dark:text-white flex items-center">
-                        {coin.balance}
-                        {errorTokens[coin.symbol] && (
-                          <span
-                            className="ml-2 text-yellow-500 cursor-pointer"
-                            title={`Error fetching balance: ${errorTokens[coin.symbol]}`}
-                          >
-                            ⚠️
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            {/* --- World-class Stablecoin Balances Table --- */}
+            <Balances
+              balances={processedBalances}
+              onSwap={handleSwapClick}
+            />
+            {/* --- Swap Modal --- */}
+            <SwapModal
+              open={swapModalOpen}
+              fromSymbol={swapFromSymbol}
+              onClose={() => setSwapModalOpen(false)}
+              onSwap={handleSwap}
+              maxAmount={
+                processedBalances.find((b: any) => b.symbol === swapFromSymbol)?.balance || '0'
+              }
+            />
           </div>
           
           {/* Quick Actions */}
@@ -904,6 +897,7 @@ const fetchRealBalances = async (walletAddress: string) => {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
