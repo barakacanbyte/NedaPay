@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { FaBell } from 'react-icons/fa';
 
+// Fallback UUID generator for environments without crypto.randomUUID
+function uuidFallback() {
+  // Simple RFC4122 version 4 compliant solution
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+
 export interface NotificationItem {
   id: string;
   message: string;
@@ -17,7 +27,7 @@ export default function NotificationTab() {
     function handleNewNotification(e: CustomEvent) {
       setNotifications((prev) => [
         {
-          id: crypto.randomUUID(),
+          id: (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : uuidFallback(),
           message: e.detail.message,
           timestamp: new Date().toLocaleString(),
           read: false,

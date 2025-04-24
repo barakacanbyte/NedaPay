@@ -27,10 +27,33 @@ export default function CreateInvoicePage() {
   };
   const addLineItem = () => setLineItems([...lineItems, { description: "", amount: "" }]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus("success");
-    setTimeout(() => router.push("/invoice"), 1200);
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient,
+          email,
+          paymentCollection,
+          dueDate,
+          currency,
+          lineItems,
+          merchantEmail: "nedalabs@hotmail.com"
+        })
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        setStatus(errorData.error || "Failed to send invoice");
+        return;
+      }
+      setStatus("success");
+      setTimeout(() => router.push("/invoice"), 1200);
+    } catch (err: any) {
+      setStatus(err.message || "Unknown error");
+    }
   };
 
   return (
@@ -41,7 +64,7 @@ export default function CreateInvoicePage() {
           <span aria-hidden="true">←</span> Back
         </button>
       </div>
-      <div className="max-w-2xl mx-auto py-10 px-4">
+      <div className="max-w-2xl mx-auto pb-2 px-4">
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-8 space-y-6">
 
         <div>
@@ -92,8 +115,8 @@ export default function CreateInvoicePage() {
             onChange={e => setCurrency(e.target.value)}
             required
           >
-            {stablecoinOptions.map((coin) => (
-              <option key={coin.baseToken} value={coin.baseToken}>
+            {stablecoinOptions.map((coin, idx) => (
+              <option key={`${coin.baseToken}-${coin.name}-${idx}`} value={coin.baseToken}>
                 {coin.baseToken} - {coin.name}
               </option>
             ))}
@@ -160,16 +183,15 @@ export default function CreateInvoicePage() {
           <button
             type="submit"
             className="flex-1 py-3 rounded bg-blue-600 text-white font-bold hover:bg-blue-700 transition"
+            disabled={status === "loading"}
           >
-            Send
+            {status === "loading" ? "Sending..." : "Send"}
           </button>
+
+          {status === "success" && (
+            <div className="mt-4 text-green-600 font-semibold">Invoice sent successfully!</div>
+          )}
         </div>
-        {status === "success" && (
-          <div className="text-green-600 text-center font-semibold mt-2">Invoice created! Redirecting...</div>
-        )}
-        {status === "draft" && (
-          <div className="text-gray-600 text-center font-semibold mt-2">Draft saved (not persisted).</div>
-        )}
       </form>
     </div>
   </div>
