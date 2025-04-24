@@ -105,6 +105,9 @@ const ensName = isHexAddress(address) ? nameResult.data : undefined;
         createdAt: new Date().toISOString()
       }));
       
+      // Immediately dispatch a custom event so dashboard can react instantly
+      window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address } }));
+      
       // Redirect to dashboard after successful connection
       // Use a short timeout to ensure cookie is set before navigation
       setTimeout(() => {

@@ -128,7 +128,7 @@ function HomeContent() {
         </div>
         
         {/* Stablecoins Section */}
-        <div className="mb-16">
+        <div id="how-it-works" className="mb-16">
           <h2 className="text-2xl font-bold mb-6 text-center gradient-text">
             Global Stablecoins Network
           </h2>
@@ -148,7 +148,7 @@ function HomeContent() {
         </div>
         
         {/* How It Works Section */}
-        <div className="mb-16">
+        <div id="how-it-works" className="mb-16">
           <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white">
             How It Works
           </h2>

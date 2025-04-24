@@ -133,10 +133,23 @@ const mockTransactionsByDay = {
 
 export default function MerchantDashboard() {
   const [mounted, setMounted] = useState(false);
-  const [balances, setBalances] = useState<Record<string, string>>(mockBalances);
+  // Always show cached/mock balances instantly, update with real fetch
+  const [balances, setBalances] = useState<Record<string, string>>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('lastBalances');
+      if (cached) return JSON.parse(cached);
+    }
+    return mockBalances;
+  });
   const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [transactions, setTransactions] = useState(mockTransactions.slice(0, 5));
+  const [transactions, setTransactions] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const cachedTx = localStorage.getItem('lastTransactions');
+      if (cachedTx) return JSON.parse(cachedTx);
+    }
+    return mockTransactions.slice(0, 5);
+  });
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
   
   const { address, isConnected } = useAccount();
@@ -145,9 +158,12 @@ export default function MerchantDashboard() {
   // Set mounted state
   useEffect(() => {
     setMounted(true);
-    
-    // Check for smart wallet
+  }, []);
+
+  // Fetch smart wallet and balances instantly on wallet connect/address change
+  useEffect(() => {
     if (address && typeof window !== 'undefined') {
+      // Smart wallet
       const storedWallet = localStorage.getItem(`smartWallet_${address}`);
       if (storedWallet) {
         try {
@@ -156,14 +172,31 @@ export default function MerchantDashboard() {
         } catch (e) {
           console.error('Error parsing smart wallet data', e);
         }
+      } else {
+        setSmartWalletAddress(null);
       }
+    } else {
+      setSmartWalletAddress(null);
     }
-    
-    // Fetch real balances when connected
+    // Fetch balances and transactions immediately when wallet connects/changes
     if (isConnected && address) {
       fetchRealBalances(address);
     }
   }, [address, isConnected]);
+
+  // Listen for custom walletConnected event for INSTANT dashboard update
+  useEffect(() => {
+    function handleWalletConnected(e: any) {
+      if (e.detail && e.detail.address) {
+        fetchRealBalances(e.detail.address);
+      }
+    }
+    window.addEventListener('walletConnected', handleWalletConnected);
+    return () => {
+      window.removeEventListener('walletConnected', handleWalletConnected);
+    };
+  }, []);
+
   
   // Check wallet connection and redirect if needed
   useEffect(() => {
@@ -246,6 +279,7 @@ export default function MerchantDashboard() {
   // Function to fetch real balances from wallet
   const fetchRealBalances = async (walletAddress: string) => {
     try {
+      // Only set loading if this is a new fetch (UI already shows cached data)
       setIsLoading(true);
       
       // In a production environment, this would call the blockchain API to get real token balances
@@ -279,7 +313,10 @@ export default function MerchantDashboard() {
       };
       
       setBalances(realBalances);
-      
+      // Cache for instant reloads
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastBalances', JSON.stringify(realBalances));
+      }
       // Also fetch transactions
       setIsTransactionLoading(true);
       
@@ -305,11 +342,14 @@ export default function MerchantDashboard() {
       ];
       
       setTransactions(realTimeTransactions);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastTransactions', JSON.stringify(realTimeTransactions));
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
     } finally {
       setIsTransactionLoading(false);
-      setIsLoading(false);
+      setIsLoading(false); // End loading as soon as balances are updated
     }
   };
 
@@ -546,34 +586,24 @@ export default function MerchantDashboard() {
               <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Wallet Balances</h3>
               
               <div className="space-y-4">
-                {isLoading ? (
-                  // Loading skeleton for balances
-                  Array(3).fill(0).map((_, index) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                      <div className="flex items-center">
-                        <div className="animate-pulse h-6 w-6 bg-slate-200 dark:bg-slate-700 rounded-full mr-2"></div>
-                        <div>
-                          <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded mb-1"></div>
-                          <div className="animate-pulse h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                        </div>
+                {/* Always show balances instantly, overlay a subtle spinner if loading */}
+                {processBalances(balances).processedStablecoins.map((coin: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700 relative">
+                    <div className="flex items-center">
+                      <span className="mr-2 text-lg">{coin.flag}</span>
+                      <div>
+                        <span className="font-medium text-slate-800 dark:text-white">{coin.symbol}</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400 block">{coin.name}</span>
                       </div>
-                      <div className="animate-pulse h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
                     </div>
-                  ))
-                ) : (
-                  processBalances(balances).processedStablecoins.map((coin: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700">
-                      <div className="flex items-center">
-                        <span className="mr-2 text-lg">{coin.flag}</span>
-                        <div>
-                          <span className="font-medium text-slate-800 dark:text-white">{coin.symbol}</span>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 block">{coin.name}</span>
-                        </div>
-                      </div>
-                      <span className="font-medium text-slate-800 dark:text-white">{coin.balance}</span>
-                    </div>
-                  ))
-                )}
+                    <span className="font-medium text-slate-800 dark:text-white">{coin.balance}</span>
+                    {isLoading && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <svg className="animate-spin h-4 w-4 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { usePathname } from 'next/navigation';
 import WalletSelector from './WalletSelector';
 import NotificationTab from './NotificationTab';
 
@@ -10,6 +11,7 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const [walletConnected, setWalletConnected] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -46,11 +48,17 @@ export default function Header() {
         {/* Right: Nav Buttons + Wallet */}
         <div className="flex items-center space-x-4">
           <nav className="flex space-x-3">
-            <a href="#how-it-works" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">How it works</a>
-            <a href="#faq" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">FAQ</a>
-            <Link href="/settings" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
-  Settings
-</Link>
+            {pathname === '/' && (
+              <>
+                <a href="#how-it-works" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">How It Works</a>
+                <a href="#faq" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">FAQ</a>
+              </>
+            )}
+            {walletConnected && (
+              <Link href="/settings" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                Settings
+              </Link>
+            )}
           </nav>
           <div className="flex items-center space-x-2 border-2 border-blue-400 dark:border-blue-600 rounded-lg px-3 py-1 shadow-md bg-white/80 dark:bg-slate-900/60">
             <NotificationTab />
