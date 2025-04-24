@@ -140,100 +140,170 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
 
   const availableToCoins = stablecoins.filter(c => c.baseToken !== fromSymbol);
 
+  // Live balances for from and to tokens
+  const [fromBalance, setFromBalance] = useState('0');
+  const [toBalance, setToBalance] = useState('0');
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (!address) {
+        setFromBalance('0');
+        setToBalance('0');
+        return;
+      }
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      if (fromToken) {
+        try {
+          const contract = new ethers.Contract(fromToken, ["function balanceOf(address owner) view returns (uint256)", "function decimals() view returns (uint8)"], provider);
+          const bal = await contract.balanceOf(address);
+          const dec = fromTokenObj?.decimals ?? 18;
+          setFromBalance(Number(ethers.utils.formatUnits(bal, dec)).toLocaleString());
+        } catch (e) { setFromBalance('0'); }
+      }
+      if (toToken) {
+        try {
+          const contract = new ethers.Contract(toToken, ["function balanceOf(address owner) view returns (uint256)", "function decimals() view returns (uint8)"], provider);
+          const bal = await contract.balanceOf(address);
+          const dec = toTokenObj?.decimals ?? 18;
+          setToBalance(Number(ethers.utils.formatUnits(bal, dec)).toLocaleString());
+        } catch (e) { setToBalance('0'); }
+      }
+    };
+    fetchBalances();
+  }, [address, fromToken, toToken, open, fromSymbol, toSymbol]);
+
   if (!open) return null;
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl flex flex-col border border-slate-200 dark:border-slate-700 p-0 animate-fadeInScale">
+      <div className="relative bg-[#181A20] rounded-2xl shadow-2xl w-full max-w-md flex flex-col border border-slate-700 p-0 animate-fadeInScale">
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-2xl focus:outline-none" aria-label="Close">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-blue-400 text-2xl focus:outline-none" aria-label="Close">
           &times;
         </button>
-        <div className="flex-1 p-8 text-slate-900 dark:text-white space-y-6">
-          <h2 className="text-2xl font-bold mb-6">Swap {fromSymbol}</h2>
-          <label className="block mb-2 font-medium">To:</label>
-          <select
-            className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded mb-4 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-            value={toSymbol}
-            onChange={e => setToSymbol(e.target.value)}
-          >
-            <option value="">Select token</option>
-            {availableToCoins.map(c => (
-              <option key={c.baseToken} value={c.baseToken}>
-                {c.baseToken} - {c.name}
-              </option>
-            ))}
-          </select>
-          <label className="block mb-2 font-medium">Amount:</label>
-          <div className="flex mb-8 gap-2">
-            <input
-              type="number"
-              className="flex-grow p-2 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              max={maxAmount}
-              min="0"
-              placeholder="0.0"
-            />
-            <button
-              className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 rounded font-semibold"
-              onClick={() => setAmount(maxAmount)}
-              type="button"
-            >
-              Max
-            </button>
+        <div className="flex-1 p-6 text-white space-y-4">
+          <h2 className="text-xl font-bold mb-4">Swap</h2>
+
+          {/* Sell Panel */}
+          <div className="bg-[#23263B] rounded-xl p-4 mb-2 text-white">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm text-slate-200">Sell</span>
+              <span className="text-xs text-slate-200">Balance: {fromBalance} {fromSymbol}</span>
+            </div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">{fromTokenObj?.flag ?? ''}</span>
+              <span className="font-semibold text-white">{fromSymbol}</span>
+              <span className="text-xs text-slate-300">{fromTokenObj?.name ?? ''}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                className="flex-grow bg-transparent text-white text-5xl font-extrabold outline-none border-none"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                max={maxAmount}
+                min="0"
+                placeholder="0.0"
+                style={{ color: 'white', fontWeight: 800, fontSize: '3rem', lineHeight: 1.1, WebkitTextFillColor: 'white' }}
+              />
+              <button
+                className="bg-blue-700 text-white px-3 py-1 rounded font-semibold text-xs"
+                onClick={() => setAmount(maxAmount)}
+                type="button"
+              >
+                Max
+              </button>
+            </div>
+            <div className="text-xs text-slate-300 mt-1">${/* Fiat value placeholder */}0.00</div>
           </div>
+
+          {/* Swap Arrow */}
+          <div className="flex justify-center items-center my-2">
+            <span className="rounded-full bg-[#23263B] p-2 text-lg">↓</span>
+          </div>
+
+          {/* Buy Panel */}
+          <div className="bg-[#23263B] rounded-xl p-4 mb-2 text-white">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm text-slate-200">Buy</span>
+              <span className="text-xs text-slate-200">Balance: {toBalance} {toSymbol}</span>
+            </div>
+            <div className="flex items-center gap-3 mb-2">
+              <select
+                className="bg-[#181A20] text-white rounded px-2 py-1 appearance-none"
+                value={toSymbol}
+                onChange={e => setToSymbol(e.target.value)}
+                style={{ color: 'white', WebkitTextFillColor: 'white' }}
+              >
+                <option value="" style={{ color: 'white', background: '#23263B' }}>Select token</option>
+                {availableToCoins.map(c => (
+                  <option key={c.baseToken} value={c.baseToken} style={{ color: 'white', background: '#23263B' }}>
+                    {c.flag ?? ''} {c.baseToken} - {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="flex-grow text-white text-5xl font-extrabold select-text"
+                style={{ color: 'white', fontWeight: 800, fontSize: '3rem', lineHeight: 1.1 }}
+              >
+                {quote ?? '0.0'}
+              </span>
+            </div>
+            <div className="text-xs text-slate-300 mt-1">${/* Fiat value placeholder */}0.00</div>
+          </div>
+
           {/* Pool type selector */}
           <div className="mb-2 flex items-center gap-3">
-            <span className="text-xs text-gray-500">Pool Type:</span>
+            <span className="text-xs text-gray-400">Pool Type:</span>
             <select
-              className="border rounded px-2 py-1 text-xs"
+              className="border rounded px-2 py-1 text-xs bg-[#23263B] text-white border-slate-700 appearance-none"
               value={poolType}
               onChange={e => setPoolType(e.target.value as 'stable' | 'volatile')}
+              style={{ color: 'white', WebkitTextFillColor: 'white' }}
             >
-              <option value="stable">Stable</option>
-              <option value="volatile">Volatile</option>
+              <option value="stable" style={{ color: 'white', background: '#23263B' }}>Stable</option>
+              <option value="volatile" style={{ color: 'white', background: '#23263B' }}>Volatile</option>
             </select>
           </div>
-          {/* Show estimated output/rate from Aerodrome here */}
-          <div className="mb-4 min-h-[24px]">
-            {amount && toSymbol && (
-              quoteError ? (
-                <span className="text-red-500 text-sm">{quoteError}</span>
-              ) : quote ? (
-                <span className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  Estimated: {quote} {toSymbol}
-                </span>
-              ) : (
-                <span className="text-gray-400 text-sm">Fetching quote...</span>
-              )
-            )}
+
+          {/* Swap Details Section */}
+          <div className="bg-[#23263B] rounded-xl p-4 mb-2 space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span>Fees</span>
+              <span>0.05% {/* token icons placeholder */}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Exchange rate</span>
+              <span>1 {fromSymbol} = {/* Exchange rate calc */} {quote && amount ? (Number(quote) / Number(amount)).toFixed(6) : '--'} {toSymbol}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Price impact</span>
+              <span> {/* Placeholder */}0.77%</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Minimum received</span>
+              <span>{quote ? (Number(quote) * 0.995).toFixed(toDecimals) : '--'} {toSymbol}</span>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-8">
+
+          {/* Actions */}
+          <div className="flex flex-row gap-2 mt-4">
             <button
-              className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-slate-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-600"
-              onClick={onClose}
+              className="flex-1 px-4 py-2 rounded bg-gray-700 text-white font-semibold hover:bg-gray-600"
+              onClick={() => window.location.reload()}
               type="button"
             >
-              Cancel
+              Refresh
             </button>
             <button
-              className="flex items-center justify-center px-8 py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60 w-full sm:w-auto"
-              disabled={!toSymbol || !amount || parseFloat(amount) <= 0 || isSwapping || !quote}
-              onClick={async () => {
-                if (swapInProgress.current) return;
-                await handleSwap();
-              }}
+              className="flex-1 px-4 py-2 rounded bg-blue-600 text-white font-bold text-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60"
+              onClick={handleSwap}
+              disabled={isSwapping || !amount || !toSymbol || !quote}
               type="button"
             >
-              {isSwapping ? (
-                <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 12h16m-7-7l7 7-7 7" /></svg>
-              )}
               {isSwapping ? 'Swapping...' : 'Swap'}
             </button>
           </div>

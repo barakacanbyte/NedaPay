@@ -131,30 +131,46 @@ async function fetchIncomingPayments(merchantAddress: string) {
   return allTxs.slice(0, 10); // Limit to 10 most recent
 }
 
-
-// Function to get payment methods data for charts
-const getPaymentMethodsData = (balanceData: Record<string, string>) => {
-  const { processedStablecoins } = processBalances(balanceData);
+// Function to get payment methods data for charts (per stablecoin, using transactions)
+const getPaymentMethodsData = (transactions: any[]) => {
+  // Count transactions per stablecoin
+  const grouped: Record<string, { count: number, flag: string }> = {};
+  transactions.forEach(tx => {
+    const symbol = tx.currency;
+    if (!grouped[symbol]) {
+      // Find the flag from stablecoins
+      const coin = stablecoins.find(c => c.baseToken === symbol);
+      grouped[symbol] = { count: 0, flag: coin?.flag || '🌐' };
+    }
+    grouped[symbol].count++;
+  });
+  const entries = Object.entries(grouped).filter(([sym, data]) => data.count > 0);
+  const labels = entries.map(([symbol]) => symbol);
+  const data = entries.map(([_, d]) => d.count);
+  // Cycle colors for all currencies
+  const baseColors = [
+    'rgba(59, 130, 246, 0.8)',  // Blue
+    'rgba(16, 185, 129, 0.8)',  // Green
+    'rgba(245, 158, 11, 0.8)',  // Amber
+    'rgba(139, 92, 246, 0.8)',  // Purple
+    'rgba(239, 68, 68, 0.8)'    // Red
+  ];
+  const backgroundColor = labels.map((_, i) => baseColors[i % baseColors.length]);
+  const borderColor = [
+    'rgba(59, 130, 246, 1)',
+    'rgba(16, 185, 129, 1)',
+    'rgba(245, 158, 11, 1)',
+    'rgba(139, 92, 246, 1)',
+    'rgba(239, 68, 68, 1)'
+  ];
   return {
-    labels: processedStablecoins.map((coin: any) => coin.symbol),
+    labels,
     datasets: [
       {
         label: 'Payment Methods',
-        data: processedStablecoins.map((coin: any) => coin.percentage),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',  // Blue
-          'rgba(16, 185, 129, 0.8)',  // Green
-          'rgba(245, 158, 11, 0.8)',  // Amber
-          'rgba(139, 92, 246, 0.8)',  // Purple
-          'rgba(239, 68, 68, 0.8)'    // Red
-        ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(139, 92, 246, 1)',
-          'rgba(239, 68, 68, 1)'
-        ],
+        data,
+        backgroundColor,
+        borderColor: borderColor,
         borderWidth: 1
       }
     ]
@@ -209,6 +225,42 @@ function getDailyRevenueData(transactions: any[]) {
         fill: true,
       }
     ]
+  };
+}
+
+// Daily revenue data
+// Generate daily revenue data for each stablecoin separately
+function getMultiStablecoinDailyRevenueData(transactions: any[]) {
+  // Get all dates in the data
+  const dateSet = new Set<string>();
+  const stablecoinSymbols = Array.from(new Set(transactions.map(tx => tx.currency)));
+  transactions.forEach(tx => {
+    const d = tx.date.split('T')[0];
+    dateSet.add(d);
+  });
+  const dates = Array.from(dateSet).sort();
+
+  // Prepare a dataset for each stablecoin
+  const datasets = stablecoinSymbols.map(symbol => {
+    // Find the flag from stablecoins
+    const coin = stablecoins.find(c => c.baseToken === symbol);
+    const flag = coin?.flag || '🌐';
+    return {
+      label: `${flag} ${symbol}`,
+      data: dates.map(date => {
+        // Sum for this date and stablecoin
+        return transactions
+          .filter(tx => tx.currency === symbol && tx.date.startsWith(date))
+          .reduce((sum, tx) => sum + (parseFloat((tx.amount || '0').replace(/,/g, '')) || 0), 0);
+      }),
+      // borderColor intentionally omitted to fix lint error
+      fill: false,
+      tension: 0.2,
+    };
+  });
+  return {
+    labels: dates,
+    datasets,
   };
 }
 
@@ -471,7 +523,7 @@ export default function MerchantDashboard() {
       // Clean up
       return () => {
         clearInterval(refreshInterval);
-      };
+      }
     }
   }, [address, isConnected, router]);
   
@@ -604,43 +656,77 @@ const fetchRealBalances = async (walletAddress: string) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Received</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {isTransactionLoading ? (
-                  <div className="animate-pulse h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                ) : (
-                  (() => {
-                    if (!transactions.length) return '0';
-                    // Sum all incoming amounts
-                    const total = transactions.reduce((acc, tx) => acc + (parseFloat((tx.amount || '0').replace(/,/g, '')) || 0), 0);
-                    // Use the most common currency (by count) among transactions
-                    const symbol = (() => {
-                      const counts: Record<string, number> = {};
-                      transactions.forEach(tx => { counts[tx.currency] = (counts[tx.currency] || 0) + 1; });
-                      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-                    })();
-                    return `${total.toLocaleString()} ${symbol}`;
-                  })()
-                )}
+              <div className="flex flex-col gap-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {(() => {
+                  const processed = processBalances(balances).processedBalances;
+                  const nonZero = processed.filter(c => parseFloat(c.balance.replace(/,/g, '')) > 0);
+                  if (!nonZero.length) return '0';
+                  return nonZero.map(c => (
+                    <div key={c.symbol} className="flex items-center gap-2">
+                      <span>{c.flag}</span>
+                      <span className="font-semibold">{c.balance}</span>
+                      <span className="ml-1">{c.symbol}</span>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Total Transactions</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">{transactions.length}</div>
+              <div className="flex flex-col gap-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {(() => {
+                  // Group transactions by currency
+                  const grouped: Record<string, { count: number, flag: string }> = {};
+                  transactions.forEach(tx => {
+                    const symbol = tx.currency;
+                    if (!grouped[symbol]) {
+                      // Find the flag from stablecoins
+                      const coin = stablecoins.find(c => c.baseToken === symbol);
+                      grouped[symbol] = { count: 0, flag: coin?.flag || '🌐' };
+                    }
+                    grouped[symbol].count++;
+                  });
+                  const entries = Object.entries(grouped).filter(([sym, data]) => data.count > 0);
+                  if (!entries.length) return '0';
+                  return entries.map(([symbol, data]) => (
+                    <div key={symbol} className="flex items-center gap-2">
+                      <span>{data.flag}</span>
+                      <span className="font-semibold">{data.count.toLocaleString()}</span>
+                      <span className="ml-1">{symbol}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
               <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Average Transaction</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-  {(() => {
-    const total = parseInt(processBalances(balances).totalReceived.replace(/,/g, ''));
-    const symbol = processBalances(balances).processedBalances.find(c => parseInt(c.balance.replace(/,/g, '')) > 0)?.symbol || '';
-    if (total === 0 || transactions.length === 0) return `0 ${symbol}`;
-    // Average over real transactions
-    const sum = transactions.reduce((acc, tx) => acc + (parseFloat(tx.amount.replace(/,/g, '')) || 0), 0);
-    return `${Math.round(sum / transactions.length).toLocaleString()} ${symbol}`;
-  })()}
-</div>
+              <div className="flex flex-col gap-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {(() => {
+                  // Group transactions by currency
+                  const grouped: Record<string, { sum: number, count: number, flag: string }> = {};
+                  transactions.forEach(tx => {
+                    const symbol = tx.currency;
+                    if (!grouped[symbol]) {
+                      // Find the flag from stablecoins
+                      const coin = stablecoins.find(c => c.baseToken === symbol);
+                      grouped[symbol] = { sum: 0, count: 0, flag: coin?.flag || '🌐' };
+                    }
+                    grouped[symbol].sum += parseFloat((tx.amount || '0').replace(/,/g, '')) || 0;
+                    grouped[symbol].count++;
+                  });
+                  const entries = Object.entries(grouped).filter(([sym, data]) => data.count > 0);
+                  if (!entries.length) return '0';
+                  return entries.map(([symbol, data]) => (
+                    <div key={symbol} className="flex items-center gap-2">
+                      <span>{data.flag}</span>
+                      <span className="font-semibold">{Math.round(data.sum / data.count).toLocaleString()}</span>
+                      <span className="ml-1">{symbol}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
             
             <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
@@ -674,6 +760,26 @@ const fetchRealBalances = async (walletAddress: string) => {
                 })()}
               </div>
             </div>
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+              <div className="text-sm text-slate-700 dark:text-slate-300 mb-1 font-semibold">Payment Methods</div>
+              <div className="flex flex-col gap-1 text-2xl font-bold text-slate-900 dark:text-white">
+                {(() => {
+                  // List payment methods (stablecoins with nonzero transactions)
+                  const usedSymbols = Array.from(new Set(transactions.map(tx => tx.currency)));
+                  if (!usedSymbols.length) return 'None';
+                  return usedSymbols.map(symbol => {
+                    const coin = stablecoins.find(c => c.baseToken === symbol);
+                    return (
+                      <div key={symbol} className="flex items-center gap-2">
+                        <span>{coin?.flag || '🌐'}</span>
+                        <span className="font-semibold">{symbol}</span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
           </div>
           
           {/* Charts */}
@@ -683,42 +789,47 @@ const fetchRealBalances = async (walletAddress: string) => {
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Revenue</h3>
               <div className="h-64">
                 <Line 
-  data={getDailyRevenueData(transactions)} 
-  options={{ 
-    responsive: true, 
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(156, 163, 175, 0.1)'
-        },
-        ticks: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                '#9ca3af' : '#4b5563',
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          color: typeof window !== 'undefined' && 
-                window.matchMedia && 
-                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                '#9ca3af' : '#4b5563',
-        }
-      }
-    },
-    plugins: {
-      legend: {
-        display: false
-      }
-    }
-  }} 
-/>
+                  data={getMultiStablecoinDailyRevenueData(transactions)} 
+                  options={{ 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        grid: {
+                          color: 'rgba(156, 163, 175, 0.1)'
+                        },
+                        ticks: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#9ca3af' : '#4b5563',
+                        }
+                      },
+                      x: {
+                        grid: {
+                          display: false
+                        },
+                        ticks: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#9ca3af' : '#4b5563',
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        labels: {
+                          color: typeof window !== 'undefined' && 
+                                window.matchMedia && 
+                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
+                                '#fff' : '#222',
+                        }
+                      }
+                    }
+                  }} 
+                />
               </div>
             </div>
             
@@ -727,7 +838,7 @@ const fetchRealBalances = async (walletAddress: string) => {
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Payment Methods</h3>
               <div className="h-64">
                 <Doughnut 
-                  data={getPaymentMethodsData(balances)} 
+                  data={getPaymentMethodsData(transactions)} 
                   options={{ 
                     responsive: true, 
                     maintainAspectRatio: false,
