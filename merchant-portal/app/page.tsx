@@ -59,7 +59,7 @@ function HomeContent() {
             NEDA Pay Merchant Portal
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Accept local stablecoins for your business and manage payments with ease
+            Accept local stablecoins for your business, manage payments, and swap between stablecoins instantly with ease
           </p>
           
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -101,7 +101,7 @@ function HomeContent() {
         </div>
         
         {/* Features Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
             <div className="text-4xl mb-4">💸</div>
             <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Accept Local Stablecoins</h2>
@@ -109,7 +109,13 @@ function HomeContent() {
               Accept TSHC, cNGN, IDRX and other local stablecoins alongside USDC
             </p>
           </div>
-          
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
+            <div className="text-4xl mb-4">🔄</div>
+            <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Swap Stablecoins Instantly</h2>
+            <p className="text-on-light dark:text-gray-300">
+              Swap between supported stablecoins in seconds, right from your dashboard
+            </p>
+          </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
             <div className="text-4xl mb-4">📊</div>
             <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Track Performance</h2>
@@ -117,9 +123,8 @@ function HomeContent() {
               Monitor your business performance with detailed analytics and reports
             </p>
           </div>
-          
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-            <div className="text-4xl mb-4">🔄</div>
+            <div className="text-4xl mb-4">⚙️</div>
             <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Automatic Settlement</h2>
             <p className="text-on-light dark:text-gray-300">
               Automatically settle payments to your preferred stablecoin
@@ -153,7 +158,7 @@ function HomeContent() {
             How It Works
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
   {/* Add border and background to each step */}
             <div className="flex flex-col items-center border border-blue-200 dark:border-blue-700 rounded-xl bg-white/70 dark:bg-gray-900/70 p-6 shadow-md transition hover:shadow-xl">
               <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl mb-4">
@@ -184,13 +189,26 @@ function HomeContent() {
                 Customers pay using their NEDA Pay app and you receive stablecoins instantly
               </p>
             </div>
+            <div className="flex flex-col items-center border border-blue-200 dark:border-blue-700 rounded-xl bg-white/70 dark:bg-gray-900/70 p-6 shadow-md transition hover:shadow-xl">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xl mb-4">
+                <span role="img" aria-label="swap">🔄</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Swap Stablecoins</h3>
+              <p className="text-center text-gray-600 dark:text-gray-300">
+                Instantly swap between TSHC, cNGN, IDRX, USDC, and more—no third-party required
+              </p>
+            </div>
           </div>
         </div>
         
         {/* FAQ Section */}
         <div id="faq" className="max-w-3xl mx-auto mt-20 mb-20">
           <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+           <div className="space-y-4">
+            <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Can I swap stablecoins using NEDA Pay?</summary>
+              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes! NEDA Pay lets you swap between supported stablecoins (TSHC, cNGN, IDRX, USDC, etc.) instantly and securely, right from your dashboard—no need for external exchanges.</div>
+            </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
               <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">What is NEDA Pay?</summary>
               <div className="mt-2 text-gray-700 dark:text-gray-200">NEDA Pay is a platform that enables merchants to accept and manage local stablecoin payments easily and securely on the Base blockchain.</div>
