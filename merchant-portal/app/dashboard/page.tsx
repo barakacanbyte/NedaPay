@@ -291,8 +291,18 @@ import Balances from './Balances';
 import SwapModal from './SwapModal';
 
 export default function MerchantDashboard() {
+  // Wallet switching state
+  const [selectedWalletType, setSelectedWalletType] = useState<'eoa' | 'smart'>('eoa');
+  const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
+  const [smartWalletLoading, setSmartWalletLoading] = useState(false);
   // ...existing state and hooks...
   const { address, isConnected, connector } = useAccount();
+  
+  // Only show and use the correct address for the selected wallet type
+  const selectedWalletAddress = selectedWalletType === 'eoa'
+    ? address
+    : (smartWalletAddress && smartWalletAddress !== address ? smartWalletAddress : undefined);
+  const [copied, setCopied] = useState(false);
   const [networkWarning, setNetworkWarning] = useState(false);
   const [balanceError, setBalanceError] = useState(false);
   const [errorTokens, setErrorTokens] = useState<Record<string, string>>({});
@@ -318,7 +328,7 @@ export default function MerchantDashboard() {
     // Optionally refresh balances
   };
 
-  const [smartWalletAddress, setSmartWalletAddress] = useState<string | null>(null);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isTransactionLoading, setIsTransactionLoading] = useState(false);
@@ -327,33 +337,77 @@ export default function MerchantDashboard() {
   // Set mounted state
   useEffect(() => {
     setMounted(true);
-    
-    // Check for smart wallet
-    if (address && typeof window !== 'undefined') {
-      const storedWallet = localStorage.getItem(`smartWallet_${address}`);
-      if (storedWallet) {
-        try {
-          const wallet = JSON.parse(storedWallet);
-          setSmartWalletAddress(wallet.address);
-        } catch (e) {
-          console.error('Error parsing smart wallet data', e);
+  }, []);
+
+  // Dynamically fetch smart wallet address when EOA or wallet type changes
+  useEffect(() => {
+    async function updateSmartWalletAddress() {
+      if (selectedWalletType !== 'smart' || !address) {
+        setSmartWalletAddress(null);
+        return;
+      }
+      setSmartWalletLoading(true);
+      // Try cache/localStorage first
+      const cacheKey = `smartWallet_${address}`;
+      let smartAddr: string | null = null;
+      if (typeof window !== 'undefined') {
+        const storedWallet = localStorage.getItem(cacheKey);
+        if (storedWallet) {
+          try {
+            const wallet = JSON.parse(storedWallet);
+            if (wallet && wallet.address) {
+              smartAddr = wallet.address;
+              setSmartWalletAddress(wallet.address);
+              setSmartWalletLoading(false);
+              return;
+            }
+          } catch {}
         }
       }
+      // If not in cache, compute using getSmartWalletAddress
+      try {
+        const { getSmartWalletAddress } = await import('../utils/smartWallet');
+        const { ethers } = await import('ethers');
+        const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+        const salt = 0; // Use 0 unless you support multiple smart wallets per EOA
+        const realSmartWallet = await getSmartWalletAddress(address, salt, provider);
+        setSmartWalletAddress(realSmartWallet);
+        // Cache for next time
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(cacheKey, JSON.stringify({ address: realSmartWallet }));
+        }
+      } catch (err) {
+        setSmartWalletAddress(null);
+        console.error('Failed to fetch smart wallet address', err);
+      }
+      setSmartWalletLoading(false);
     }
-    // Fetch real balances when connected
-    if (isConnected && address && connector) {
-      fetchRealBalances(address);
+    updateSmartWalletAddress();
+  }, [address, selectedWalletType]);
+
+  // Fetch balances and info for the correct wallet after selectedWalletAddress is set
+  useEffect(() => {
+    // Only fetch balances if the correct address is loaded
+    if (
+      isConnected &&
+      ((selectedWalletType === 'eoa' && address && connector) ||
+       (selectedWalletType === 'smart' && smartWalletAddress && smartWalletAddress !== address && connector))
+    ) {
+      fetchRealBalances(selectedWalletAddress!);
     }
-    // Fetch real incoming payments
-    if (isConnected && address) {
+  }, [isConnected, selectedWalletAddress, connector, selectedWalletType, smartWalletAddress, address]);
+
+  // Fetch real incoming payments
+  useEffect(() => {
+    if (isConnected && selectedWalletAddress) {
       setIsTransactionLoading(true);
-      fetchIncomingPayments(address).then(async (txs) => {
+      fetchIncomingPayments(selectedWalletAddress).then(async (txs) => {
         setTransactions(txs);
         setIsTransactionLoading(false);
         // Automatically save new transactions to the database
         if (txs.length > 0) {
           // Fetch existing transactions from the DB for this merchant
-          const res = await fetch(`/api/transactions?merchantId=${address}`);
+          const res = await fetch(`/api/transactions?merchantId=${selectedWalletAddress}`);
           const dbTxs = res.ok ? await res.json() : [];
           const dbHashes = new Set(dbTxs.map((t: any) => t.txHash));
           // Only POST transactions that aren't already in DB
@@ -363,7 +417,7 @@ export default function MerchantDashboard() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  merchantId: address,
+                  merchantId: selectedWalletAddress,
                   wallet: tx.sender,
                   amount: parseFloat(tx.amount),
                   currency: tx.currency,
@@ -376,7 +430,7 @@ export default function MerchantDashboard() {
         }
       });
     }
-  }, [address, isConnected]);
+  }, [address, isConnected, selectedWalletType, selectedWalletAddress, connector]);
 
   // --- Live Blockchain Event Listeners for Instant Updates ---
   useEffect(() => {
@@ -615,6 +669,21 @@ const fetchRealBalances = async (walletAddress: string) => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
+      {/* Wallet Switcher */}
+      <div className="flex gap-4 mb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <button
+          className={`px-4 py-2 rounded-lg border font-semibold ${selectedWalletType === 'eoa' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+          onClick={() => setSelectedWalletType('eoa')}
+        >
+          EOA Wallet
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg border font-semibold ${selectedWalletType === 'smart' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+          onClick={() => setSelectedWalletType('smart')}
+        >
+          Smart Wallet
+        </button>
+      </div>
       <div className="my-4">
         <button onClick={() => window.history.back()} className="flex items-center gap-2 px-3 py-1 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-medium">
           <span aria-hidden="true">←</span> Back
@@ -639,18 +708,59 @@ const fetchRealBalances = async (walletAddress: string) => {
           </div>
 
           {/* Smart Wallet Info */}
-          {smartWalletAddress && (
-            <div className="bg-primary dark:bg-primary-dark border border-primary-light dark:border-blue-800 rounded-xl p-6 mb-8">
-              <h2 className="text-xl font-semibold text-white mb-2">Smart Wallet Connected</h2>
-              <p className="text-white mb-4">You're using a smart wallet for enhanced security and lower fees</p>
-              <div className="flex items-center space-x-2">
-                <div className="text-sm font-medium text-white">Smart Wallet Address:</div>
-                <div className="text-sm text-white/90">
-                  {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="bg-primary dark:bg-primary-dark border border-primary-light dark:border-blue-800 rounded-xl p-6 mb-8">
+  <h2 className="text-xl font-semibold text-white mb-2">
+    {selectedWalletType === 'smart' ? 'Smart Wallet Connected' : 'EOA Wallet Connected'}
+  </h2>
+  <p className="text-white mb-4">
+    {selectedWalletType === 'smart'
+      ? "You're using a smart wallet for enhanced security and lower fees"
+      : "You're using your externally owned account (EOA) wallet"}
+  </p>
+  <div className="flex items-center space-x-2">
+    <div className="text-sm font-medium text-white">
+      {selectedWalletType === 'smart' ? 'Smart Wallet Address:' : 'EOA Wallet Address:'}
+    </div>
+    <div className="text-sm text-white/90">
+      {selectedWalletType === 'smart' && smartWalletLoading && 'Loading smart wallet address...'}
+      {selectedWalletType === 'smart' && !smartWalletLoading && !smartWalletAddress &&
+        'Smart wallet address not found. Please create or connect your smart wallet.'}
+      {selectedWalletType === 'smart' && !smartWalletLoading && smartWalletAddress && smartWalletAddress !== address && (
+        <span className="inline-flex items-center gap-2">
+          {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
+          <button
+            className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
+            onClick={() => {
+              navigator.clipboard.writeText(smartWalletAddress);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1200);
+            }}
+            title="Copy address"
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </span>
+      )}
+      {selectedWalletType !== 'smart' && selectedWalletAddress && (
+        <span className="inline-flex items-center gap-2">
+          {`${selectedWalletAddress.substring(0, 10)}...${selectedWalletAddress.substring(selectedWalletAddress.length - 8)}`}
+          <button
+            className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
+            onClick={() => {
+              navigator.clipboard.writeText(selectedWalletAddress);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1200);
+            }}
+            title="Copy address"
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </span>
+      )}
+      {selectedWalletType !== 'smart' && !selectedWalletAddress && 'Not Connected'}
+    </div>
+  </div>
+</div>
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -788,48 +898,96 @@ const fetchRealBalances = async (walletAddress: string) => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Daily Revenue</h3>
               <div className="h-64">
-                <Line 
-                  data={getMultiStablecoinDailyRevenueData(transactions)} 
-                  options={{ 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          color: 'rgba(156, 163, 175, 0.1)'
-                        },
-                        ticks: {
-                          color: typeof window !== 'undefined' && 
-                                window.matchMedia && 
-                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                                '#9ca3af' : '#4b5563',
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        },
-                        ticks: {
-                          color: typeof window !== 'undefined' && 
-                                window.matchMedia && 
-                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                                '#9ca3af' : '#4b5563',
-                        }
-                      }
-                    },
-                    plugins: {
-                      legend: {
-                        labels: {
-                          color: typeof window !== 'undefined' && 
-                                window.matchMedia && 
-                                window.matchMedia('(prefers-color-scheme: dark)').matches ? 
-                                '#fff' : '#222',
-                        }
-                      }
-                    }
-                  }} 
-                />
+                <Line
+  data={getMultiStablecoinDailyRevenueData(transactions)}
+  options={{
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(156, 163, 175, 0.1)'
+        },
+        ticks: {
+          color:
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? '#9ca3af'
+              : '#4b5563',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color:
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? '#9ca3af'
+              : '#4b5563',
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+  color:
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? '#fff'
+      : '#222',
+  usePointStyle: false, // <--- This disables the colored boxes entirely
+  generateLabels: (chart) => {
+            // Custom legend: show flag and currency code
+            const { datasets } = chart.data;
+            if (!datasets || !datasets.length) return [];
+            return datasets.map((ds, i) => {
+              // Expect label to be in the format: `${flag} ${symbol}`
+              const labelString = ds.label || '';
+              // Split into flag and code
+              const match = labelString.match(/^(\S+)\s+(.+)$/);
+              let flag = '', code = '';
+              if (match) {
+                flag = match[1];
+                code = match[2];
+              } else {
+                code = labelString;
+              }
+              return {
+  text: `${flag} ${code}`.trim(),
+  hidden: chart.isDatasetVisible(i) === false,
+  index: i,
+};
+            });
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            // Show value with currency symbol in tooltip
+            const ds = context.dataset;
+            const label = ds.label || '';
+            const match = label.match(/^(\S+)\s+(.+)$/);
+            let flag = '', code = '';
+            if (match) {
+              flag = match[1];
+              code = match[2];
+            } else {
+              code = label;
+            }
+            return `${flag} ${code}: ${context.parsed.y.toLocaleString()}`;
+          },
+        },
+      },
+    },
+  }}
+/>
               </div>
             </div>
             

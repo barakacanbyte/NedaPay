@@ -1,5 +1,8 @@
 'use client';
 
+import { getSmartWalletAddress, createSmartWallet as createSmartWalletOnChain } from "../utils/smartWallet";
+import { ethers } from "ethers";
+import toast from 'react-hot-toast';
 import { useState, useRef, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { metaMask, coinbaseWallet, walletConnect } from 'wagmi/connectors';
@@ -102,16 +105,16 @@ const ensName = isHexAddress(address) ? nameResult.data : undefined;
       
       // Set a cookie for the middleware to check
       document.cookie = 'wallet_connected=true; path=/; max-age=86400'; // 24 hours
-      
-      // Simulate smart wallet by creating a derived address
-      const simulatedSmartWallet = `0x${address.substring(2, 6)}5${address.substring(7, 42)}`;
-      setSmartWalletAddress(simulatedSmartWallet);
-      
-      // Store in local storage
-      localStorage.setItem(`smartWallet_${address}`, JSON.stringify({
-        address: simulatedSmartWallet,
-        createdAt: new Date().toISOString()
-      }));
+           // Always fetch the real smart wallet address from the on-chain factory
+      const salt = 0; // Use 0 unless you support multiple smart wallets per EOA
+      const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+      getSmartWalletAddress(address, salt, provider).then((realSmartWalletAddress) => {
+        setSmartWalletAddress(realSmartWalletAddress);
+        localStorage.setItem(`smartWallet_${address}`, JSON.stringify({
+          address: realSmartWalletAddress,
+          createdAt: new Date().toISOString()
+        }));
+      });
       
       // Immediately dispatch a custom event so dashboard can react instantly
       window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address } }));
@@ -136,36 +139,55 @@ const ensName = isHexAddress(address) ? nameResult.data : undefined;
     }
   }, [address, isConnected, router]);
   
-  // Function to create a smart wallet
-  const createSmartWallet = async () => {
-    if (!address || !isConnected) return;
-    
-    setIsCreatingSmartWallet(true);
-    try {
-      // Simulate smart wallet creation with a 2-second delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create a derived address to simulate a smart wallet
-      const simulatedSmartWallet = `0x${address.substring(2, 6)}5${address.substring(7, 42)}`;
-      
-      // Store the smart wallet address
-      setSmartWalletAddress(simulatedSmartWallet);
-      
-      // Store in local storage for future use
+
+// Function to create a smart wallet (on-chain)
+const createSmartWallet = async () => {
+  console.log('Create Smart Wallet clicked', { address, isConnected });
+  if (!address || !isConnected) return;
+  setIsCreatingSmartWallet(true);
+  try {
+    // Use a fixed salt for demo, or generate a random one for production
+    const salt = 1;
+    // Get the provider from the injected wallet
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    // First, check if the smart wallet already exists
+    console.log('Checking if smart wallet exists for', address, 'with salt', salt);
+    const walletAddr = await getSmartWalletAddress(address, salt, provider);
+    let code = '';
+    if (walletAddr && walletAddr !== ethers.constants.AddressZero) {
+      code = await provider.getCode(walletAddr);
+    }
+    // If the wallet contract is actually deployed, show it
+    if (walletAddr && walletAddr !== ethers.constants.AddressZero && code !== '0x') {
+      setSmartWalletAddress(walletAddr);
       localStorage.setItem(`smartWallet_${address}`, JSON.stringify({
-        address: simulatedSmartWallet,
+        address: walletAddr,
         createdAt: new Date().toISOString()
       }));
-      
-      // Redirect to dashboard after creating smart wallet
+      toast.success('Smart wallet already exists.');
       router.push('/dashboard');
-    } catch (error) {
-      console.error('Error creating smart wallet:', error);
-    } finally {
-      setIsCreatingSmartWallet(false);
-      setShowOptions(false);
+      return; 
     }
-  };
+    // Otherwise, create the wallet on-chain
+    toast('Creating smart wallet on-chain...');
+    const result = await createSmartWalletOnChain(address, salt, signer);
+    setSmartWalletAddress(result.walletAddress);
+    localStorage.setItem(`smartWallet_${address}`, JSON.stringify({
+      address: result.walletAddress,
+      createdAt: new Date().toISOString()
+    }));
+    toast.success('Smart wallet created!');
+    router.push('/dashboard');
+  } catch (error) {
+    console.error('Error creating smart wallet:', error);
+    toast.error('Failed to create smart wallet. See console for details.');
+  } finally {
+    setIsCreatingSmartWallet(false);
+    setShowOptions(false);
+  }
+};
   
   // Function to handle MetaMask connection
   const handleConnectMetaMask = async () => {
@@ -266,12 +288,22 @@ const ensName = isHexAddress(address) ? nameResult.data : undefined;
           }}
           className="flex items-center space-x-2 bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-800/40 text-gray-900 dark:text-blue-300 px-4 py-2 rounded-lg transition-all duration-200"
         >
-          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
-              <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
-            </svg>
-          </div>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2 bg-blue-100 dark:bg-blue-900">
+  {connector?.id === 'coinbaseWallet' || connector?.name === 'Coinbase Wallet' ? (
+    // Coinbase Wallet Logo
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="12" fill="#0052FF" />
+      <circle cx="12" cy="12" r="7.2" fill="#fff" />
+      <rect x="8" y="11" width="8" height="2" rx="1" fill="#0052FF" />
+    </svg>
+  ) : (
+    // MetaMask Logo (default)
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M21.3622 2L13.3622 8.4L14.9622 4.56L21.3622 2Z" fill="#E17726"/>
+      <path d="M2.63782 2L10.5378 8.46L9.03782 4.56L2.63782 2Z" fill="#E27625"/>
+    </svg>
+  )}
+</div>
           <div className="text-sm font-medium">
             {baseName || ensName || formatAddress(address)}
           </div>

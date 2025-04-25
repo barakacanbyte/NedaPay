@@ -135,7 +135,12 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Smart Wallets
 - Users can create a smart wallet for enhanced security and lower fees.
-- Smart wallet address is simulated for demo purposes and stored in `localStorage`.
+- **Production Deployment:** The NedaPaySmartWalletFactory contract is deployed and verified on Base Mainnet at:
+  - `0x46358DA741d3456dBAEb02995979B2722C3b8722` ([View on Basescan](https://basescan.org/address/0x46358DA741d3456dBAEb02995979B2722C3b8722#code))
+- **Frontend Integration:**
+  - Update your environment variables or frontend config to use this contract address for all mainnet interactions.
+  - Example: Add `NEXT_PUBLIC_FACTORY_ADDRESS=0x46358DA741d3456dBAEb02995979B2722C3b8722` to your `.env.local` file.
+  - The factory contract supports smart wallet creation and management for NEDA Pay users.
 - Creation is handled in `WalletSelector.tsx`.
 - UI shows smart wallet status and allows switching between EOA and smart wallet.
 
