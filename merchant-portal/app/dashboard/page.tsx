@@ -722,42 +722,45 @@ const fetchRealBalances = async (walletAddress: string) => {
       {selectedWalletType === 'smart' ? 'Smart Wallet Address:' : 'EOA Wallet Address:'}
     </div>
     <div className="text-sm text-white/90">
-      {selectedWalletType === 'smart' && smartWalletLoading && 'Loading smart wallet address...'}
-      {selectedWalletType === 'smart' && !smartWalletLoading && !smartWalletAddress &&
-        'Smart wallet address not found. Please create or connect your smart wallet.'}
-      {selectedWalletType === 'smart' && !smartWalletLoading && smartWalletAddress && smartWalletAddress !== address && (
-        <span className="inline-flex items-center gap-2">
-          {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
-          <button
-            className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
-            onClick={() => {
-              navigator.clipboard.writeText(smartWalletAddress);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1200);
-            }}
-            title="Copy address"
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </span>
-      )}
-      {selectedWalletType !== 'smart' && selectedWalletAddress && (
-        <span className="inline-flex items-center gap-2">
-          {`${selectedWalletAddress.substring(0, 10)}...${selectedWalletAddress.substring(selectedWalletAddress.length - 8)}`}
-          <button
-            className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
-            onClick={() => {
-              navigator.clipboard.writeText(selectedWalletAddress);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1200);
-            }}
-            title="Copy address"
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-        </span>
-      )}
-      {selectedWalletType !== 'smart' && !selectedWalletAddress && 'Not Connected'}
+      {selectedWalletType === 'smart' && smartWalletLoading && (
+  <span>Loading smart wallet address...</span>
+)}
+{selectedWalletType === 'smart' && !smartWalletLoading && (!smartWalletAddress || smartWalletAddress === address) && (
+  <span className="text-yellow-200">Smart wallet address not found. Please create or connect your smart wallet.</span>
+)}
+{selectedWalletType === 'smart' && !smartWalletLoading && smartWalletAddress && smartWalletAddress !== address && (
+  <span className="inline-flex items-center gap-2">
+    {`${smartWalletAddress.substring(0, 10)}...${smartWalletAddress.substring(smartWalletAddress.length - 8)}`}
+    <button
+      className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
+      onClick={() => {
+        navigator.clipboard.writeText(smartWalletAddress);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      }}
+      title="Copy address"
+    >
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
+  </span>
+)}
+{selectedWalletType !== 'smart' && selectedWalletAddress && (
+  <span className="inline-flex items-center gap-2">
+    {`${selectedWalletAddress.substring(0, 10)}...${selectedWalletAddress.substring(selectedWalletAddress.length - 8)}`}
+    <button
+      className="ml-1 px-2 py-0.5 rounded bg-slate-600 text-xs text-white hover:bg-slate-800 focus:outline-none"
+      onClick={() => {
+        navigator.clipboard.writeText(selectedWalletAddress);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      }}
+      title="Copy address"
+    >
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
+  </span>
+)}
+{selectedWalletType !== 'smart' && !selectedWalletAddress && 'Not Connected'}
     </div>
   </div>
 </div>
