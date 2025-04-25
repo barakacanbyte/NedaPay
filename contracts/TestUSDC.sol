@@ -15,8 +15,9 @@ contract TestUSDC is ERC20, Ownable {
      */
     constructor(address initialOwner) 
         ERC20("Test USDC", "TUSDC") 
-        Ownable(initialOwner) 
+        Ownable() 
     {
+        _transferOwnership(initialOwner);
         // Mint 1,000,000 tokens to the owner (with 6 decimals like real USDC)
         _mint(initialOwner, 1_000_000 * 10**6);
     }

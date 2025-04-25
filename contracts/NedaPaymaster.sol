@@ -41,7 +41,7 @@ contract NedaPaymaster is Ownable, BasePaymaster {
         IEntryPoint _entryPoint,
         IERC20 _tshcToken,
         uint256 _exchangeRate
-    ) Ownable(msg.sender) BasePaymaster(_entryPoint) {
+    ) Ownable() BasePaymaster(_entryPoint) {
         tshcToken = _tshcToken;
         exchangeRate = _exchangeRate;
         minGasPrice = 1 gwei;

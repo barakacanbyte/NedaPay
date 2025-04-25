@@ -544,7 +544,16 @@ contract FiatOnRamp is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @dev Get transaction details
      * @param _txId Transaction ID
-     * @return Full transaction data
+     * @return user The user involved in the transaction
+     * @return amount The amount of TSHC
+     * @return fiatAmount The amount of fiat
+     * @return txType The type of transaction
+     * @return state The state of the transaction
+     * @return paymentReference The payment reference
+     * @return paymentMethod The payment method
+     * @return timestamp The timestamp of the transaction
+     * @return processor The processor address
+     * @return rejectionReason The reason for rejection
      */
     function getTransaction(uint256 _txId) 
         external 

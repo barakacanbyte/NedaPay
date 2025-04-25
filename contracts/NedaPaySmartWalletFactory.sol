@@ -136,7 +136,7 @@ contract NedaPaySmartWalletFactory is Ownable {
      * @dev Constructor initializes the factory with the EntryPoint
      * @param _entryPoint The EntryPoint contract address
      */
-    constructor(EntryPoint _entryPoint) Ownable(msg.sender) {
+    constructor(EntryPoint _entryPoint) Ownable() {
         entryPoint = _entryPoint;
     }
     

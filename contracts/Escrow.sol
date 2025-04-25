@@ -348,7 +348,16 @@ contract Escrow is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @dev Get escrow details
      * @param _escrowId The ID of the escrow
-     * @return Full escrow data
+     * @return buyer The buyer address
+     * @return seller The seller address
+     * @return amount The amount held in escrow
+     * @return fee The escrow fee
+     * @return createdAt The escrow creation timestamp
+     * @return expiresAt The escrow expiration timestamp
+     * @return metadata The metadata string
+     * @return state The escrow state
+     * @return resolution The dispute resolution
+     * @return disputeReason The reason for dispute, if any
      */
     function getEscrow(uint256 _escrowId) 
         external 

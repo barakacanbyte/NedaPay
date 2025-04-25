@@ -169,7 +169,14 @@ contract BatchPayment is AccessControl, ReentrancyGuard, Pausable {
     /**
      * @dev Get batch payment details
      * @param _batchId The ID of the batch payment
-     * @return Full batch payment data
+     * @return sender The sender of the batch payment
+     * @return recipients The recipients of the batch payment
+     * @return amounts The amounts sent to each recipient
+     * @return paymentReference The payment reference
+     * @return timestamp The timestamp of the batch payment
+     * @return processed Whether the batch payment is processed
+     * @return totalAmount The total amount sent
+     * @return totalFee The total fee charged
      */
     function getBatchPayment(uint256 _batchId) 
         external 
