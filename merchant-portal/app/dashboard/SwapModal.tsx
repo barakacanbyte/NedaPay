@@ -12,9 +12,19 @@ interface SwapModalProps {
   onClose: () => void;
   onSwap: (from: string, to: string, amount: string) => void;
   maxAmount: string;
+  onReverse?: (newFrom: string) => void; // add prop to allow parent to update fromSymbol
 }
 
 const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap, maxAmount }) => {
+  // Helper to safely truncate to allowed decimals
+  function truncateToDecimals(value: string, decimals: number) {
+    if (!value.includes('.')) return value;
+    const [whole, frac] = value.split('.');
+    return frac.length > decimals
+      ? `${whole}.${frac.slice(0, decimals)}`
+      : value;
+  }
+
   const { address, isConnected } = useAccount();
   const [toSymbol, setToSymbol] = useState('');
   const [amount, setAmount] = useState('');
@@ -24,6 +34,22 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
   const [swapError, setSwapError] = useState<string | null>(null);
   const [poolType, setPoolType] = useState<'stable' | 'volatile'>('stable');
   const swapInProgress = useRef(false);
+
+  // New: callback to update fromSymbol in parent
+  const handleReverseTokens = () => {
+    if (!toSymbol) return;
+    // Swap fromSymbol in parent, toSymbol in modal
+    if (typeof onReverse === 'function') {
+      onReverse(toSymbol); // ask parent to update fromSymbol
+    }
+    setToSymbol(fromSymbol); // swap modal's toSymbol
+    setAmount(quote || ''); // use last quote as new amount
+    setQuote(null); // clear quote to force refresh
+    setQuoteError(null);
+  };
+
+
+
 
   // Get token and factory addresses
   const fromToken = stablecoins.find(c => c.baseToken === fromSymbol)?.address;
@@ -42,31 +68,33 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
   useEffect(() => {
     setQuote(null);
     setQuoteError(null);
-    if (!fromToken || !toToken || !amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
+    if (!fromToken || !toToken || fromToken === toToken || !amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      setQuoteError('Select two different tokens and enter a valid amount.');
+      return;
+    }
     const fetchQuote = async () => {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const parsedAmount = ethers.utils.parseUnits(amount, fromDecimals).toString();
-        console.log('[Quote] Fetching quote with:', {
-          fromToken,
-          toToken,
-          poolType,
-          factory,
-          fromDecimals,
-          toDecimals,
-          parsedAmount,
-          amount
-        });
-        const amounts = await getAerodromeQuote({
-          provider,
-          amountIn: parsedAmount,
-          fromToken,
-          toToken,
-          stable: poolType === 'stable',
-          factory
-        });
-        console.log('[Quote] getAerodromeQuote result:', amounts);
-        setQuote(ethers.utils.formatUnits(amounts[amounts.length - 1], toDecimals));
+        const safeAmount = truncateToDecimals(amount, fromDecimals);
+        const parsedAmount = ethers.utils.parseUnits(safeAmount, fromDecimals).toString();
+        if (!parsedAmount || parsedAmount === '0') {
+          setQuoteError('Enter a valid amount.');
+          return;
+        }
+        try {
+          const amounts = await getAerodromeQuote({
+            provider,
+            amountIn: parsedAmount,
+            fromToken,
+            toToken,
+            stable: poolType === 'stable',
+            factory
+          });
+          setQuote(ethers.utils.formatUnits(amounts[amounts.length - 1], toDecimals));
+        } catch (err: any) {
+          setQuoteError('No pool exists for this pair or insufficient liquidity.');
+          return;
+        }
       } catch (err: any) {
         console.error('[Quote] Error fetching quote:', err);
         setQuoteError('Unable to fetch quote');
@@ -77,12 +105,14 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
 
   const handleSwap = async () => {
     setSwapError(null);
-    if (!fromToken || !toToken || !address || !amount) {
-      setSwapError('Missing swap details');
+    if (!fromToken || !toToken || fromToken === toToken || !address || !amount) {
+      setSwapError('Missing or invalid swap details');
       return;
     }
-    const parsedAmount = ethers.utils.parseUnits(amount, fromDecimals).toString();
-    const minOut = quote ? ethers.utils.parseUnits((Number(quote) * 0.995).toFixed(toDecimals), toDecimals).toString() : '0'; // 0.5% slippage
+    const safeAmount = truncateToDecimals(amount, fromDecimals);
+    const parsedAmount = ethers.utils.parseUnits(safeAmount, fromDecimals).toString();
+    const safeQuote = quote ? truncateToDecimals((Number(quote) * 0.995).toFixed(toDecimals), toDecimals) : '0';
+    const minOut = quote ? ethers.utils.parseUnits(safeQuote, toDecimals).toString() : '0'; // 0.5% slippage
     const deadline = Math.floor(Date.now() / 1000) + 600; // 10 min
     try {
       setIsSwapping(true);
@@ -220,8 +250,17 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
 
           {/* Swap Arrow */}
           <div className="flex justify-center items-center my-2">
-            <span className="rounded-full bg-[#23263B] p-2 text-lg">↓</span>
-          </div>
+  <button
+    className="rounded-full bg-[#23263B] p-2 text-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+    aria-label="Switch tokens"
+    onClick={handleReverseTokens}
+    disabled={!toSymbol}
+    type="button"
+    title="Switch tokens"
+  >
+    <span>↓</span>
+  </button>
+</div>
 
           {/* Buy Panel */}
           <div className="bg-[#23263B] rounded-xl p-4 mb-2 text-white">

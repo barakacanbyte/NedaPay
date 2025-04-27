@@ -115,6 +115,10 @@ function HomeContent() {
             <p className="text-on-light dark:text-gray-300">
               Swap between supported stablecoins in seconds, right from your dashboard
             </p>
+            <div className="mt-4 flex flex-col items-center">
+              <img src="/swap-screenshot.png" alt="Example of swapping stablecoins in NEDA Pay" className="rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-full md:max-w-xs" />
+              <span className="text-xs text-gray-500 mt-2">Example: Swapping USDC to ZARP in seconds</span>
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
             <div className="text-4xl mb-4">📊</div>
@@ -122,6 +126,10 @@ function HomeContent() {
             <p className="text-on-light dark:text-gray-300">
               Monitor your business performance with detailed analytics and reports
             </p>
+            <div className="mt-4 flex flex-col items-center">
+              <img src="/dashboard-screenshot.png" alt="Dashboard analytics example in NEDA Pay" className="rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-full md:max-w-lg" />
+              <span className="text-xs text-gray-500 mt-2">Example: Analytics and business performance dashboard</span>
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
             <div className="text-4xl mb-4">⚙️</div>

@@ -379,10 +379,10 @@ const createSmartWallet = async () => {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">WalletConnect</div>
-                    <div className="text-xs text-gray-700 dark:text-gray-400">
-                      {isConnecting ? 'Connecting...' : 'Connect with WalletConnect (Mobile/Desktop)'}
-                    </div>
+                    <div className="font-medium text-white">WalletConnect</div>
+<div className="text-xs text-white/80">
+  {isConnecting ? 'Connecting...' : 'Connect with WalletConnect (Mobile/Desktop)'}
+</div>
                   </div>
                 </button>
 
@@ -400,10 +400,10 @@ const createSmartWallet = async () => {
                       </svg>
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">Coinbase Wallet</div>
-                      <div className="text-xs text-gray-700 dark:text-gray-400">
-                        {isConnecting ? 'Connecting...' : 'Connect using Coinbase Wallet'}
-                      </div>
+                      <div className="font-medium text-white">Coinbase Wallet</div>
+<div className="text-xs text-white/80">
+  {isConnecting ? 'Connecting...' : 'Connect using Coinbase Wallet'}
+</div>
                     </div>
                   </button>
                 </div>
@@ -423,10 +423,10 @@ const createSmartWallet = async () => {
                     </svg>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">MetaMask</div>
-                    <div className="text-xs text-gray-700 dark:text-gray-400">
-                      {isConnecting ? 'Connecting...' : 'Connect using MetaMask'}
-                    </div>
+                    <div className="font-medium text-white">MetaMask</div>
+<div className="text-xs text-white/80">
+  {isConnecting ? 'Connecting...' : 'Connect using MetaMask'}
+</div>
                   </div>
                 </button>
               </div>

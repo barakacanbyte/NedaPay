@@ -22,13 +22,15 @@ export const stablecoins = [
     issuer: 'Convexity',
     description: 'Stablecoin pegged 1:1 to the Nigerian Naira (NGN)',
     website: 'https://stablecoins.earth',
-    chainId: 8453 // Base Mainnet
+    chainId: 8453, // Base Mainnet
+    decimals: 6
   },
   {
     region: 'Nigeria',
     flag: '🇳🇬',
     currency: 'NGN',
     baseToken: 'NGNC',
+    decimals: 18,
     name: 'Nigerian Naira Coin',
     address: '0xe743f13623e000261b634f0e5676f294475ec24d', // Updated NGNC address
     issuer: 'Link',
@@ -41,6 +43,7 @@ export const stablecoins = [
     flag: '🇿🇦',
     currency: 'ZAR',
     baseToken: 'ZARP',
+    decimals: 18,
     name: 'South African Rand Coin',
     address: '0xb755506531786C8aC63B756BaB1ac387bACB0C04', // Updated ZARP address
     issuer: 'inv.es',
@@ -66,6 +69,7 @@ export const stablecoins = [
     flag: '🇪🇺',
     currency: 'EUR',
     baseToken: 'EURC',
+    decimals: 6,
     name: 'Euro Coin',
     address: '0x60a3e35cc302bfa44cb288bc5a4f316fdb1adb42', // EURC address confirmed
     issuer: 'Circle',
@@ -78,6 +82,7 @@ export const stablecoins = [
     flag: '🇨🇦',
     currency: 'CAD',
     baseToken: 'CADC',
+    decimals: 18,
     name: 'Canadian Dollar Coin',
     address: '0x043eB4B75d0805c43D7C834902E335621983Cf03', // CADC address confirmed
     issuer: 'PayTrie',
@@ -90,6 +95,7 @@ export const stablecoins = [
     flag: '🇧🇷',
     currency: 'BRL',
     baseToken: 'BRL',
+    decimals: 18,
     name: 'Brazilian Real Coin',
     address: '0x043eB4B75d0805c43D7C834902E335621983Cf03', // CADC address confirmed
     issuer: 'Transfero',
@@ -102,6 +108,7 @@ export const stablecoins = [
     flag: '🇹🇷',
     currency: 'TRY',
     baseToken: 'TRYB',
+    decimals: 6,
     name: 'Turkish Lira Coin',
     address: '0x043eB4B75d0805c43D7C834902E335621983Cf03', // CADC address confirmed
     issuer: 'BiLira',
@@ -114,6 +121,7 @@ export const stablecoins = [
     flag: '🇳🇿',
     currency: 'NZD',
     baseToken: 'NZDD',
+    decimals: 6,
     name: 'New Zealand Dollar Coin',
     address: '0x2dD087589ce9C5b2D1b42e20d2519B3c8cF022b7', // NZD address confirmed
     issuer: 'Easy Crypto',
@@ -126,6 +134,7 @@ export const stablecoins = [
     flag: '🇲🇽',
     currency: 'MXN',
     baseToken: 'MXNe',
+    decimals: 6,
     name: 'Mexican Peso Coin',
     address: '0x043eB4B75d0805c43D7C834902E335621983Cf03', // CADC address confirmed
     issuer: 'Etherfuse/Brale',
