@@ -50,13 +50,23 @@ export default function Header() {
           <nav className="flex space-x-3">
             {pathname === '/' && (
               <>
-                <a href="#how-it-works" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">How It Works</a>
-                <a href="#faq" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">FAQ</a>
+                <a href="#how-it-works" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white !dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  <span className="text-slate-800 dark:text-white !dark:text-white">
+                    How It Works
+                  </span>
+                </a>
+                <a href="#faq" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white !dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  <span className="text-slate-800 dark:text-white !dark:text-white">
+                    FAQ
+                  </span>
+                </a>
               </>
             )}
             {walletConnected && (
-              <Link href="/settings" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
-                Settings
+              <Link href="/settings" className="px-4 py-2 rounded-full border-2 border-blue-400 dark:border-blue-300 text-slate-800 dark:text-white !dark:text-white font-semibold bg-white/80 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-blue-800 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <span className="text-slate-800 dark:text-white !dark:text-white">
+                  Settings
+                </span>
               </Link>
             )}
           </nav>

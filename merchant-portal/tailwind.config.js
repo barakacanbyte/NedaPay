@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+      },
       animation: {
         fadeIn: 'fadeIn 0.8s ease-in-out forwards',
       },
@@ -22,4 +26,5 @@ module.exports = {
     },
   },
   plugins: [],
+  darkMode: 'class',
 }

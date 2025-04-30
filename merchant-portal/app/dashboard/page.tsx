@@ -306,6 +306,7 @@ function getTransactionsByDayData(transactions: any[]) {
 
 import Balances from './Balances';
 import SwapModal from './SwapModal';
+import TransactionHistory from './TransactionHistory';
 
 export default function MerchantDashboard() {
   // Wallet switching state

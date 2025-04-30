@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { stablecoins } from '../data/stablecoins';
+import './SwapModalFix.css';
+import { addTransaction } from '../utils/transactionStorage';
 import { getAerodromeQuote, swapAerodrome, AERODROME_ROUTER_ADDRESS, AERODROME_FACTORY_ADDRESS } from '../utils/aerodrome';
 import { checkAllowance, approveToken } from '../utils/erc20';
 import { useAccount } from 'wagmi';
@@ -15,7 +17,7 @@ interface SwapModalProps {
   onReverse?: (newFrom: string) => void; // add prop to allow parent to update fromSymbol
 }
 
-const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap, maxAmount }) => {
+const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap, maxAmount, onReverse }) => {
   // Helper to safely truncate to allowed decimals
   function truncateToDecimals(value: string, decimals: number) {
     if (!value.includes('.')) return value;
@@ -32,6 +34,7 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
   const [quote, setQuote] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [swapError, setSwapError] = useState<string | null>(null);
+  const [swapSuccess, setSwapSuccess] = useState<string | null>(null);
   const [poolType, setPoolType] = useState<'stable' | 'volatile'>('stable');
   const swapInProgress = useRef(false);
 
@@ -148,9 +151,42 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
         userAddress: address,
         deadline
       });
+      
+      // Generate a unique transaction ID
+      const txId = `swap-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Add transaction to history as pending
+      addTransaction({
+        id: txId,
+        fromToken: fromSymbol,
+        toToken: toSymbol,
+        fromAmount: amount,
+        toAmount: quote || '0',
+        txHash: tx.hash,
+        timestamp: Date.now(),
+        status: 'pending',
+        walletAddress: address || ''
+      });
+      
+      // Wait for transaction confirmation
       await tx.wait();
+      
+      // Update transaction status to completed
+      addTransaction({
+        id: txId,
+        fromToken: fromSymbol,
+        toToken: toSymbol,
+        fromAmount: amount,
+        toAmount: quote || '0',
+        txHash: tx.hash,
+        timestamp: Date.now(),
+        status: 'completed',
+        walletAddress: address || ''
+      });
+      
       setIsSwapping(false);
       swapInProgress.current = false;
+      setSwapSuccess(`Successfully swapped ${amount} ${fromSymbol} to ${quote} ${toSymbol}`);
       onSwap(fromSymbol, toSymbol, amount); // callback to parent
     } catch (err: any) {
       setSwapError(err?.reason || err?.message || 'Swap failed');
@@ -166,6 +202,7 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
     setQuote(null);
     setQuoteError(null);
     setSwapError(null);
+    setSwapSuccess(null);
   }, [open, fromSymbol]);
 
   const availableToCoins = stablecoins.filter(c => c.baseToken !== fromSymbol);
@@ -206,7 +243,7 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
+    <div className="swap-modal-container fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
       <div className="relative bg-[#181A20] rounded-2xl shadow-2xl w-full max-w-md flex flex-col border border-slate-700 p-0 animate-fadeInScale">
         {/* Close button */}
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-blue-400 text-2xl focus:outline-none" aria-label="Close">
@@ -218,13 +255,13 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
           {/* Sell Panel */}
           <div className="bg-[#23263B] rounded-xl p-4 mb-2 text-white">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm text-slate-200">Sell</span>
-              <span className="text-xs text-slate-200">Balance: {fromBalance} {fromSymbol}</span>
+              <span className="text-sm text-white">Sell</span>
+              <span className="text-xs text-white">Balance: {fromBalance} {fromSymbol}</span>
             </div>
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">{fromTokenObj?.flag ?? ''}</span>
               <span className="font-semibold text-white">{fromSymbol}</span>
-              <span className="text-xs text-slate-300">{fromTokenObj?.name ?? ''}</span>
+              <span className="text-xs text-white">{fromTokenObj?.name ?? ''}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -245,7 +282,7 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
                 Max
               </button>
             </div>
-            <div className="text-xs text-slate-300 mt-1">${/* Fiat value placeholder */}0.00</div>
+            <div className="text-xs text-white mt-1">${/* Fiat value placeholder */}0.00</div>
           </div>
 
           {/* Swap Arrow */}
@@ -265,8 +302,8 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
           {/* Buy Panel */}
           <div className="bg-[#23263B] rounded-xl p-4 mb-2 text-white">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm text-slate-200">Buy</span>
-              <span className="text-xs text-slate-200">Balance: {toBalance} {toSymbol}</span>
+              <span className="text-sm text-white">Buy</span>
+              <span className="text-xs text-white">Balance: {toBalance} {toSymbol}</span>
             </div>
             <div className="flex items-center gap-3 mb-2">
               <select
@@ -286,12 +323,12 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
             <div className="flex items-center gap-2">
               <span
                 className="flex-grow text-white text-5xl font-extrabold select-text"
-                style={{ color: 'white', fontWeight: 800, fontSize: '3rem', lineHeight: 1.1 }}
+                style={{ color: 'white !important', fontWeight: 800, fontSize: '3rem', lineHeight: 1.1, WebkitTextFillColor: 'white !important' }}
               >
                 {quote ?? '0.0'}
               </span>
             </div>
-            <div className="text-xs text-slate-300 mt-1">${/* Fiat value placeholder */}0.00</div>
+            <div className="text-xs text-white mt-1">${/* Fiat value placeholder */}0.00</div>
           </div>
 
           {/* Pool type selector */}
@@ -309,7 +346,7 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
           </div>
 
           {/* Swap Details Section */}
-          <div className="bg-[#23263B] rounded-xl p-4 mb-2 space-y-2 text-xs">
+          <div className="bg-[#23263B] rounded-xl p-4 mb-2 space-y-2 text-xs text-white">
             <div className="flex justify-between">
               <span>Fees</span>
               <span>0.05% {/* token icons placeholder */}</span>
@@ -349,6 +386,11 @@ const SwapModal: React.FC<SwapModalProps> = ({ open, fromSymbol, onClose, onSwap
           {swapError && (
             <div className="mt-4 text-red-500 text-center text-sm">
               {swapError}
+            </div>
+          )}
+          {swapSuccess && (
+            <div className="mt-4 text-green-500 text-center text-sm font-semibold">
+              {swapSuccess}
             </div>
           )}
         </div>

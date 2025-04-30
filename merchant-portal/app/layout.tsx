@@ -23,7 +23,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-background">
+      <body className="bg-white dark:bg-black text-black dark:text-white">
         <div className="flex flex-col min-h-screen">
           <Providers>
             <AppToaster />

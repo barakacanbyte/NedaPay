@@ -49,7 +49,15 @@ function HomeContent() {
   if (!mounted) return null;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white" style={{"--tw-text-opacity": "1 !important"}}>
+      <style jsx global>{`
+        .dark h2, .dark h3, .dark p, .dark span, .dark summary, .dark div {
+          color: white !important;
+        }
+        .dark .text-gray-300, .dark .text-gray-500, .dark .text-gray-600, .dark .text-gray-700 {
+          color: white !important;
+        }
+      `}</style>
       <Header />
       
       <div className="container mx-auto max-w-6xl px-4 py-12">
@@ -102,39 +110,51 @@ function HomeContent() {
         
         {/* Features Section */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-            <div className="text-4xl mb-4">💸</div>
-            <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Accept Local Stablecoins</h2>
-            <p className="text-on-light dark:text-gray-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center border-2 border-blue-200 dark:border-blue-600 hover:border-blue-400 dark:hover:border-blue-400 transition-all transform hover:scale-102">
+            <div className="text-4xl mb-4 dark:text-white">💸</div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2" style={{color: 'var(--foreground)'}}>
+              Accept Local Stablecoins
+            </h2>
+            <p className="text-gray-700 dark:text-white" style={{color: 'var(--foreground)'}}>
               Accept TSHC, cNGN, IDRX and other local stablecoins alongside USDC
             </p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-            <div className="text-4xl mb-4">🔄</div>
-            <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Swap Stablecoins Instantly</h2>
-            <p className="text-on-light dark:text-gray-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center border-2 border-blue-200 dark:border-blue-600 hover:border-blue-400 dark:hover:border-blue-400 transition-all transform hover:scale-102">
+            <div className="text-4xl mb-4 dark:text-white">🔄</div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2" style={{color: 'var(--foreground)'}}>
+              Swap Stablecoins Instantly
+            </h2>
+            <p className="text-gray-700 dark:text-white" style={{color: 'var(--foreground)'}}>
               Swap between supported stablecoins in seconds, right from your dashboard
             </p>
             <div className="mt-4 flex flex-col items-center">
               <img src="/swap-screenshot.png" alt="Example of swapping stablecoins in NEDA Pay" className="rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-full md:max-w-xs" />
-              <span className="text-xs text-gray-500 mt-2">Example: Swapping USDC to ZARP in seconds</span>
+              <span className="text-xs text-gray-500 dark:text-white mt-2" style={{color: 'var(--foreground)'}}>
+                Example: Swapping USDC to ZARP in seconds
+              </span>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-            <div className="text-4xl mb-4">📊</div>
-            <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Track Performance</h2>
-            <p className="text-on-light dark:text-gray-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center border-2 border-blue-200 dark:border-blue-600 hover:border-blue-400 dark:hover:border-blue-400 transition-all transform hover:scale-102">
+            <div className="text-4xl mb-4 dark:text-white">📊</div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2" style={{color: 'var(--foreground)'}}>
+              Track Performance
+            </h2>
+            <p className="text-gray-700 dark:text-white" style={{color: 'var(--foreground)'}}>
               Monitor your business performance with detailed analytics and reports
             </p>
             <div className="mt-4 flex flex-col items-center">
               <img src="/dashboard-screenshot.png" alt="Dashboard analytics example in NEDA Pay" className="rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-full md:max-w-lg" />
-              <span className="text-xs text-gray-500 mt-2">Example: Analytics and business performance dashboard</span>
+              <span className="text-xs text-gray-500 dark:text-white mt-2" style={{color: 'var(--foreground)'}}>
+                Example: Analytics and business performance dashboard
+              </span>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center">
-            <div className="text-4xl mb-4">⚙️</div>
-            <h2 className="text-xl font-semibold text-on-light dark:text-white mb-2">Automatic Settlement</h2>
-            <p className="text-on-light dark:text-gray-300">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg text-center border-2 border-blue-200 dark:border-blue-600 hover:border-blue-400 dark:hover:border-blue-400 transition-all transform hover:scale-102">
+            <div className="text-4xl mb-4 dark:text-white">⚙️</div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2" style={{color: 'var(--foreground)'}}>
+              Automatic Settlement
+            </h2>
+            <p className="text-gray-700 dark:text-white" style={{color: 'var(--foreground)'}}>
               Automatically settle payments to your preferred stablecoin
             </p>
           </div>
@@ -142,19 +162,19 @@ function HomeContent() {
         
         {/* Stablecoins Section */}
         <div id="how-it-works" className="mb-16">
-          <h2 className="text-2xl font-bold mb-6 text-center gradient-text">
+          <h2 className="text-2xl font-bold mb-6 text-center gradient-text dark:text-white !dark:text-white">
             Global Stablecoins Network
           </h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+          <p className="text-center text-gray-600 dark:text-white !dark:text-white mb-6 max-w-2xl mx-auto">
             Accept and manage stablecoins from around the world on the Base blockchain
           </p>
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {stablecoins.map((coin, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg text-center">
-                <div className="text-3xl mb-2">{coin.flag}</div>
-                <h3 className="font-semibold text-on-light dark:text-white">{coin.baseToken}</h3>
-                <p className="text-sm text-on-light dark:text-gray-300">{coin.region}</p>
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg text-center border-2 border-blue-200 dark:border-blue-600 hover:border-blue-400 dark:hover:border-blue-400 transition-all transform hover:scale-105">
+                <div className="text-3xl mb-3 dark:text-white">{coin.flag}</div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-1" style={{color: 'var(--foreground)'}}>{coin.baseToken}</h3>
+                <p className="text-sm text-gray-700 dark:text-white" style={{color: 'var(--foreground)'}}>{coin.region}</p>
               </div>
             ))}
           </div>
@@ -211,31 +231,31 @@ function HomeContent() {
         
         {/* FAQ Section */}
         <div id="faq" className="max-w-3xl mx-auto mt-20 mb-20">
-          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 dark:text-white !dark:text-white">Frequently Asked Questions</h2>
            <div className="space-y-4">
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Can I swap stablecoins using NEDA Pay?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes! NEDA Pay lets you swap between supported stablecoins (TSHC, cNGN, IDRX, USDC, etc.) instantly and securely, right from your dashboard—no need for external exchanges.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">Can I swap stablecoins using NEDA Pay?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">Yes! NEDA Pay lets you swap between supported stablecoins (TSHC, cNGN, IDRX, USDC, etc.) instantly and securely, right from your dashboard—no need for external exchanges.</div>
             </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">What is NEDA Pay?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">NEDA Pay is a platform that enables merchants to accept and manage local stablecoin payments easily and securely on the Base blockchain.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">What is NEDA Pay?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">NEDA Pay is a platform that enables merchants to accept and manage local stablecoin payments easily and securely on the Base blockchain.</div>
             </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">How do I receive stablecoin payments?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">Simply connect your Base wallet, generate payment links or QR codes, and share them with your customers. Payments are settled instantly to your wallet in local stablecoins.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">How do I receive stablecoin payments?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">Simply connect your Base wallet, generate payment links or QR codes, and share them with your customers. Payments are settled instantly to your wallet in local stablecoins.</div>
             </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Is NEDA Pay secure?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes! NEDA Pay uses secure wallet connections and never stores your private keys. All transactions happen directly on the blockchain for full transparency and safety.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">Is NEDA Pay secure?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">Yes! NEDA Pay uses secure wallet connections and never stores your private keys. All transactions happen directly on the blockchain for full transparency and safety.</div>
             </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">Can I use NEDA Pay internationally?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">Yes, NEDA Pay enables merchants to accept stablecoin payments from customers around the world, as long as they use supported wallets and stablecoins on the Base blockchain.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">Can I use NEDA Pay internationally?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">Yes, NEDA Pay enables merchants to accept stablecoin payments from customers around the world, as long as they use supported wallets and stablecoins on the Base blockchain.</div>
             </details>
             <details className="border border-blue-200 dark:border-blue-700 rounded-lg bg-white/70 dark:bg-gray-900/70 p-4 group">
-              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 group-open:text-blue-900">What fees does NEDA Pay charge?</summary>
-              <div className="mt-2 text-gray-700 dark:text-gray-200">NEDA Pay charges low transaction fees for each payment processed. You can view the detailed fee structure in your merchant dashboard or on our website.</div>
+              <summary className="font-semibold text-lg cursor-pointer text-blue-700 dark:text-blue-300 !dark:text-white group-open:text-blue-900">What fees does NEDA Pay charge?</summary>
+              <div className="mt-2 text-gray-700 dark:text-white !dark:text-white">NEDA Pay charges low transaction fees for each payment processed. You can view the detailed fee structure in your merchant dashboard or on our website.</div>
             </details>
           </div>
         </div>
