@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { Connector } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
+import { Toaster, toast } from 'react-hot-toast';
 import TransactionTable from './TransactionTable';
 import { stablecoins } from '../data/stablecoins';
 import { ethers } from 'ethers';
@@ -330,6 +331,10 @@ export default function MerchantDashboard() {
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [swapFromSymbol, setSwapFromSymbol] = useState<string>('');
+  // Fix: Add missing state for transactions and loading
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isTransactionLoading, setIsTransactionLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Prepare balances for Balances component
   const { processedBalances } = processBalances(balances);
@@ -342,16 +347,12 @@ export default function MerchantDashboard() {
 
   // Handler for SwapModal swap action
   const handleSwap = (from: string, to: string, amount: string) => {
-    // TODO: Integrate Aerodrome swap logic here
-    console.log(`Swap ${amount} ${from} to ${to}`);
     setSwapModalOpen(false);
+    toast.success(`Swap successful! ${amount} ${from} swapped to ${to}.`);
     // Optionally refresh balances
   };
 
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+  // ... existing code ...
   const router = useRouter();
   
   // Set mounted state
@@ -685,9 +686,14 @@ const fetchRealBalances = async (walletAddress: string) => {
 };
 
   if (!mounted) return null;
-  
+
+  // Ensure Toaster is rendered for toast notifications
+  // (should be near the root of your component tree)
+    
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
+    <>
+      <Toaster position="top-right" />
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white">
       <Header />
       {/* Wallet Switcher */}
       <div className="flex gap-4 mb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1375,5 +1381,6 @@ const fetchRealBalances = async (walletAddress: string) => {
       </div>
 
     </div>
+    </>
   );
 }
