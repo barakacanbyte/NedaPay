@@ -8,6 +8,7 @@ import Header from '../components/Header';
 import TransactionTable from './TransactionTable';
 import { stablecoins } from '../data/stablecoins';
 import { ethers } from 'ethers';
+import { getProvider } from '../utils/rpcProvider';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -90,8 +91,9 @@ const processBalances = (balanceData: Record<string, string>, networkChainId?: n
 async function fetchIncomingPayments(merchantAddress: string) {
   if (!merchantAddress) return [];
   const ethers = (await import('ethers')).ethers;
-  // Base Mainnet RPC (public)
-  const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+  // Use robust fallback provider logic
+  const { getProvider } = await import('../utils/rpcProvider');
+  const provider = await getProvider();
   const ERC20_ABI = [
     "event Transfer(address indexed from, address indexed to, uint256 value)",
     "function decimals() view returns (uint8)",

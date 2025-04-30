@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { getProvider } from '../utils/rpcProvider';
 
 // ABI for ERC20 token (simplified version)
 const erc20Abi = [
@@ -63,37 +64,10 @@ export default function ContractIntegration({
         // Connect to provider (Base network)
         let provider;
         try {
-          // Define multiple RPC endpoints to try
-          const baseRpcUrls = [
-            'https://mainnet.base.org',
-            'https://base-mainnet.g.alchemy.com/v2/demo',
-            'https://base.llamarpc.com',
-            'https://1rpc.io/base'
-          ];
-          
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
           } else {
-            // Try each RPC endpoint until one works
-            let connected = false;
-            
-            for (const rpcUrl of baseRpcUrls) {
-              try {
-                provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-                // Test the connection
-                await provider.getBlockNumber();
-                console.log(`Connected successfully to ${rpcUrl}`);
-                connected = true;
-                break;
-              } catch (rpcError) {
-                console.warn(`RPC connection failed for ${rpcUrl}`, rpcError);
-                continue;
-              }
-            }
-            
-            if (!connected) {
-              throw new Error('All RPC endpoints failed');
-            }
+            provider = await getProvider();
           }
         } catch (providerError) {
           console.error('Failed to connect to any provider', providerError);
