@@ -70,7 +70,8 @@ useEffect(() => {
     setIsLoading(true);
     setIsTransactionLoading(true);
     // Fetch balances
-    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+    const { getProvider } = await import('../utils/rpcProvider');
+    const provider = await getProvider();
     const ERC20_ABI = [
       'function balanceOf(address owner) view returns (uint256)',
       'function decimals() view returns (uint8)'
