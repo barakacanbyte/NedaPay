@@ -152,6 +152,35 @@ input:focus, select:focus, textarea:focus {
   .text-on-dark {
     color: #f8fafc !important; /* Light text for dark backgrounds */
   }
+  
+  /* Dashboard welcome message animations */
+  .animate-fadeIn {
+    animation: fadeIn 0.8s ease-in-out forwards;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  
+  .animation-delay-300 {
+    animation-delay: 0.3s;
+  }
+  
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Fix for white-on-white text issues */

@@ -61,8 +61,25 @@ const processBalances = (balanceData: Record<string, string>, networkChainId?: n
     percentage: total > 0 ? Math.round((parseInt(coin.balance.replace(/,/g, '')) / total) * 100) : 0
   }));
 
+  // Ensure we have all stablecoins represented for display
+  const allStablecoins = stablecoins.map(coin => {
+    // Find if this coin exists in processed data
+    const existingCoin = processed.find(p => p.symbol === coin.baseToken);
+    if (existingCoin) {
+      return existingCoin;
+    }
+    // If not found, create a default entry with zero balance
+    return {
+      symbol: coin.baseToken,
+      name: coin.name,
+      balance: '0',
+      flag: coin.flag || '🌐',
+      region: coin.region || 'Unknown',
+    };
+  });
+
   return {
-    processedBalances: processed,
+    processedBalances: allStablecoins, // Use the complete list to ensure all coins are shown
     totalReceived: total.toLocaleString(),
     processedStablecoins: processedCoins
   };
@@ -705,6 +722,51 @@ const fetchRealBalances = async (walletAddress: string) => {
             <p className="text-slate-600 dark:text-slate-300 text-base">
               Manage your stablecoin payments and track business performance
             </p>
+            
+            {/* Welcome Message with Animation */}
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-lg shadow-lg transform transition-all duration-500 hover:scale-102 hover:shadow-xl">
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <h2 className="text-white text-xl font-bold mb-2 animate-fadeIn">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour < 12) return '☀️ Good Morning';
+                      if (hour < 18) return '🌤️ Good Afternoon';
+                      return '🌙 Good Evening';
+                    })()} {selectedWalletAddress ? `${selectedWalletAddress.substring(0, 6)}...` : 'Merchant'}!
+                  </h2>
+                  <p className="text-white text-opacity-90 animate-fadeIn animation-delay-200">
+                    {(() => {
+                      const messages = [
+                        "Today is a great day to grow your business with NEDA Pay!",
+                        "Your dashboard is looking great! Ready to accept more payments?",
+                        "Crypto payments made simple - that's the NEDA Pay promise!",
+                        "Need help? We're just a click away to support your business journey.",
+                        "Your success is our success. Let's make today count!"
+                      ];
+                      return messages[Math.floor(Math.random() * messages.length)];
+                    })()}
+                  </p>
+                  <div className="mt-3 flex space-x-3 animate-fadeIn animation-delay-300">
+                    <button 
+                      onClick={() => router.push('/payment-link')}
+                      className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-md text-sm font-medium transition-all duration-200">
+                      Create Payment Link
+                    </button>
+                    <button 
+                      onClick={() => router.push('/settings')}
+                      className="px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-md text-sm font-medium transition-all duration-200">
+                      Customize Dashboard
+                    </button>
+                  </div>
+                </div>
+                <div className="hidden md:block animate-pulse">
+                  <div className="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                    <span className="text-3xl">💰</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Smart Wallet Info */}
@@ -1027,9 +1089,14 @@ const fetchRealBalances = async (walletAddress: string) => {
           {/* Transactions and Balances */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Recent Transactions */}
-            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:shadow-xl">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Recent Transactions
+                </h3>
               </div>
               
               <div className="overflow-x-auto">
@@ -1045,57 +1112,121 @@ const fetchRealBalances = async (walletAddress: string) => {
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                     {isTransactionLoading ? (
-                      // Loading skeleton for transactions
+                      // Loading skeleton for transactions with shimmer effect
                       Array(5).fill(0).map((_, index) => (
                         <tr key={`loading-${index}`} className="animate-pulse">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
+                              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
+                              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="h-4 w-28 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-4 w-28 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
+                              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
+                              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
+                              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            </div>
                           </td>
                         </tr>
                       ))
+                    ) : transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center justify-center space-y-3">
+                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p>No transactions found</p>
+                            <button 
+                              onClick={() => router.push('/payment-link')} 
+                              className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              Create Payment Link
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ) : (
-                      transactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      transactions.map((tx, index) => (
+                        <tr 
+                          key={tx.id} 
+                          className={`hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-slate-50 dark:bg-gray-750'}`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <a 
                               href={tx.blockExplorerUrl} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-blue-300 font-medium"
+                              className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center"
                             >
+                              <span className="mr-1.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 py-1 px-2 rounded-md">
+                                <svg className="w-3 h-3 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Tx
+                              </span>
                               {tx.shortId}
                             </a>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-200">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <a 
                               href={`https://basescan.org/address/${tx.sender}`} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-blue-300 font-medium"
+                              className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center"
                             >
+                              <span className="inline-block w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 mr-2 flex items-center justify-center text-xs">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </span>
                               {tx.senderShort}
                             </a>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-200">{tx.date}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-slate-200">{tx.amount} <span className="text-primary dark:text-primary-light">{tx.currency}</span></td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              tx.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                              tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
-                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            <div className="flex items-center text-sm text-slate-800 dark:text-slate-200">
+                              <svg className="w-4 h-4 text-slate-500 dark:text-slate-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              {tx.date}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium">
+                              <span className="text-green-600 dark:text-green-400 font-bold">{tx.amount}</span>
+                              <span className="ml-1.5 text-xs px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                {tx.currency}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-3 py-1.5 inline-flex items-center text-xs font-medium rounded-full ${
+                              tx.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800' : 
+                              tx.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800' : 
+                              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'
                             }`}>
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                {tx.status === 'Completed' ? (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                ) : tx.status === 'Pending' ? (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                ) : (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                )}
+                              </svg>
                               {tx.status}
                             </span>
                           </td>
@@ -1106,20 +1237,90 @@ const fetchRealBalances = async (walletAddress: string) => {
                 </table>
               </div>
               
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex justify-center mt-4">
-                  <a href="/transactions" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20">
+                <div className="flex justify-center mt-2">
+                  <a 
+                    href="/transactions" 
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/30 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                     View All Transactions
                   </a>
                 </div>
               </div>
             </div>
             
-            {/* --- World-class Stablecoin Balances Table --- */}
-            <Balances
-              balances={processedBalances}
-              onSwap={handleSwapClick}
-            />
+            {/* --- Custom Stablecoin Balances Table --- */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 transform hover:shadow-xl">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Stablecoin Balances
+                </h2>
+              </div>
+              
+              <div className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Coin</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Balance</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {processedBalances.map((coin, index) => {
+                        const balanceNum = parseFloat(String(coin.balance).replace(/,/g, ''));
+                        const hasBalance = balanceNum > 0;
+                        
+                        return (
+                          <tr 
+                            key={coin.symbol} 
+                            className={`hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-lg">
+                                  {coin.flag}
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">{coin.symbol}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{coin.name}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm font-semibold ${hasBalance ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                {coin.balance}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {/* Identical Swap button for all coins */}
+                              <button
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                onClick={() => hasBalance && handleSwapClick(coin.symbol)}
+                                disabled={!hasBalance}
+                                title={hasBalance ? `Swap ${coin.symbol}` : `No ${coin.symbol} balance to swap`}
+                              >
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                                Swap
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
             {/* --- Swap Modal --- */}
             <SwapModal
               open={swapModalOpen}
