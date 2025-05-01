@@ -22,6 +22,7 @@ const wagmiConfig = createConfig({
   ssr: true,
   transports: {
     [base.id]: fallback([
+      http(process.env.NEXT_PUBLIC_COINBASE_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/n4RnEAzBQtErAI53dP6DCa6l6HRGODgV'),
       http('https://mainnet.base.org'),
       http('https://base-mainnet.g.alchemy.com/v2/demo'),
       http('https://base.llamarpc.com'),

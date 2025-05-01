@@ -48,9 +48,10 @@ export default function WalletPage() {
       const sentFilter = tshcContract.filters.Transfer(userAddress);
       const receivedFilter = tshcContract.filters.Transfer(null, userAddress);
       
+      const { paginatedQueryFilter } = await import('../../merchant-portal/app/utils/paginatedQueryFilter');
       const [sentEvents, receivedEvents] = await Promise.all([
-        tshcContract.queryFilter(sentFilter, fromBlock),
-        tshcContract.queryFilter(receivedFilter, fromBlock)
+        paginatedQueryFilter(tshcContract, sentFilter, fromBlock, currentBlock),
+        paginatedQueryFilter(tshcContract, receivedFilter, fromBlock, currentBlock)
       ]);
       
       // Combine and process events

@@ -115,13 +115,15 @@ async function fetchIncomingPayments(merchantAddress: string) {
       continue;
     }
     try {
-      logs = await contract.queryFilter(
+      const { paginatedQueryFilter } = await import('../utils/paginatedQueryFilter');
+      logs = await paginatedQueryFilter(
+        contract,
         contract.filters.Transfer(null, merchantAddress),
         fromBlock,
         latestBlock
       );
     } catch (e) {
-      console.warn(`Skipping token ${coin.baseToken} at ${coin.address}: queryFilter failed.`);
+      console.warn(`Skipping token ${coin.baseToken} at ${coin.address}: paginatedQueryFilter failed.`);
       continue;
     }
     const symbol = coin.baseToken;

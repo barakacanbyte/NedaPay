@@ -4,7 +4,18 @@
 import { ethers } from 'ethers';
 
 // Define RPC endpoints with priorities
+// List of endpoints known to NOT support eth_getLogs (expand as needed)
+const NON_LOG_COMPATIBLE_ENDPOINTS = [
+  'https://1rpc.io/base',
+  // Add more here if needed
+];
+
 const RPC_ENDPOINTS = [
+  {
+    url: process.env.NEXT_PUBLIC_COINBASE_BASE_RPC || 'https://api.developer.coinbase.com/rpc/v1/base/n4RnEAzBQtErAI53dP6DCa6l6HRGODgV',
+    priority: 0,
+    name: 'CoinbaseCDP'
+  },
   {
     url: 'https://base-rpc.publicnode.com/',
     priority: 1,
@@ -41,6 +52,33 @@ const RPC_ENDPOINTS = [
     name: 'Ankr'
   }
 ];
+
+// Utility to filter endpoints compatible with eth_getLogs
+function getLogCompatibleEndpoints() {
+  return RPC_ENDPOINTS.filter(ep => !NON_LOG_COMPATIBLE_ENDPOINTS.includes(ep.url));
+}
+
+// Get a provider compatible with eth_getLogs for log/event queries
+export const getLogCompatibleProvider = async (): Promise<ethers.providers.JsonRpcProvider> => {
+  // Shuffle compatible endpoints by priority
+  const compatibleEndpoints = getLogCompatibleEndpoints().sort((a, b) => a.priority - b.priority);
+
+  for (const endpoint of compatibleEndpoints) {
+    try {
+      console.log(`[LOGS] Trying RPC endpoint: ${endpoint.name}`);
+      const provider = createProviderWithTimeout(endpoint.url);
+      const isHealthy = await isProviderHealthy(provider);
+      if (isHealthy) {
+        console.log(`[LOGS] Successfully connected to: ${endpoint.name}`);
+        return provider;
+      }
+    } catch (error) {
+      console.error(`[LOGS] Failed to connect to ${endpoint.name}:`, error);
+    }
+  }
+  throw new Error('No compatible RPC endpoints available for log/event queries.');
+}
+
 
 // Cache for providers with timestamp to track freshness
 interface ProviderCache {

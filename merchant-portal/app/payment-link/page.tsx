@@ -257,7 +257,7 @@ export default function PaymentLinkPage() {
         
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg mt-8">
           <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">Recent Payment Links</h2>
-          <div className="overflow-x-auto">
+          <div className="force-white-text overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
               <thead className="bg-slate-50 dark:bg-slate-700">
                 <tr>
@@ -276,16 +276,16 @@ export default function PaymentLinkPage() {
                 ) : (
                   recentLinks.map((link, idx) => (
                     <tr key={link.link + '-' + idx}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.amount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{link.currency}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{link.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{link.amount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{link.currency}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                           {link.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                        <a href={link.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark dark:text-primary-light">View</a>
+                        <a href={link.link} target="_blank" rel="noopener noreferrer" >View</a>
                       </td>
                     </tr>
                   ))

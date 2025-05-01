@@ -18,6 +18,19 @@ export default function TransactionHistory() {
     setIsLoading(false);
   }, [address]);
 
+  // Listen for localStorage changes to update swap transactions in real time
+  useEffect(() => {
+    if (!address) return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === 'neda_pay_swap_transactions') {
+        const walletTxs = getWalletTransactions(address);
+        setTransactions(walletTxs);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [address]);
+
   // Refresh transactions every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {

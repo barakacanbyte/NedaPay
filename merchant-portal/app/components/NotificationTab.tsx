@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaBell } from 'react-icons/fa';
+import { addPaymentTransaction, PaymentTransaction } from '../utils/paymentStorage';
 
 // Fallback UUID generator for environments without crypto.randomUUID
 function uuidFallback() {
@@ -34,6 +35,16 @@ export default function NotificationTab() {
         },
         ...prev,
       ]);
+
+      // --- Sync payment data with dashboard if notification is a payment ---
+      if (e.detail && e.detail.type === 'payment' && e.detail.paymentData) {
+        // e.detail.paymentData should match PaymentTransaction interface
+        const tx: PaymentTransaction = {
+          ...e.detail.paymentData,
+          id: e.detail.paymentData.id || (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : uuidFallback()),
+        };
+        addPaymentTransaction(tx);
+      }
     }
     window.addEventListener('neda-notification', handleNewNotification as EventListener);
     return () => window.removeEventListener('neda-notification', handleNewNotification as EventListener);

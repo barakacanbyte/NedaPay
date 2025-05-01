@@ -50,6 +50,18 @@ export default function PaymentHistory() {
     fetchPayments();
   }, [address]);
 
+  // Listen for localStorage changes to update payments in real time
+  useEffect(() => {
+    if (!address) return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === 'neda_pay_payment_transactions') {
+        fetchPayments();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [address]);
+
   // Refresh payments every 30 seconds
   useEffect(() => {
     if (!address) return;

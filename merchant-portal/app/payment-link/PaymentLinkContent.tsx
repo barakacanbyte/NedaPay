@@ -154,7 +154,7 @@ export default function PaymentLinkContent() {
 
         <div className="mb-4">
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Merchant Wallet:</span>
-          <span className="ml-2 font-mono text-blue-900 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded select-all">{merchantAddress ? merchantAddress : 'Not connected'}</span>
+          <span className="ml-2 font-mono dark:text-white bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded select-all">{merchantAddress ? merchantAddress : 'Not connected'}</span>
         </div>
         {!merchantAddress && (
           <div className="mb-4 text-red-600 dark:text-red-400 font-semibold">
@@ -163,8 +163,8 @@ export default function PaymentLinkContent() {
         )}
         {merchantAddress && (
           <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Payment link preview (with merchant address):</div>
-            <div className="break-all font-mono text-xs text-blue-700 dark:text-blue-300">
+            <div className="text-xs text-gray-500 dark:text-white mb-1">Payment link preview (with merchant address):</div>
+            <div className="break-all font-mono text-xs dark:text-white">
               {`${window.location.origin}/pay/EXAMPLEID?amount=${amount || '<amount>'}&currency=${currency || '<currency>'}&to=${merchantAddress}`}
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function PaymentLinkContent() {
                   type="text"
                   readOnly
                   value={generatedLink}
-                  className="flex-1 p-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-l-md text-sm text-slate-900 dark:text-white"
+                  className="flex-1 p-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-l-md text-sm dark:text-white placeholder-white"
                 />
                 <button
                   onClick={copyToClipboard}
@@ -265,7 +265,7 @@ export default function PaymentLinkContent() {
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-2 text-sm dark:text-white">
                 Share this link with your customers to receive payments.
               </p>
             </div>
@@ -273,56 +273,72 @@ export default function PaymentLinkContent() {
         </div>
         
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">Recent Payment Links</h2>
-          <div className="overflow-x-auto">
+          <h2 className="text-xl font-semibold dark:text-white mb-4">Recent Payment Links</h2>
+          <div className="overflow-x-auto force-white-text">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
               <thead className="bg-slate-50 dark:bg-slate-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date Created</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Currency</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white uppercase tracking-wider">Date Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white uppercase tracking-wider">Currency</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 15, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">1,500</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">TSHC</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">May 1, 2025</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">5</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">TSHC</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </span>
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full dark:bg-green-900/30 dark:text-white bg-green-100">Active</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">
+                    <button className="font-bold force-white">View</button>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 10, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">2,000</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">cNGN</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">May 1, 2025</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">5</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">cNGN</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      Active
-                    </span>
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full dark:bg-green-900/30 dark:text-white bg-green-100">Active</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">
+                    <button className="font-bold force-white">View</button>
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">Apr 5, 2025</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">500</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">IDRX</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">May 1, 2025</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">3</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">TSHC</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                      Expired
-                    </span>
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full dark:bg-green-900/30 dark:text-white bg-green-100">Active</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">
-                    <button className="text-primary hover:text-primary-dark dark:text-primary-light">View</button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">
+                    <button className="font-bold force-white">View</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">May 1, 2025</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">2349</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">IDRX</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full dark:bg-green-900/30 dark:text-white bg-green-100">Active</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">
+                    <button className="font-bold force-white">View</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">May 1, 2025</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">23</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">cNGN</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full dark:bg-red-900/30 dark:text-white bg-red-100">Expired</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm force-white">
+                    <button className="font-bold force-white">View</button>
                   </td>
                 </tr>
               </tbody>

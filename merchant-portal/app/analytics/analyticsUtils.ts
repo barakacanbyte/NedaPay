@@ -48,7 +48,9 @@ export async function fetchIncomingPayments(merchantAddress: string) {
       continue;
     }
     try {
-      logs = await contract.queryFilter(
+      const { paginatedQueryFilter } = await import('../utils/paginatedQueryFilter');
+      logs = await paginatedQueryFilter(
+        contract,
         contract.filters.Transfer(null, merchantAddress),
         fromBlock,
         latestBlock

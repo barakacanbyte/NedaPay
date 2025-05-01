@@ -61,14 +61,10 @@ export default function ContractIntegration({
         setLoading(true);
         setError('');
         
-        // Connect to provider (Base network)
+        // Always use our unified provider logic for Base network
         let provider;
         try {
-          if (window.ethereum) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-          } else {
-            provider = await getProvider();
-          }
+          provider = await getProvider();
         } catch (providerError) {
           console.error('Failed to connect to any provider', providerError);
           setError('Failed to connect to the Base network. Please try again later.');
