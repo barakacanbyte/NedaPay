@@ -2,8 +2,9 @@
 // Using SQLite for local dev, can be Postgres in prod
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {

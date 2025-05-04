@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
   });
   return NextResponse.json(links);
 }
-
 // POST: Create a new payment link
 export async function POST(req: NextRequest) {
   const data = await req.json();
@@ -24,11 +23,17 @@ export async function POST(req: NextRequest) {
   if (!merchantId || !url || !amount || !currency || !status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  const parsedAmount = parseFloat(amount);
+  if (isNaN(parsedAmount)) {
+    return NextResponse.json({ error: 'Invalid amount format' }, { status: 400 });
+  }
+
   const newLink = await prisma.paymentLink.create({
     data: {
       merchantId,
       url,
-      amount,
+      amount: parsedAmount,
       currency,
       description,
       status,

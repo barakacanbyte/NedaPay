@@ -21,19 +21,20 @@ export default function TransactionTable({ merchantId }: Props) {
     data: transactions,
     isLoading,
     error,
-  } = useQuery<Transaction[], Error>([
-    'transactions', merchantId
-  ], async () => {
+} = useQuery<Transaction[], Error>({
+  queryKey: ['transactions', merchantId],
+  queryFn: async () => {
     if (!merchantId) return [];
     const res = await fetch(`/api/transactions?merchantId=${merchantId}`);
     if (!res.ok) throw new Error('Failed to fetch');
     return res.json();
-  }, {
-    enabled: !!merchantId,
-    refetchOnWindowFocus: false,
-    staleTime: 60 * 1000, // 1 minute cache
-    refetchInterval: 10000, // Auto-refresh every 10 seconds
-  });
+  },
+  enabled: !!merchantId,
+  refetchOnWindowFocus: false,
+  staleTime: 60 * 1000, // 1 minute cache
+  refetchInterval: 10000, // Auto-refresh every 10 seconds
+}
+);
 
   if (!merchantId) return <div className="text-red-500">No merchantId provided.</div>;
   if (isLoading) return <div>Loading transactions...</div>;
