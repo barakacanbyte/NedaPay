@@ -17,6 +17,7 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+
   const handlePay = async () => {
     setError(null);
     setLoading(true);
@@ -47,10 +48,13 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const walletAddress = await signer.getAddress(); // Get the sender's wallet address
+
       // Find token info from stablecoins
       const token = stablecoins.find(
         (sc) => sc.baseToken.toLowerCase() === currency?.toLowerCase() || sc.currency.toLowerCase() === currency?.toLowerCase()
       );
+      let txResponse;
       if (token && token.address && token.address !== "0x0000000000000000000000000000000000000000") {
         // ERC-20 transfer (EIP-681 style)
         const erc20ABI = [
@@ -62,7 +66,6 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
         try {
           decimals = await contract.decimals();
         } catch {
-          // fallback to 18 if decimals() fails
           decimals = 18;
         }
         let value;
@@ -73,9 +76,7 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
           setLoading(false);
           return;
         }
-        const tx = await contract.transfer(to, value);
-        setTxHash(tx.hash);
-        await tx.wait();
+        txResponse = await contract.transfer(to, value); //store transaction response
       } else {
         // Native ETH/coin transfer
         let value;
@@ -86,16 +87,46 @@ export default function PayWithWallet({ to, amount, currency }: { to: string; am
           setLoading(false);
           return;
         }
-        const tx = await signer.sendTransaction({ to, value });
-        setTxHash(tx.hash);
-        await tx.wait();
+        txResponse = await signer.sendTransaction({ to, value }); //store transaction response
       }
+
+      setTxHash(txResponse.hash);
+      await txResponse.wait(); // Wait for transaction confirmation
+
+      // Send transaction details to the database
+      //*****************start*****************************
+      try {
+        const response = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            merchantId: to, // Merchant address is the recipient
+            wallet: walletAddress, // Sender's wallet address
+            amount, // Sending as string since the frontend handles it as string
+            currency,
+            status: 'Completed', // Assuming completion after tx confirmation
+            txHash: txResponse.hash,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to save transaction:', errorData);
+          setError(`Transaction saved on blockchain but failed to record in database: ${errorData.error}`);
+        }
+      } catch (dbError) {
+        console.error('Error saving transaction to database:', dbError);
+        setError('Transaction saved on blockchain but failed to record in database.');
+      }
+      //*****************end*****************************
+
     } catch (e: any) {
       setError(e.message || "Transaction failed");
     }
     setLoading(false);
   };
-
 
   return (
     <div className="mt-4 text-center">

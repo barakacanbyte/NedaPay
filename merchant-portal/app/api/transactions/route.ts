@@ -29,11 +29,17 @@ export async function POST(req: NextRequest) {
   if (!merchantId || !wallet || !amount || !currency || !status || !txHash) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  const parsedAmount = parseFloat(amount);
+  if (isNaN(parsedAmount)) {
+    return NextResponse.json({ error: 'Invalid amount format' }, { status: 400 });
+  }
+
   const transaction = await prisma.transaction.create({
     data: {
       merchantId,
       wallet,
-      amount,
+      amount: parsedAmount,
       currency,
       status,
       txHash,
