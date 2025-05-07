@@ -1,21 +1,66 @@
-import { getName } from '@coinbase/onchainkit/identity';
-import { base } from 'viem/chains';
+import {
+  type Address,
+  createPublicClient,
+  encodePacked,
+  http,
+  keccak256,
+  namehash,
+} from 'viem';
+import L2ResolverAbi from '../abi/L2ResolverAbi';
+import { base, mainnet } from 'viem/chains';
+// import { BLASTAPI_SINGULAR_PROD_API_KEY } from 'lib/wagmi/wagmiConfig';
+
+export type Basename = `${string}.base.eth`;
+
+export const BASENAME_L2_RESOLVER_ADDRESS = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD';
+
+
+
+
+const baseClient = createPublicClient({
+  chain: base,
+  transport: http("https://mainnet.base.org"),
+});
 
 /**
- * Fetches the Base Name for a given wallet address.
- * Returns the base name as a string or null if not found.
+ * Convert an chainId to a coinType hex for reverse chain resolution
  */
-export async function getBaseName(address: string): Promise<string | null> {
-  try {
-    console.log('[BaseName DEBUG] Calling getName with:', { address, base });
-    const result = await getName({ address, chain: base });
-    console.log('[BaseName DEBUG] getName result:', result);
-    if (result && typeof result === 'string') {
-      return result;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching Base Name:', error);
-    return null;
+export const convertChainIdToCoinType = (chainId: number): string => {
+  // L1 resolvers to addr
+  if (chainId === mainnet.id) {
+    return 'addr';
   }
+
+  const cointype = (0x80000000 | chainId) >>> 0;
+  return cointype.toString(16).toLocaleUpperCase();
+};
+
+/**
+ * Convert an address to a reverse node for ENS resolution
+ */
+export const convertReverseNodeToBytes = (address: Address, chainId: number) => {
+  const addressFormatted = address.toLocaleLowerCase() as Address;
+  const addressNode = keccak256(addressFormatted.substring(2) as Address);
+  const chainCoinType = convertChainIdToCoinType(chainId);
+  const baseReverseNode = namehash(`${chainCoinType.toLocaleUpperCase()}.reverse`);
+  const addressReverseNode = keccak256(
+    encodePacked(['bytes32', 'bytes32'], [baseReverseNode, addressNode]),
+  );
+  return addressReverseNode;
+};
+
+export async function getBasename(address: Address) {
+  const addressReverseNode = convertReverseNodeToBytes(address, base.id);
+  const basename = await baseClient.readContract({
+    abi: L2ResolverAbi,
+    address: BASENAME_L2_RESOLVER_ADDRESS,
+    functionName: 'name',
+    args: [addressReverseNode],
+  });
+  if (basename) {
+    return basename as Basename;
+  }
+  return undefined;
 }
+
+

@@ -21,6 +21,9 @@ import {
   ArcElement
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { getBasename } from '../utils/getBaseName';
+
+
 
 // Register ChartJS components
 ChartJS.register(
@@ -252,9 +255,10 @@ function getTransactionsByDayData(transactions: any[]) {
   };
 }
 
-import Balances from './Balances';
+// import Balances from './Balances';
 import SwapModal from './SwapModal';
-import TransactionHistory from './TransactionHistory';
+import { get } from 'http';
+// import TransactionHistory from './TransactionHistory';
 
 export default function MerchantDashboard() {
   const [selectedWalletType, setSelectedWalletType] = useState<'eoa' | 'smart'>('eoa');
@@ -276,7 +280,37 @@ export default function MerchantDashboard() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isTransactionLoading, setIsTransactionLoading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [baseName, setBaseName] = useState<string | null>(null);
 
+
+
+
+  // Use with selectedWalletAddress
+  if (selectedWalletAddress) {
+    //basename
+    function toHexAddress(address: string): `0x${string}` {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address provided');
+      }
+      return (address.startsWith('0x') ? address : `0x${address}`) as `0x${string}`;
+    }
+    
+    const address = toHexAddress(selectedWalletAddress);
+    
+  async function fetchData() {
+    const basename = await getBasename(address);
+   
+    if (basename === undefined) throw Error('failed to resolve address to name');
+   
+   
+    return basename
+  }
+
+  fetchData()
+    .then((resolvedData) => setBaseName(resolvedData))
+    .catch((error) => console.error('Error fetching base name:', error));
+
+  console.log('Base Name:', baseName);
   const { processedBalances } = processBalances(balances);
 
   const handleSwapClick = (fromSymbol: string) => {
@@ -477,6 +511,8 @@ export default function MerchantDashboard() {
 
   if (!mounted) return null;
 
+
+  
   return (
     <>
       <Toaster position="top-right" />
@@ -525,7 +561,7 @@ export default function MerchantDashboard() {
                         if (hour < 12) return '☀️ Good Morning';
                         if (hour < 18) return '🌤️ Good Afternoon';
                         return '🌙 Good Evening';
-                      })()} {selectedWalletAddress ? `${selectedWalletAddress.substring(0, 6)}...` : 'Merchant'}!
+                      })()} {baseName ? baseName: `${(selectedWalletAddress ?? '').substring(0, 6)}...` }
                     </h2>
                     <p className="text-white text-opacity-90 animate-fadeIn animation-delay-200">
                       {(() => {
@@ -1104,4 +1140,4 @@ export default function MerchantDashboard() {
       </div>
     </>
   );
-}
+}}

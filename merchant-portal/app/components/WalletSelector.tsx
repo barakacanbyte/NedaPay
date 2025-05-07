@@ -10,13 +10,13 @@ import { useRouter } from 'next/navigation';
 import { base } from 'wagmi/chains';
 import { useName } from '@coinbase/onchainkit/identity';
 import { base as baseChain } from 'viem/chains';
-import { getBaseName } from '../utils/getBaseName';
+import { getBasename } from '../utils/getBaseName';
 
 // --- ENS-style fallback ---
 // (no-op here, logic will be in component)
 
 // Custom hook to resolve Base Name
-function useBaseName(address: string | undefined) {
+export function useBaseName(address: `0x${string}` | undefined) {
   const [baseName, setBaseName] = useState<string | null>(null);
   useEffect(() => {
     if (!address) {
@@ -24,7 +24,7 @@ function useBaseName(address: string | undefined) {
       return;
     }
     let cancelled = false;
-    getBaseName(address).then((name) => {
+    getBasename(address).then((name) => {
       if (!cancelled) setBaseName(name);
     });
     return () => { cancelled = true; };
@@ -56,7 +56,7 @@ export default function WalletSelector() {
   function isHexAddress(addr: string | undefined): addr is `0x${string}` {
   return typeof addr === 'string' && addr.startsWith('0x') && addr.length === 42;
 }
-const nameResult = useName({ address: isHexAddress(address) ? address : undefined, chain: baseChain });
+const nameResult = useName({ address: isHexAddress(address) ? address : '0x0000000000000000000000000000000000000000', chain: baseChain });
 const ensName = isHexAddress(address) ? nameResult.data : undefined;
   // Resolve Base Name using custom hook (for .base)
   const baseName = useBaseName(address);
