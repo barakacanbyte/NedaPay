@@ -8,7 +8,6 @@ import {
 } from 'viem';
 import L2ResolverAbi from '../abi/L2ResolverAbi';
 import { base, mainnet } from 'viem/chains';
-// import { BLASTAPI_SINGULAR_PROD_API_KEY } from 'lib/wagmi/wagmiConfig';
 
 export type Basename = `${string}.base.eth`;
 
