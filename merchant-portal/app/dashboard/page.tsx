@@ -284,31 +284,54 @@ export default function MerchantDashboard() {
 
 
 
-
+  
   // Use with selectedWalletAddress
-  if (selectedWalletAddress) {
-    //basename
+  useEffect(() => {
+    if (!selectedWalletAddress) {
+      setBaseName(null);
+      return;
+    }
+
     function toHexAddress(address: string): `0x${string}` {
       if (!address || typeof address !== 'string') {
         throw new Error('Invalid address provided');
       }
       return (address.startsWith('0x') ? address : `0x${address}`) as `0x${string}`;
     }
-    
+  
     const address = toHexAddress(selectedWalletAddress);
-    
-  async function fetchData() {
-    const basename = await getBasename(address);
-   
-    if (basename === undefined) throw Error('failed to resolve address to name');
-   
-   
-    return basename
-  }
-
-  fetchData()
-    .then((resolvedData) => setBaseName(resolvedData))
-    .catch((error) => console.error('Error fetching base name:', error));
+    if (!address) {
+      console.error("Invalid address format");
+      setBaseName(null);
+      return;
+    }
+  
+    let isMounted = true;
+  
+    const fetchData = async () => {
+      try {
+        const basename = await getBasename(address);
+        if (basename === undefined) {
+          throw new Error("Failed to resolve address to name");
+        }
+        if (isMounted) {
+          setBaseName(basename);
+        }
+      } catch (error) {
+        console.error("Error fetching base name:", error);
+        if (isMounted) {
+          setBaseName(null);
+        }
+      }
+    };
+  
+    fetchData();
+  
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedWalletAddress]);
+  
 
   console.log('Base Name:', baseName);
   const { processedBalances } = processBalances(balances);
@@ -1140,4 +1163,4 @@ export default function MerchantDashboard() {
       </div>
     </>
   );
-}}
+}

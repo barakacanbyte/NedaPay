@@ -309,6 +309,56 @@ export default function WalletSelector() {
     }
   };
 
+   //basename fetching
+   useEffect(() => {
+    if (!address) {
+      setBaseName(null);
+      return;
+    }
+  
+    function toHexAddress(address: `0x${string}` | undefined): `0x${string}` {
+      if (!address || typeof address !== "string") {
+        throw new Error("Invalid address provided");
+      }
+      return (address.startsWith("0x") ? address : `0x${address}`) as `0x${string}`;
+    }
+  
+    const address_formatted = toHexAddress(address);
+  
+    if (!address_formatted) {
+      console.error("Invalid address format");
+      setBaseName(null);
+      return;
+    }
+  
+    let isMounted = true;
+  
+    const fetchData = async () => {
+      try {
+        const basename = await getBasename(address_formatted);
+        if (basename === undefined) {
+          throw new Error("Failed to resolve address to name");
+        }
+        if (isMounted) {
+          setBaseName(basename);
+        }
+      } catch (error) {
+        console.error("Error fetching base name:", error);
+        if (isMounted) {
+          setBaseName(null);
+        }
+      }
+    };
+  
+    fetchData();
+  
+    return () => {
+      isMounted = false;
+    };
+  }, [address]);
+  
+   
+
   // Function to handle wallet disconnection
   const handleDisconnect = () => {
     disconnect();
@@ -322,36 +372,10 @@ export default function WalletSelector() {
     document.cookie = "wallet_connected=; path=/; max-age=0";
 
     // Redirect to home page using Next.js router
-    router.push("/");
+    router.push("/dashboard");
   };
 
-  //basename fetching
-  if(address){
-    function toHexAddress(address: `0x${string}` | undefined): `0x${string}` {
-      if (!address || typeof address !== "string") {
-        throw new Error("Invalid address provided");
-      }
-      return (
-        address.startsWith("0x") ? address : `0x${address}`
-      ) as `0x${string}`;
-    }
-  
-    const address_formated = toHexAddress(address);
-  
-    async function fetchData() {
-      const basename = await getBasename(address_formated);
-  
-      if (basename === undefined)
-        throw Error("failed to resolve address to name");
-  
-      return basename;
-    }
-  
-    fetchData()
-      .then((resolvedData) => setBaseName(resolvedData))
-      .catch((error) => console.error("Error fetching base name:", error));
-  
-  }
+ 
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -400,19 +424,29 @@ export default function WalletSelector() {
           </div>
           <div className="text-xs sm:text-sm font-bold">
             {address ? (
-              <>
-                <span className="ml-1 text-sm text-black font-bold">
-                  {baseName}
-                </span><br/>
-
-                <span className="ml-1 text-xs text-gray-500">
-                  ({formatAddress(address)})
-                </span>
-              </>
+              baseName ? (
+                <>
+                  <span className="ml-1 text-sm text-black font-bold">
+                    {baseName}
+                  </span>
+                  <br />
+                  <span className="ml-1 text-xs text-gray-500">
+                    ({formatAddress(address)})
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="ml-1 text-sm text-black font-bold">
+                    {formatAddress(address)}
+                  </span>
+                  <br />
+                </>
+              )
             ) : (
               "Connect Wallet"
             )}
           </div>
+
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
