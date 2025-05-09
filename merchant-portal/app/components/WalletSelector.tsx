@@ -19,18 +19,18 @@ import { getBasename } from "../utils/getBaseName";
 // Use the Base chain with type assertions where needed
 
 // Format address for display when no name is available
-function formatAddress(address: string | undefined): string {
-  if (
-    !address ||
-    typeof address !== "string" ||
-    !address.startsWith("0x") ||
-    address.length < 10
-  )
-    return "";
-  return `${address.substring(0, 6)}...${address.substring(
-    address.length - 4
-  )}`;
-}
+// function formatAddress(address: string | undefined): string {
+//   if (
+//     !address ||
+//     typeof address !== "string" ||
+//     !address.startsWith("0x") ||
+//     address.length < 10
+//   )
+//     return "";
+//   return `${address.substring(0, 6)}...${address.substring(
+//     address.length - 4
+//   )}`;
+// }
 
 // Utility to detect mobile browsers
 function isMobile() {
@@ -56,11 +56,11 @@ export default function WalletSelector() {
   const { disconnect } = useDisconnect();
 
   // Helper function to ensure address is properly formatted for the Name component
-  function isHexAddress(addr: string | undefined): addr is `0x${string}` {
-    return (
-      typeof addr === "string" && addr.startsWith("0x") && addr.length === 42
-    );
-  }
+  // function isHexAddress(addr: string | undefined): addr is `0x${string}` {
+  //   return (
+  //     typeof addr === "string" && addr.startsWith("0x") && addr.length === 42
+  //   );
+  // }
 
   // Format address for display
   const formatAddress = (address: string | undefined): string => {
@@ -326,29 +326,32 @@ export default function WalletSelector() {
   };
 
   //basename fetching
-  function toHexAddress(address: `0x${string}` | undefined): `0x${string}` {
-    if (!address || typeof address !== "string") {
-      throw new Error("Invalid address provided");
+  if(address){
+    function toHexAddress(address: `0x${string}` | undefined): `0x${string}` {
+      if (!address || typeof address !== "string") {
+        throw new Error("Invalid address provided");
+      }
+      return (
+        address.startsWith("0x") ? address : `0x${address}`
+      ) as `0x${string}`;
     }
-    return (
-      address.startsWith("0x") ? address : `0x${address}`
-    ) as `0x${string}`;
+  
+    const address_formated = toHexAddress(address);
+  
+    async function fetchData() {
+      const basename = await getBasename(address_formated);
+  
+      if (basename === undefined)
+        throw Error("failed to resolve address to name");
+  
+      return basename;
+    }
+  
+    fetchData()
+      .then((resolvedData) => setBaseName(resolvedData))
+      .catch((error) => console.error("Error fetching base name:", error));
+  
   }
-
-  const address_formated = toHexAddress(address);
-
-  async function fetchData() {
-    const basename = await getBasename(address_formated);
-
-    if (basename === undefined)
-      throw Error("failed to resolve address to name");
-
-    return basename;
-  }
-
-  fetchData()
-    .then((resolvedData) => setBaseName(resolvedData))
-    .catch((error) => console.error("Error fetching base name:", error));
 
   return (
     <div className="relative" ref={dropdownRef}>
