@@ -1,5 +1,4 @@
 import { stablecoins } from '../data/stablecoins';
-import { ethers } from 'ethers';
 
 export const processBalances = (balanceData: Record<string, string>, networkChainId?: number) => {
   const processed = stablecoins.map((coin) => {
@@ -27,61 +26,44 @@ export const processBalances = (balanceData: Record<string, string>, networkChai
   };
 };
 
-export async function fetchIncomingPayments(merchantAddress: string) {
+export async function fetchIncomingPayments(merchantAddress: `0x${string}`) {
+  console.log("merchantAddress debug:", merchantAddress); //debugging
   if (!merchantAddress) return [];
-  const provider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
-  const ERC20_ABI = [
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-    "function decimals() view returns (uint8)",
-    "function symbol() view returns (string)"
-  ];
-  const latestBlock = await provider.getBlockNumber();
-  const fromBlock = Math.max(latestBlock - 10000, 0);
-  let allTxs: any[] = [];
-  for (const coin of stablecoins.filter(c => c.chainId === 8453 && c.address && /^0x[a-fA-F0-9]{40}$/.test(c.address))) {
-    const contract = new ethers.Contract(coin.address, ERC20_ABI, provider);
-    let logs;
-    let decimals;
-    try {
-      decimals = await contract.decimals();
-    } catch (e) {
-      continue;
+
+  try {
+    // Fetch transactions from the database via API
+    const response = await fetch(`/api/transactions?merchantId=${merchantAddress}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch transactions: ${response.statusText}`);
     }
-    try {
-      const { paginatedQueryFilter } = await import('../utils/paginatedQueryFilter');
-      logs = await paginatedQueryFilter(
-        contract,
-        contract.filters.Transfer(null, merchantAddress),
-        fromBlock,
-        latestBlock
-      );
-    } catch (e) {
-      continue;
-    }
-    const symbol = coin.baseToken;
-    for (const log of logs) {
-      const { transactionHash, args, blockNumber } = log as { transactionHash: string, args?: { from: string, to: string, value: any }, blockNumber: number };
-      if (!args) continue;
-      const from = args.from;
-      const to = args.to;
-      const value = ethers.utils.formatUnits(args.value, decimals);
-      const block = await provider.getBlock(blockNumber);
-      const date = new Date(block.timestamp * 1000);
-      allTxs.push({
+    const txs = await response.json();
+    console.log('Fetched transactions debug:', txs); //debugging
+
+    // Map database transactions to UI-expected format
+    const formattedTxs = txs.map((tx: any) => {
+      const date = tx.createdAt ? new Date(tx.createdAt) : new Date();
+      const transactionHash = tx.txHash;
+      const sender = tx.wallet; // Use wallet as sender address
+      return {
         id: transactionHash,
         shortId: transactionHash.slice(0, 6) + '...' + transactionHash.slice(-4),
-        date: date.toISOString().replace('T', ' ').slice(0, 16),
-        amount: value,
-        currency: symbol,
-        status: 'Completed',
-        sender: from,
-        senderShort: from.slice(0, 6) + '...' + from.slice(-4),
+        date: date.toISOString().replace('T', ' ').slice(0, 16), // Format as "YYYY-MM-DD HH:mm"
+        amount: tx.amount.toFixed(2), // Ensure 2 decimal places
+        currency: tx.currency,
+        status: tx.status.charAt(0).toUpperCase() + tx.status.slice(1), // Capitalize status
+        sender,
+        senderShort: sender.slice(0, 6) + '...' + sender.slice(-4),
         blockExplorerUrl: `https://basescan.org/tx/${transactionHash}`
-      });
-    }
+      };
+    });
+
+    // Sort by date (newest first) and limit to 10
+    formattedTxs.sort((a: any, b: any) => b.date.localeCompare(a.date));
+    return formattedTxs.slice(0, 10);
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    return [];
   }
-  allTxs.sort((a, b) => b.date.localeCompare(a.date));
-  return allTxs.slice(0, 10);
 }
 
 export const getPaymentMethodsData = (balanceData: Record<string, string>) => {

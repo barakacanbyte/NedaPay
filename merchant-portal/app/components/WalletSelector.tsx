@@ -316,7 +316,7 @@ export default function WalletSelector() {
       return;
     }
   
-    function toHexAddress(address: `0x${string}` | undefined): `0x${string}` {
+    function toHexAddress(address: `0x${string}` | undefined | string): `0x${string}` {
       if (!address || typeof address !== "string") {
         throw new Error("Invalid address provided");
       }
@@ -341,6 +341,7 @@ export default function WalletSelector() {
         }
         if (isMounted) {
           setBaseName(basename);
+          
         }
       } catch (error) {
         console.error("Error fetching base name:", error);
@@ -357,7 +358,6 @@ export default function WalletSelector() {
     };
   }, [address]);
   
-   
 
   // Function to handle wallet disconnection
   const handleDisconnect = () => {
@@ -436,10 +436,7 @@ export default function WalletSelector() {
                 </>
               ) : (
                 <>
-                  <span className="ml-1 text-sm text-black font-bold">
-                    {formatAddress(address)}
-                  </span>
-                  <br />
+                  <Name address={address} chain={base}/>
                 </>
               )
             ) : (
