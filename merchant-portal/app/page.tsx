@@ -49,7 +49,7 @@ function HomeContent() {
   if (!mounted) return null;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white" style={{opacity: "1"}}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:bg-gray-900 dark:text-white" style={{"--tw-text-opacity": "1 !important"} as React.CSSProperties}>
       <style jsx global>{`
         .dark h2, .dark h3, .dark p, .dark span, .dark summary, .dark div {
           color: white !important;

@@ -20,10 +20,11 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
 import { getBasename } from "../utils/getBaseName";
 import { Name } from "@coinbase/onchainkit/identity";
 import { base } from "wagmi/chains";
+import ChartComponent from "./ChartComponet";
+import PieComponent from "./PieComponent";
 
 // Register ChartJS components
 ChartJS.register(
@@ -127,172 +128,11 @@ const fetchTransactionsFromDB = async (
   }
 };
 
-// Function to get payment methods data for charts
-const getPaymentMethodsData = (transactions: any[]) => {
-  const grouped: Record<string, { count: number; flag: string }> = {};
-  transactions.forEach((tx) => {
-    const symbol = tx.currency;
-    if (!grouped[symbol]) {
-      const coin = stablecoins.find((c) => c.baseToken === symbol);
-      grouped[symbol] = { count: 0, flag: coin?.flag || "🌐" };
-    }
-    grouped[symbol].count++;
-  });
-  const entries = Object.entries(grouped).filter(
-    ([sym, data]) => data.count > 0
-  );
-  const labels = entries.map(([symbol]) => symbol);
-  const data = entries.map(([_, d]) => d.count);
-  const baseColors = [
-    "rgba(59, 130, 246, 0.8)",
-    "rgba(16, 185, 129, 0.8)",
-    "rgba(245, 158, 11, 0.8)",
-    "rgba(139, 92, 246, 0.8)",
-    "rgba(239, 68, 68, 0.8)",
-  ];
-  const backgroundColor = labels.map(
-    (_, i) => baseColors[i % baseColors.length]
-  );
-  const borderColor = [
-    "rgba(59, 130, 246, 1)",
-    "rgba(16, 185, 129, 1)",
-    "rgba(245, 158, 11, 1)",
-    "rgba(139, 92, 246, 1)",
-    "rgba(239, 68, 68, 1)",
-  ];
-  return {
-    labels,
-    datasets: [
-      {
-        label: "Payment Methods",
-        data,
-        backgroundColor,
-        borderColor: borderColor,
-        borderWidth: 1,
-      },
-    ],
-  };
-};
 
-// Generate daily revenue data from real transactions
-function getDailyRevenueData(transactions: any[]) {
-  const currencyCounts: Record<string, number> = {};
-  transactions.forEach((tx) => {
-    if (tx.currency)
-      currencyCounts[tx.currency] = (currencyCounts[tx.currency] || 0) + 1;
-  });
-  const mainSymbol =
-    Object.entries(currencyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
 
-  const dayMap: Record<string, number> = {};
-  transactions.forEach((tx) => {
-    let day = "";
-    if (tx.date) {
-      try {
-        day =
-          typeof tx.date === "string"
-            ? tx.date.slice(0, 10)
-            : new Date(tx.date).toISOString().slice(0, 10);
-      } catch {}
-    }
-    const amount = parseFloat((tx.amount || "0").toString().replace(/,/g, ""));
-    if (day && !isNaN(amount)) {
-      dayMap[day] = (dayMap[day] || 0) + amount;
-    }
-  });
-
-  const today = new Date("2025-04-24");
-  const days: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
-  }
-
-  return {
-    labels: days,
-    datasets: [
-      {
-        label: `Daily Revenue${mainSymbol ? " (" + mainSymbol + ")" : ""}`,
-        data: days.map((day) => dayMap[day] || 0),
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.1)",
-        tension: 0.3,
-        fill: true,
-      },
-    ],
-  };
-}
-
-// Generate daily revenue data for each stablecoin separately
-function getMultiStablecoinDailyRevenueData(transactions: any[]) {
-  const dateSet = new Set<string>();
-  const stablecoinSymbols = Array.from(
-    new Set(transactions.map((tx) => tx.currency))
-  );
-  transactions.forEach((tx) => {
-    const d = tx.date.split("T")[0];
-    dateSet.add(d);
-  });
-  const dates = Array.from(dateSet).sort();
-
-  const datasets = stablecoinSymbols.map((symbol) => {
-    const coin = stablecoins.find((c) => c.baseToken === symbol);
-    const flag = coin?.flag || "🌐";
-    return {
-      label: `${flag} ${symbol}`,
-      data: dates.map((date) => {
-        return transactions
-          .filter((tx) => tx.currency === symbol && tx.date.startsWith(date))
-          .reduce(
-            (sum, tx) =>
-              sum + (parseFloat((tx.amount || "0").replace(/,/g, "")) || 0),
-            0
-          );
-      }),
-      fill: false,
-      tension: 0.2,
-    };
-  });
-  return {
-    labels: dates,
-    datasets,
-  };
-}
-
-// Generate transactions by day data from real transactions
-function getTransactionsByDayData(transactions: any[]) {
-  const dayMap: Record<string, number> = {
-    Sun: 0,
-    Mon: 0,
-    Tue: 0,
-    Wed: 0,
-    Thu: 0,
-    Fri: 0,
-    Sat: 0,
-  };
-  transactions.forEach((tx) => {
-    const dateObj = new Date(tx.date);
-    const day = dateObj.toLocaleDateString(undefined, { weekday: "short" });
-    dayMap[day] = (dayMap[day] || 0) + 1;
-  });
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return {
-    labels: weekDays,
-    datasets: [
-      {
-        label: "Transactions",
-        data: weekDays.map((day) => dayMap[day] || 0),
-        backgroundColor: "rgba(59, 130, 246, 0.8)",
-      },
-    ],
-  };
-}
 
 // import Balances from './Balances';
 import SwapModal from "./SwapModal";
-import { get } from "http";
-// import TransactionHistory from './TransactionHistory';
 
 export default function MerchantDashboard() {
   const [selectedWalletType, setSelectedWalletType] = useState<"eoa" | "smart">(
@@ -323,6 +163,34 @@ export default function MerchantDashboard() {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [baseName, setBaseName] = useState<string | null>(null);
+
+   // isDarkMode state for dynamic theme detection
+   const [isDarkMode, setIsDarkMode] = useState<boolean>(
+    typeof window !== "undefined" &&
+      (document.body.classList.contains('dark') ||
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+  );
+
+  // Updates theme when it changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const newDarkMode = document.body.classList.contains('dark');
+      setIsDarkMode(newDarkMode);
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsDarkMode(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
 
   //formats address to normal string
   function toHexAddress(address: string | undefined): `0x${string}` {
@@ -1003,94 +871,7 @@ export default function MerchantDashboard() {
                   Daily Revenue
                 </h3>
                 <div className="h-64">
-                  <Line
-                    data={getMultiStablecoinDailyRevenueData(transactions)}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          grid: { color: "rgba(156, 163, 175, 0.1)" },
-                          ticks: {
-                            color:
-                              typeof window !== "undefined" &&
-                              window.matchMedia &&
-                              window.matchMedia("(prefers-color-scheme: dark)")
-                                .matches
-                                ? "#9ca3af"
-                                : "#4b5563",
-                          },
-                        },
-                        x: {
-                          grid: { display: false },
-                          ticks: {
-                            color:
-                              typeof window !== "undefined" &&
-                              window.matchMedia &&
-                              window.matchMedia("(prefers-color-scheme: dark)")
-                                .matches
-                                ? "#9ca3af"
-                                : "#4b5563",
-                          },
-                        },
-                      },
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color:
-                              typeof window !== "undefined" &&
-                              window.matchMedia &&
-                              window.matchMedia("(prefers-color-scheme: dark)")
-                                .matches
-                                ? "#fff"
-                                : "#222",
-                            usePointStyle: false,
-                            generateLabels: (chart) => {
-                              const { datasets } = chart.data;
-                              if (!datasets || !datasets.length) return [];
-                              return datasets.map((ds, i) => {
-                                const labelString = ds.label || "";
-                                const match =
-                                  labelString.match(/^(\S+)\s+(.+)$/);
-                                let flag = "",
-                                  code = "";
-                                if (match) {
-                                  flag = match[1];
-                                  code = match[2];
-                                } else {
-                                  code = labelString;
-                                }
-                                return {
-                                  text: `${flag} ${code}`.trim(),
-                                  hidden: chart.isDatasetVisible(i) === false,
-                                  index: i,
-                                };
-                              });
-                            },
-                          },
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: function (context) {
-                              const ds = context.dataset;
-                              const label = ds.label || "";
-                              const match = label.match(/^(\S+)\s+(.+)$/);
-                              let flag = "",
-                                code = "";
-                              if (match) {
-                                flag = match[1];
-                                code = match[2];
-                              } else {
-                                code = label;
-                              }
-                              return `${flag} ${code}: ${context.parsed.y.toLocaleString()}`;
-                            },
-                          },
-                        },
-                      },
-                    }}
-                  />
+                <ChartComponent transactions={transactions} />
                 </div>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
@@ -1098,29 +879,7 @@ export default function MerchantDashboard() {
                   Payment Methods
                 </h3>
                 <div className="h-64">
-                  <Doughnut
-                    data={getPaymentMethodsData(transactions)}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: "bottom",
-                          labels: {
-                            color:
-                              typeof window !== "undefined" &&
-                              window.matchMedia &&
-                              window.matchMedia("(prefers-color-scheme: dark)")
-                                .matches
-                                ? "#9ca3af"
-                                : "#4b5563",
-                            padding: 20,
-                            font: { size: 12 },
-                          },
-                        },
-                      },
-                    }}
-                  />
+                  <PieComponent transactions={transactions}/>
                 </div>
               </div>
             </div>
