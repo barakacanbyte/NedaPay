@@ -13,7 +13,7 @@ import {
   LegendItem,
   Color,
 } from 'chart.js';
-import { stablecoins } from '../data/stablecoins'; 
+import { stablecoins } from '../data/stablecoins';
 import { useTheme } from 'next-themes';
 
 // Register Chart.js components
@@ -23,7 +23,7 @@ ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip,
 interface Transaction {
   id: string;
   shortId: string;
-  date: string;
+  date: string; // Expected format: "YYYY-MM-DD HH:MM:SS" or similar
   amount: string;
   currency: string;
   status: string;
@@ -37,8 +37,24 @@ interface ChartComponentProps {
   transactions: Transaction[];
 }
 
+// Define color mapping based on the image attachment
+const colorMap: { [key: string]: string } = {
+  TSHC: '#00A1D6', // Blue
+  cNGN: '#00A65A', // Green
+  NGNC: '#F5A623', // Orange
+  ZARP: '#A100A1', // Purple
+  IDRX: '#D6323A', // Red
+  EURC: '#00A1D6', // Blue
+  CADC: '#00A65A', // Green
+  BRL: '#F5A623', // Orange
+  TRYB: '#A100A1', // Purple
+  NZDD: '#D6323A', // Red
+  MXNe: '#00A1D6', // Blue
+  USDC: '#00A65A', // Green
+};
+
 // Function to get chart data with validation
-const getMultiStablecoinDailyRevenueData = (
+const getMultiStablecoinHourlyRevenueData = (
   transactions: Transaction[]
 ): ChartData<'line', number[], string> => {
   if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
@@ -46,31 +62,34 @@ const getMultiStablecoinDailyRevenueData = (
     return { labels: [], datasets: [] };
   }
 
-  // Get unique dates
-  const dateSet = new Set<string>();
+  // Get unique date-hour combinations
+  const dateHourSet = new Set<string>();
   transactions.forEach((tx) => {
     if (tx.date && typeof tx.date === 'string') {
-      const date = tx.date.slice(0, 10); // e.g., "2025-05-01"
-      dateSet.add(date);
+      const dateHour = tx.date.slice(0, 13) + ':00';
+      dateHourSet.add(dateHour);
     }
   });
-  const labels = Array.from(dateSet).sort();
+  const labels = Array.from(dateHourSet).sort();
 
   // Get unique stablecoin symbols
   const stablecoinSymbols = Array.from(new Set(transactions.map((tx) => tx.currency)));
 
   // Generate datasets for each stablecoin
-  const datasets = stablecoinSymbols.map((symbol, index) => {
+  const datasets = stablecoinSymbols.map((symbol) => {
     const coin = stablecoins.find((c) => c.baseToken === symbol);
     const flag = coin?.flag || '🌐';
-    const data = labels.map((date) => {
-      const dailySum = transactions
-        .filter((tx) => tx.currency === symbol && tx.date.startsWith(date))
+    const data = labels.map((dateHour) => {
+      const hourlySum = transactions
+        .filter((tx) => {
+          const txDateHour = tx.date.slice(0, 13) + ':00';
+          return tx.currency === symbol && txDateHour === dateHour;
+        })
         .reduce((sum, tx) => {
           const amount = parseFloat(tx.amount.replace(/,/g, '')) || 0;
           return sum + (isNaN(amount) ? 0 : amount);
         }, 0);
-      return dailySum;
+      return hourlySum;
     });
 
     return {
@@ -78,15 +97,13 @@ const getMultiStablecoinDailyRevenueData = (
       data,
       fill: false,
       tension: 0.2,
-      borderColor: `hsl(${index * 60}, 70%, 50%)` as Color,
-      backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.3)` as Color,
+      borderColor: colorMap[symbol] as Color,
+      backgroundColor: `${colorMap[symbol]}80` as Color, // 50% opacity
     };
   });
 
-  // Log data for debugging
   console.log('Chart Data:', { labels, datasets });
 
-  // Validate data consistency
   datasets.forEach((dataset) => {
     if (dataset.data.length !== labels.length) {
       console.error(`Dataset length mismatch for ${dataset.label}:`, {
@@ -105,49 +122,59 @@ const getMultiStablecoinDailyRevenueData = (
 };
 
 const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
-  // State to track theme
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const { theme } = useTheme();
-
-  console.log('Current theme:', theme); //debugging
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(theme === 'dark');
 
   useEffect(() => {
-  theme === 'dark' ? setIsDarkMode(true) : setIsDarkMode(false);
-  const textColor = isDarkMode ? '#ffffff' : '#222222';
-}, [theme, setIsDarkMode]);
+    setIsDarkMode(theme === 'dark');
+  }, [theme]);
 
-
-
-  // Calculate suggested max for y-axis
   const maxAmount = transactions
     .map((tx) => parseFloat(tx.amount.replace(/,/g, '')) || 0)
     .filter((num) => !isNaN(num))
     .reduce((max, num) => Math.max(max, num), 0);
-  const suggestedMax = maxAmount > 0 ? maxAmount * 1.2 : 100; // 20% buffer or default to 100
+  const suggestedMax = maxAmount > 0 ? maxAmount * 1.2 : 100;
 
-  // Chart options with constrained y-axis and customized legend
+  const textColor = isDarkMode ? '#ffffff' : '#222222';
+
   const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       y: {
         beginAtZero: true,
-        suggestedMax, // Dynamic max based on data
-        grid: { color: isDarkMode ? 'rgba(159, 161, 160, 0.28)': 'rgba(100, 102, 101, 0.17)' },
+        suggestedMax,
+        grid: { color: isDarkMode ? 'rgba(159, 161, 160, 0.28)' : 'rgba(100, 102, 101, 0.17)' },
         ticks: { color: isDarkMode ? '#fffff0' : '#4b5563' },
       },
       x: {
         grid: { display: false },
-        ticks: { color: isDarkMode ? '#fffff0' : '#4b5563' },
+        ticks: {
+          color: isDarkMode ? '#fffff0' : '#4b5563',
+          callback: function (value) {
+            const label = this.getLabelForValue(value as number);
+            try {
+              const date = new Date(label);
+              return date.toLocaleString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                hour12: false,
+              });
+            } catch (e) {
+              return label;
+            }
+          },
+        },
       },
     },
     plugins: {
       legend: {
         labels: {
-          color: isDarkMode ? '#ffffff' : '#222222',
-          usePointStyle: false, 
-          boxWidth: 20, // Width of the legend indicator
-          boxHeight: 9, // Thin line-like appearance
+          color: textColor,
+          usePointStyle: false,
+          boxWidth: 20,
+          boxHeight: 9,
           padding: 10,
           generateLabels: (chart): LegendItem[] => {
             const { datasets } = chart.data;
@@ -155,8 +182,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
             return datasets.map((ds, i) => {
               const labelString = ds.label || '';
               const match = labelString.match(/^(\S+)\s+(.+)$/);
-              let flag = '',
-                code = '';
+              let flag = '', code = '';
               if (match) {
                 flag = match[1];
                 code = match[2];
@@ -165,8 +191,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
               }
               return {
                 text: `${flag} ${code}`.trim(),
-                fillStyle: ds.borderColor as Color, // Cast to Color
-                strokeStyle: ds.borderColor as Color, // Cast to Color
+                fillStyle: ds.borderColor as Color,
+                strokeStyle: ds.borderColor as Color,
                 hidden: !chart.isDatasetVisible(i),
                 index: i,
                 lineWidth: 2,
@@ -181,8 +207,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
             const ds = context.dataset;
             const label = ds.label || '';
             const match = label.match(/^(\S+)\s+(.+)$/);
-            let flag = '',
-              code = '';
+            let flag = '', code = '';
             if (match) {
               flag = match[1];
               code = match[2];
@@ -191,6 +216,22 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
             }
             return `${flag} ${code}: ${context.parsed.y.toLocaleString()}`;
           },
+          title: function (context) {
+            const label = context[0].label;
+            try {
+              const date = new Date(label);
+              return date.toLocaleString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              });
+            } catch (e) {
+              return label;
+            }
+          },
         },
       },
     },
@@ -198,11 +239,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
 
   return (
     <div className="h-64 w-full" style={{ position: 'relative', maxHeight: '256px' }}>
-      <Line data={getMultiStablecoinDailyRevenueData(transactions)} options={options} />
+      <Line data={getMultiStablecoinHourlyRevenueData(transactions)} options={options} />
     </div>
   );
 };
-
-
 
 export default ChartComponent;

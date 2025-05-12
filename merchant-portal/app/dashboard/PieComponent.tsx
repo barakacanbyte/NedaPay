@@ -23,6 +23,22 @@ interface ChartComponentProps {
   transactions: Transaction[];
 }
 
+// Define color mapping based on the image attachment
+const colorMap: { [key: string]: string } = {
+  TSHC: '#00A1D6', // Blue
+  cNGN: '#00A65A', // Green
+  NGNC: '#F5A623', // Orange
+  ZARP: '#A100A1', // Purple
+  IDRX: '#D6323A', // Red
+  EURC: '#00A1D6', // Blue
+  CADC: '#00A65A', // Green
+  BRL: '#F5A623', // Orange
+  TRYB: '#A100A1', // Purple
+  NZDD: '#D6323A', // Red
+  MXNe: '#00A1D6', // Blue
+  USDC: '#00A65A', // Green
+};
+
 const getPaymentMethodsData = (transactions: any[]) => {
   const grouped: Record<string, { count: number; flag: string }> = {};
   transactions.forEach((tx) => {
@@ -47,11 +63,9 @@ const getPaymentMethodsData = (transactions: any[]) => {
     .sort(([a], [b]) => stablecoinOrder.indexOf(a) - stablecoinOrder.indexOf(b))
     .map(([_, d]) => d.count);
 
-  // Explicitly type as Color[] to ensure array indexing
-  const backgroundColor: Color[] = labels.map(
-    (_, i) => `hsla(${i * 60}, 70%, 50%, 0.8)`
-  );
-  const borderColor: Color[] = labels.map((_, i) => `hsl(${i * 60}, 70%, 50%)`);
+  // Map colors based on currency symbols
+  const backgroundColor: Color[] = labels.map((symbol) => `${colorMap[symbol]}CC`); // 80% opacity
+  const borderColor: Color[] = labels.map((symbol) => colorMap[symbol]);
 
   return {
     labels,
@@ -68,19 +82,14 @@ const getPaymentMethodsData = (transactions: any[]) => {
 };
 
 const PieChartComponent: React.FC<ChartComponentProps> = ({ transactions }) => {
-   // State to track theme
-   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-   const { theme } = useTheme();
- 
-   console.log('Current theme:', theme); //debugging
- 
-   useEffect(() => {
-   theme === 'dark' ? setIsDarkMode(true) : setIsDarkMode(false);
- }, [theme, setIsDarkMode]);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const { theme } = useTheme();
 
- 
+  console.log('Current theme:', theme); // debugging
 
-    
+  useEffect(() => {
+    theme === 'dark' ? setIsDarkMode(true) : setIsDarkMode(false);
+  }, [theme, setIsDarkMode]);
 
   const options: ChartOptions<"doughnut"> = {
     responsive: true,
